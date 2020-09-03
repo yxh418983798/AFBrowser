@@ -1,0 +1,6 @@
+framework module AFBrowser {
+  umbrella header "AFBrowser-umbrella.h"
+
+  export *
+  module * { export * }
+}

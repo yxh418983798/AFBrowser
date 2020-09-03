@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		31F6FB3524FF6E5D00703C1A /* AFTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 31F6FB3424FF6E5D00703C1A /* AFTableViewCell.m */; };
+		5DD1354D6E542A6730A2215F /* libPods-AFBrowser_Example.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 23F2690F7D780F78DC114440 /* libPods-AFBrowser_Example.a */; };
 		6003F58E195388D20070C39A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58D195388D20070C39A /* Foundation.framework */; };
 		6003F590195388D20070C39A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58F195388D20070C39A /* CoreGraphics.framework */; };
 		6003F592195388D20070C39A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F591195388D20070C39A /* UIKit.framework */; };
@@ -22,8 +24,7 @@
 		6003F5BC195388D20070C39A /* Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 6003F5BB195388D20070C39A /* Tests.m */; };
 		71719F9F1E33DC2100824A3D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 71719F9D1E33DC2100824A3D /* LaunchScreen.storyboard */; };
 		873B8AEB1B1F5CCA007FD442 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 873B8AEA1B1F5CCA007FD442 /* Main.storyboard */; };
-		A06EF598CD063CFEEE173181 /* Pods_AFBrowser_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 718D3229E1A296D27112389E /* Pods_AFBrowser_Tests.framework */; };
-		F6BB14EDD398755D544FD7C9 /* Pods_AFBrowser_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20545F4DD82FD2D7C3856AA7 /* Pods_AFBrowser_Example.framework */; };
+		D2D13E7C4795955B5C6B4617 /* libPods-AFBrowser_Tests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 09803E8654480C0BE2A2720B /* libPods-AFBrowser_Tests.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -37,8 +38,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		1FC1AA23EE21215BA24E8D75 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; name = README.md; path = ../README.md; sourceTree = "<group>"; };
-		20545F4DD82FD2D7C3856AA7 /* Pods_AFBrowser_Example.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AFBrowser_Example.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		09803E8654480C0BE2A2720B /* libPods-AFBrowser_Tests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AFBrowser_Tests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		1FC1AA23EE21215BA24E8D75 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		23F2690F7D780F78DC114440 /* libPods-AFBrowser_Example.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AFBrowser_Example.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		31F6FB3324FF6E5D00703C1A /* AFTableViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AFTableViewCell.h; sourceTree = "<group>"; };
+		31F6FB3424FF6E5D00703C1A /* AFTableViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AFTableViewCell.m; sourceTree = "<group>"; };
 		6003F58A195388D20070C39A /* AFBrowser_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AFBrowser_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6003F58D195388D20070C39A /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		6003F58F195388D20070C39A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -58,15 +62,14 @@
 		6003F5B9195388D20070C39A /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		6003F5BB195388D20070C39A /* Tests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Tests.m; sourceTree = "<group>"; };
 		606FC2411953D9B200FFA9A0 /* Tests-Prefix.pch */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Tests-Prefix.pch"; sourceTree = "<group>"; };
-		6677F4073B2FD2589C42FE82 /* AFBrowser.podspec */ = {isa = PBXFileReference; includeInIndex = 1; name = AFBrowser.podspec; path = ../AFBrowser.podspec; sourceTree = "<group>"; };
+		6677F4073B2FD2589C42FE82 /* AFBrowser.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = AFBrowser.podspec; path = ../AFBrowser.podspec; sourceTree = "<group>"; };
 		71719F9E1E33DC2100824A3D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
-		718D3229E1A296D27112389E /* Pods_AFBrowser_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_AFBrowser_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		75760E2731E099BD035D4EFB /* Pods-AFBrowser_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AFBrowser_Tests.release.xcconfig"; path = "Target Support Files/Pods-AFBrowser_Tests/Pods-AFBrowser_Tests.release.xcconfig"; sourceTree = "<group>"; };
 		75CCD3915923FD822DA288FF /* Pods-AFBrowser_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AFBrowser_Tests.debug.xcconfig"; path = "Target Support Files/Pods-AFBrowser_Tests/Pods-AFBrowser_Tests.debug.xcconfig"; sourceTree = "<group>"; };
 		873B8AEA1B1F5CCA007FD442 /* Main.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = Main.storyboard; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		87B6D6E2DDE6233A62747E3E /* Pods-AFBrowser_Example.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AFBrowser_Example.debug.xcconfig"; path = "Target Support Files/Pods-AFBrowser_Example/Pods-AFBrowser_Example.debug.xcconfig"; sourceTree = "<group>"; };
 		DEC94B14AC8F238F545BE12C /* Pods-AFBrowser_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AFBrowser_Example.release.xcconfig"; path = "Target Support Files/Pods-AFBrowser_Example/Pods-AFBrowser_Example.release.xcconfig"; sourceTree = "<group>"; };
-		FB0EEAD461A4ACC5D915C968 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		FB0EEAD461A4ACC5D915C968 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,7 +80,7 @@
 				6003F590195388D20070C39A /* CoreGraphics.framework in Frameworks */,
 				6003F592195388D20070C39A /* UIKit.framework in Frameworks */,
 				6003F58E195388D20070C39A /* Foundation.framework in Frameworks */,
-				F6BB14EDD398755D544FD7C9 /* Pods_AFBrowser_Example.framework in Frameworks */,
+				5DD1354D6E542A6730A2215F /* libPods-AFBrowser_Example.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -88,7 +91,7 @@
 				6003F5B0195388D20070C39A /* XCTest.framework in Frameworks */,
 				6003F5B2195388D20070C39A /* UIKit.framework in Frameworks */,
 				6003F5B1195388D20070C39A /* Foundation.framework in Frameworks */,
-				A06EF598CD063CFEEE173181 /* Pods_AFBrowser_Tests.framework in Frameworks */,
+				D2D13E7C4795955B5C6B4617 /* libPods-AFBrowser_Tests.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -103,7 +106,6 @@
 				75CCD3915923FD822DA288FF /* Pods-AFBrowser_Tests.debug.xcconfig */,
 				75760E2731E099BD035D4EFB /* Pods-AFBrowser_Tests.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -135,8 +137,8 @@
 				6003F58F195388D20070C39A /* CoreGraphics.framework */,
 				6003F591195388D20070C39A /* UIKit.framework */,
 				6003F5AF195388D20070C39A /* XCTest.framework */,
-				20545F4DD82FD2D7C3856AA7 /* Pods_AFBrowser_Example.framework */,
-				718D3229E1A296D27112389E /* Pods_AFBrowser_Tests.framework */,
+				23F2690F7D780F78DC114440 /* libPods-AFBrowser_Example.a */,
+				09803E8654480C0BE2A2720B /* libPods-AFBrowser_Tests.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -152,6 +154,8 @@
 				71719F9D1E33DC2100824A3D /* LaunchScreen.storyboard */,
 				6003F5A8195388D20070C39A /* Images.xcassets */,
 				6003F594195388D20070C39A /* Supporting Files */,
+				31F6FB3324FF6E5D00703C1A /* AFTableViewCell.h */,
+				31F6FB3424FF6E5D00703C1A /* AFTableViewCell.m */,
 			);
 			name = "Example for AFBrowser";
 			path = AFBrowser;
@@ -208,7 +212,7 @@
 				6003F586195388D20070C39A /* Sources */,
 				6003F587195388D20070C39A /* Frameworks */,
 				6003F588195388D20070C39A /* Resources */,
-				955181B80A6787ED1023306A /* [CP] Embed Pods Frameworks */,
+				AB1E4616421C3212E29D8ED6 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -258,6 +262,7 @@
 			developmentRegion = English;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+				English,
 				en,
 				Base,
 			);
@@ -317,22 +322,22 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		955181B80A6787ED1023306A /* [CP] Embed Pods Frameworks */ = {
+		AB1E4616421C3212E29D8ED6 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-AFBrowser_Example/Pods-AFBrowser_Example-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/AFBrowser/AFBrowser.framework",
+				"${PODS_ROOT}/Target Support Files/Pods-AFBrowser_Example/Pods-AFBrowser_Example-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/AFBrowser/AFBrowser.bundle",
 			);
-			name = "[CP] Embed Pods Frameworks";
+			name = "[CP] Copy Pods Resources";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/AFBrowser.framework",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/AFBrowser.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AFBrowser_Example/Pods-AFBrowser_Example-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-AFBrowser_Example/Pods-AFBrowser_Example-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		D81904B643F3D1794219C58B /* [CP] Check Pods Manifest.lock */ = {
@@ -366,6 +371,7 @@
 			files = (
 				6003F59E195388D20070C39A /* AFAppDelegate.m in Sources */,
 				6003F5A7195388D20070C39A /* AFViewController.m in Sources */,
+				31F6FB3524FF6E5D00703C1A /* AFTableViewCell.m in Sources */,
 				6003F59A195388D20070C39A /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

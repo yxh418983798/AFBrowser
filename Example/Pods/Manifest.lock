@@ -1,0 +1,29 @@
+PODS:
+  - AFBrowser (0.1.0):
+    - SDWebImage
+  - Masonry (1.1.0)
+  - SDWebImage (5.9.0):
+    - SDWebImage/Core (= 5.9.0)
+  - SDWebImage/Core (5.9.0)
+
+DEPENDENCIES:
+  - AFBrowser (from `../`)
+  - Masonry
+
+SPEC REPOS:
+  https://github.com/CocoaPods/Specs.git:
+    - Masonry
+    - SDWebImage
+
+EXTERNAL SOURCES:
+  AFBrowser:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  AFBrowser: be3a7d7357a7fa778416083ce6b9e2bf3f93c36c
+  Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
+  SDWebImage: 62ae4a18473520c67b79e9724c31a63599cc9423
+
+PODFILE CHECKSUM: a4743d934d82d6a8be646ce8deb99af15518905b
+
+COCOAPODS: 1.9.1

@@ -1,9 +1,11 @@
-use_frameworks!
+#use_frameworks!
+source 'https://github.com/CocoaPods/Specs.git'
 
 platform :ios, '8.0'
 
 target 'AFBrowser_Example' do
   pod 'AFBrowser', :path => '../'
+  pod 'Masonry'
 
   target 'AFBrowser_Tests' do
     inherit! :search_paths

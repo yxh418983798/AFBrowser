@@ -31,7 +31,11 @@ TODO: Add long description of the pod here.
   s.ios.deployment_target = '8.0'
 
   s.source_files = 'AFBrowser/Classes/**/*'
-  
+  s.dependency 'SDWebImage'
+  s.resource_bundles = {
+   'AFBrowser' => ['AFBrowser/Assets/*']
+  }
+    
   # s.resource_bundles = {
   #   'AFBrowser' => ['AFBrowser/Assets/*.png']
   # }
