@@ -56,7 +56,9 @@
             toView = [(UIViewController *)nextResponder view].superview;
         }
     }
-    CGRect frame = [transitionView.superview convertRect:transitionView.frame toView:toView ?: transitionView.window];
+    if (!toView) toView = transitionView.window ?: UIApplication.sharedApplication.keyWindow;
+    if (!toView) return CGRectZero;
+    CGRect frame = [transitionView.superview convertRect:transitionView.frame toView:toView];
     if (frame.size.width < 1 || frame.size.height < 1) {
         NSLog(@"-------------------------- sourceFrame有问题，请检查代码 frame:%@  sourceView：%@--------------------------", NSStringFromCGRect(frame), transitionView);
         frame = CGRectZero;
@@ -246,7 +248,10 @@
     [self addBackgroundViewToContainerView:containerView];
     
     // 获取图片
-    self.transitionView = [transitionView snapshotViewAfterScreenUpdates:NO];
+//    self.transitionView = [transitionView snapshotViewAfterScreenUpdates:NO];
+    self.transitionView = [[UIImageView alloc] initWithImage:transitionView.image];
+    self.transitionView.contentMode = UIViewContentModeScaleAspectFill;
+    self.transitionView.clipsToBounds = YES;
 //    CGFloat height = scrollView.contentSize.height;
 //    self.transitionView.frame = CGRectMake(-scrollView.contentOffset.x, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), scrollView.contentSize.width, scrollView.contentSize.height);
     CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(transitionView.image.size.height, 1) / fmax(transitionView.image.size.width, 1);
