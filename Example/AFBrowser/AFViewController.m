@@ -75,16 +75,20 @@
 
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    AFBrowserViewController *browserVc = AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDelete).makePageControlType(AFPageControlTypeText);
-    [browserVc addItem:[AFBrowserItem imageItem:[UIImage imageNamed:@"image"] coverImage:nil identifier:nil]];
-    [browserVc addItem:[AFBrowserItem imageItem:[UIImage imageNamed:@"image"] coverImage:nil identifier:nil]];
-    [browserVc addItem:[AFBrowserItem imageItem:[UIImage imageNamed:@"image"] coverImage:nil identifier:nil]];
-    [browserVc addItem:[AFBrowserItem imageItem:[UIImage imageNamed:@"image"] coverImage:nil identifier:nil]];
-    [browserVc addItem:[AFBrowserItem imageItem:[UIImage imageNamed:@"image"] coverImage:nil identifier:nil]];
-    [browserVc addItem:[AFBrowserItem imageItem:[UIImage imageNamed:@"image"] coverImage:nil identifier:nil]];
-    [browserVc browse];
+    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES) browse];
 }
 
+
+- (NSInteger)numberOfItemsInBrowser:(AFBrowserViewController *)browser {
+    return 10;
+}
+
+- (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index {
+    if (index > 2) {
+        return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
+    }
+    return [AFBrowserItem itemWithVideo:@"http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
+}
 
 /// 返回转场的View
 - (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index {
@@ -92,7 +96,9 @@
     return cell.imageView;
 }
 
-
+- (void)browser:(AFBrowserViewController *)browser longPressActionAtIndex:(NSInteger)index {
+    NSLog(@"-------------------------- 来了老弟：%ld --------------------------", (long)index);
+}
 
 
 @end

@@ -7,7 +7,7 @@
 
 #import "AFPlayer.h"
 #import <AVFoundation/AVFoundation.h>
-//#import "UIImageView+WebCache.h"
+#import "AFBrowserLoaderProxy.h"
 #import "AFBrowserItem.h"
 
 @interface AFPlayer ()
@@ -28,7 +28,7 @@
 @property (strong, nonatomic) UIActivityIndicatorView *activityView;
 
 /** url */
-@property (strong, nonatomic) NSURL         *url;
+@property (strong, nonatomic) AFBrowserItem         *currentItem;
 
 /** 准备完成后是否自动播放，默认No */
 @property (assign, nonatomic) BOOL          playWhenPrepareDone;
@@ -45,6 +45,9 @@
 /** 记录时长 */
 @property (assign, nonatomic) float         duration;
 
+/** 记录是否在监听 */
+@property (nonatomic, assign) BOOL          isObserving;
+
 @end
 
 
@@ -58,9 +61,10 @@
     [self addSubview:self.coverImgView];
     [self.coverImgView addSubview:self.activityView];
     [self addSubview:self.playBtn];
-    [self addSubview:self.bottomBar];
+    if (self.currentItem.showVideoControl) {
+        [self addSubview:self.bottomBar];
+    }
 }
-
 
 - (void)layoutSubviews {
     [CATransaction begin];
@@ -72,18 +76,20 @@
     self.coverImgView.frame = self.bounds;
     self.playBtn.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
     self.activityView.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
-    self.bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
+    if (self.currentItem.showVideoControl) {
+        self.bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
+    }
     [super layoutSubviews];
 }
 
-
 - (void)dealloc {
+    NSLog(@"-------------------------- 哈哈释放了播放器 --------------------------");
     if (self.playerObserver) {
         [self.player removeTimeObserver:self.playerObserver];
         self.playerObserver = nil;
     }
     if (self.player.currentItem) {
-        [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+        [self observeItemStatus:NO];
         [self.player replaceCurrentItemWithPlayerItem:nil];
         [_playerLayer removeFromSuperlayer];
         _player = nil;
@@ -94,15 +100,14 @@
 
 // 控制器即将销毁，做一些转场动画的处理
 - (void)browserWillDismiss {
-    self.bottomBar.alpha = 0;
+    if (self.currentItem.showVideoControl) {
+        self.bottomBar.alpha = 0;
+    }
     self.playBtn.hidden = YES;
     [self.activityView stopAnimating];
 }
 
-
-/**
- * 控制器取消Dismiss，做一些恢复处理
- */
+/// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss {
     self.showToolBar = self.showToolBar;
     self.playBtn.hidden = self.isPlaying;
@@ -116,10 +121,17 @@
 }
 
 
+#pragma mark - setter
+- (void)setItem:(AFBrowserItem *)item {
+    _item = item;
+    if (_item.showVideoControl && _bottomBar.superview) [self addSubview:self.bottomBar];
+}
+
 - (void)setShowToolBar:(BOOL)showToolBar {
     _showToolBar = showToolBar;
-    self.bottomBar.alpha = _showToolBar ? 1 : 0;
-    
+    if (self.currentItem.showVideoControl) {
+        self.bottomBar.alpha = _showToolBar ? 1 : 0;
+    }
 }
 
 
@@ -131,7 +143,6 @@
     return _coverImgView;
 }
 
-
 - (UIButton *)playBtn {
     if (!_playBtn) {
         _playBtn = [UIButton new];
@@ -142,7 +153,6 @@
     return _playBtn;
 }
 
-
 - (UIActivityIndicatorView *)activityView {
     if (!_activityView) {
         _activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
@@ -151,7 +161,6 @@
     }
     return _activityView;
 }
-
 
 - (AVPlayer *)player {
     if (!_player) {
@@ -164,7 +173,6 @@
     return _player;
 }
 
-
 - (AVPlayerLayer *)playerLayer {
     if (!_playerLayer) {
         _playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
@@ -173,7 +181,6 @@
     }
     return _playerLayer;
 }
-
 
 - (AFPlayerBottomBar *)bottomBar {
     if (!_bottomBar) {
@@ -190,23 +197,33 @@
 }
 
 
+#pragma mark - 更新bottomBar的进度
+- (void)updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime {
+    if (self.currentItem.showVideoControl) {
+        [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.currentItem.duration];
+    } else {
+        if (_bottomBar.superview) [_bottomBar removeFromSuperview];
+        _bottomBar = nil;
+    }
+}
+
+
 #pragma mark - 准备播放
-- (void)prepareWithURL:(NSURL *)url duration:(float)duration {
+- (void)prepare {
 
     if (self.player.currentItem) {
-        if ([self.url isEqual:url]) return;
-        [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+        if (self.currentItem == self.item) return;
+        [self observeItemStatus:NO];
     }
     
-    self.url = url;
+    self.currentItem = self.item;
     self.progress = 0.f;
-    self.duration = duration;
-    self.playWhenPrepareDone = NO;
+    self.playWhenPrepareDone = !self.currentItem.showVideoControl;
     dispatch_async(dispatch_get_global_queue(0, 0), ^{
-        [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:url]];
-        [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+        [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:self.currentItem.url ?: NSURL.new]];
+        [self observeItemStatus:YES];
     });
-    [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:duration];
+    [self updateProgressWithCurrentTime:0.f durationTime:self.currentItem.duration];
 
     if (self.playerObserver) {
         [self.player removeTimeObserver:self.playerObserver];
@@ -215,24 +232,34 @@
         __weak typeof(self) weakSelf = self;
         self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
             weakSelf.progress = CMTimeGetSeconds(time) / CMTimeGetSeconds(weakSelf.player.currentItem.duration);
-            [weakSelf.bottomBar updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:CMTimeGetSeconds(weakSelf.player.currentItem.duration)];
+            [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:CMTimeGetSeconds(weakSelf.player.currentItem.duration)];
             if (weakSelf.progress >= 1.0) {
+                // 播放结束
                 if ([weakSelf.delegate respondsToSelector:@selector(finishWithPlayer:)]) {
                     [weakSelf.delegate finishWithPlayer:weakSelf];
                 }
-                [weakSelf pause];
+                if (weakSelf.currentItem.infiniteLoop) {
+                    [weakSelf seekToTime:0];
+                    [weakSelf play];
+                } else {
+                    [weakSelf pause];
+                }
             }
         }];
     }
     
     self.coverImgView.hidden = NO;
     self.playBtn.hidden = YES;
-    if ([self.coverImage isKindOfClass:NSString.class]) {
-//        [self.coverImgView sd_setImageWithURL:[NSURL URLWithString:(NSString *)self.coverImage]];
-    } else if ([self.coverImgView isKindOfClass:NSURL.class]) {
-//            [self.coverImgView sd_setImageWithURL:(NSURL *)self.coverImage];
-    } else if ([self.coverImgView isKindOfClass:UIImage.class]) {
-        self.coverImgView.image = self.coverImage;
+    if ([self.item.coverImage isKindOfClass:NSString.class]) {
+        [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:(NSString *)self.item.coverImage] completion:^(UIImage *image) {
+            self.coverImgView.image = image;
+        }];
+    } else if ([self.item.coverImage isKindOfClass:NSURL.class]) {
+        [AFBrowserLoaderProxy loadImage:(NSURL *)self.item.coverImage completion:^(UIImage *image) {
+            self.coverImgView.image = image;
+        }];
+    } else if ([self.item.coverImage isKindOfClass:UIImage.class]) {
+        self.coverImgView.image = self.item.coverImage;
     } else {
         self.coverImgView.image = [UIImage new];
     }
@@ -244,7 +271,9 @@
 - (void)play {
     self.isPlaying = YES;
     self.playWhenPrepareDone = YES;
-    self.bottomBar.playBtn.selected = YES;
+    if (self.currentItem.showVideoControl) {
+        self.bottomBar.playBtn.selected = YES;
+    }
     self.playBtn.hidden = YES;
     if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
         self.coverImgView.hidden = YES;
@@ -263,7 +292,9 @@
 
 #pragma mark - 暂停
 - (void)pause {
-    self.bottomBar.playBtn.selected = NO;
+    if (self.currentItem.showVideoControl) {
+        self.bottomBar.playBtn.selected = NO;
+    }
     self.playWhenPrepareDone = NO;
     self.isPlaying = NO;
     self.playBtn.hidden = NO;
@@ -283,7 +314,7 @@
     self.isPlaying = NO;
     if (self.player.currentItem) {
         [self.player pause];
-        [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+        [self observeItemStatus:NO];
     }
     if (self.playerObserver) {
         [self.player removeTimeObserver:self.playerObserver];
@@ -300,6 +331,17 @@
 
 
 #pragma mark - KVO
+/// 添加 / 移除监听
+- (void)observeItemStatus:(BOOL)isAdd {
+    if (isAdd) {
+        if (self.isObserving) return;
+        [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+    } else {
+        if (self.isObserving) [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+    }
+}
+
+/// 监听回调
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     if ([keyPath isEqualToString:@"status"]) {
         switch (self.player.currentItem.status) {
@@ -326,7 +368,6 @@
         }
     }
 }
-
 
 
 #pragma mark - SliderAction

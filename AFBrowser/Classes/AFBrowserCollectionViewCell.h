@@ -9,11 +9,15 @@
 #import <UIKit/UIKit.h>
 #import "AFPlayer.h"
 
+@class AFBrowserCollectionViewCell;
+
 @protocol AFBrowserCollectionViewCellDelegate <NSObject>
 
 /** 单击事件 */
 - (void)singleTapAction;
 
+/** 长按事件 */
+- (void)longPressActionAtCollectionViewCell:(AFBrowserCollectionViewCell *)cell;
 
 @end
 
@@ -28,13 +32,10 @@
 
 @property (nonatomic, strong) UIImageView   *imageView;
 
-/** 视频播放容器 */
-@property (strong, nonatomic) UIView        *playerView;
-
 /** 播放器 */
 @property (strong, nonatomic) AFPlayer      *player;
 
-//绑定数据
+// 绑定数据
 - (void)attachItem:(id)item atIndexPath:(NSIndexPath *)indexPath;
 
 

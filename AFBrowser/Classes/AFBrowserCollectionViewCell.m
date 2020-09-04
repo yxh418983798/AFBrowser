@@ -8,7 +8,7 @@
 
 #import "AFBrowserCollectionViewCell.h"
 #import "AFBrowserItem.h"
-#import "UIImageView+WebCache.h"
+#import "AFBrowserLoaderProxy.h"
 
 @interface AFBrowserScrollView: UIScrollView
 @end
@@ -88,7 +88,8 @@ static CGFloat ScaleDistance = 0.3;
         tap2.numberOfTapsRequired = 2;
         [tap1 requireGestureRecognizerToFail:tap2];
         [self addGestureRecognizer:tap2];
-        
+        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressAction:)];
+        [self addGestureRecognizer:longPress];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateVideoStatus:) name:@"AFBrowserUpdateVideoStatus" object:nil];
     }
     return self;
@@ -114,14 +115,20 @@ static CGFloat ScaleDistance = 0.3;
     
     switch (item.type) {
         case AFBrowserItemTypeImage: {
+            if (_player) {
+                [_player removeFromSuperview];
+                _player = nil;
+            }
             [_scrollView setZoomScale:1.0];
             if ([item.item isKindOfClass:NSString.class]) {
-                [self.imageView sd_setImageWithURL:[NSURL URLWithString:item.item] placeholderImage:nil completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, NSURL *imageURL) {
+                [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.item] completion:^(UIImage *image) {
+                    self.imageView.image = image;
                     self.loadImageStatus = AFLoadImageStatusOriginal;
                     [self resizeSubviewSize];
                 }];
             } else if ([item.item isKindOfClass:NSURL.class]) {
-                [self.imageView sd_setImageWithURL:item.item placeholderImage:nil completed:^(UIImage *image, NSError *error, SDImageCacheType cacheType, NSURL *imageURL) {
+                [AFBrowserLoaderProxy loadImage:item.item completion:^(UIImage *image) {
+                    self.imageView.image = image;
                     self.loadImageStatus = AFLoadImageStatusOriginal;
                     [self resizeSubviewSize];
                 }];
@@ -138,7 +145,7 @@ static CGFloat ScaleDistance = 0.3;
             }
             if (item.coverImage) {
                 if ([item.coverImage isKindOfClass:NSString.class]) {
-                    [[SDWebImageManager sharedManager] loadImageWithURL:[NSURL URLWithString:item.coverImage] options:kNilOptions progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
+                    [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image) {
                         if (self.loadImageStatus == AFLoadImageStatusNone && image) {
                             self.loadImageStatus = AFLoadImageStatusCover;
                             self.imageView.image = image;
@@ -146,7 +153,7 @@ static CGFloat ScaleDistance = 0.3;
                         }
                     }];
                 } else if ([item.coverImage isKindOfClass:NSURL.class]) {
-                    [[SDWebImageManager sharedManager] loadImageWithURL:item.coverImage options:kNilOptions progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
+                    [AFBrowserLoaderProxy loadImage:item.coverImage completion:^(UIImage *image) {
                         if (self.loadImageStatus == AFLoadImageStatusNone && image) {
                             self.loadImageStatus = AFLoadImageStatusCover;
                             self.imageView.image = image;
@@ -165,16 +172,8 @@ static CGFloat ScaleDistance = 0.3;
             break;
             
         case AFBrowserItemTypeVideo: {
-            self.player.coverImage = item.coverImage;
-            NSURL *url;
-            if ([item.item isKindOfClass:NSString.class]) {
-                url = [NSURL URLWithString:item.item];
-            } else if ([item.item isKindOfClass:NSURL.class]) {
-                url = item.item;
-            } else {
-                url = [NSURL URLWithString:@""];
-            }
-            [self.player prepareWithURL:url duration:item.duration];
+            self.player.item = item; 
+            [self.player prepare];
             [self resizeSubviewSize];
         }
             break;
@@ -188,17 +187,21 @@ static CGFloat ScaleDistance = 0.3;
     //视频
     if (self.item.type == AFBrowserItemTypeVideo) {
         _scrollView.hidden = YES;
-        self.player.hidden = NO;
+//        self.player.hidden = NO;
     }
     
     //图片
     else {
-        [_player pause];
-        _player.hidden = YES;
+        if (_player) {
+            [_player removeFromSuperview];
+            _player = nil;
+        }
+//        [_player pause];
+//        _player.hidden = YES;
         _scrollView.hidden = NO;
         _imageContainerView.frame = CGRectMake(0, 0, _scrollView.frame.size.width, _imageContainerView.frame.size.height);
         UIImage *image = _imageView.image;
-        //如果图片自适应屏幕宽度后得到的高度 大于 屏幕高度，设置高度为自适应高度
+        // 如果图片自适应屏幕宽度后得到的高度 大于 屏幕高度，设置高度为自适应高度
         CGRect frame = _imageContainerView.frame;
         BOOL isPortrait = UIScreen.mainScreen.bounds.size.height > UIScreen.mainScreen.bounds.size.width; // 是否竖屏
         CGFloat portraitW = fmin(_scrollView.frame.size.height, _scrollView.frame.size.width);
@@ -249,7 +252,7 @@ static CGFloat ScaleDistance = 0.3;
         _scrollView.contentSize = CGSizeMake(_scrollView.frame.size.width, MAX(_imageContainerView.frame.size.height, _scrollView.frame.size.height));
         [_scrollView scrollRectToVisible:_scrollView.bounds animated:NO];
         
-        //如果高度小于屏幕高度，关闭反弹
+        // 如果高度小于屏幕高度，关闭反弹
         if (_imageContainerView.frame.size.height <= _scrollView.frame.size.height) {
             _scrollView.alwaysBounceVertical = NO;
         } else {
@@ -283,6 +286,21 @@ static CGFloat ScaleDistance = 0.3;
         CGFloat xsize = [[UIScreen mainScreen] bounds].size.width / newZoomScale;
         CGFloat ysize = [[UIScreen mainScreen] bounds].size.height / newZoomScale;
         [_scrollView zoomToRect:CGRectMake(touchPoint.x - xsize/2, touchPoint.y - ysize/2, xsize, ysize) animated:YES];
+    }
+}
+
+
+#pragma mark - 长按事件
+- (void)longPressAction:(UILongPressGestureRecognizer *)longPress {
+    switch (longPress.state) {
+        case UIGestureRecognizerStateBegan:
+            if ([self.delegate respondsToSelector:@selector(longPressActionAtCollectionViewCell:)]) {
+                [self.delegate longPressActionAtCollectionViewCell:self];
+            }
+            break;
+            
+        default:
+            break;
     }
 }
 

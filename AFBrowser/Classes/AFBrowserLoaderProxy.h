@@ -8,10 +8,8 @@
 #import <Foundation/Foundation.h>
 #import "AFBrowserLoaderDelegate.h"
 
-NS_ASSUME_NONNULL_BEGIN
-
-@interface AFBrowserLoaderProxy : NSObject
+@interface AFBrowserLoaderProxy : NSObject <AFBrowserLoaderDelegate>
 
 @end
 
-NS_ASSUME_NONNULL_END
+

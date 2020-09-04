@@ -42,15 +42,30 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
 
 @protocol AFBrowserDelegate <NSObject>
 
+
+/**
+ * @brief 必须实现， 返回item的数量
+ */
+- (NSInteger)numberOfItemsInBrowser:(AFBrowserViewController *)browser;
+
+
+/**
+ * @brief 构造item数据源
+ * @note  内部会自动缓存item，
+ */
+- (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index;
+
+
+
 @optional;
 
 
-/// 返回转场的View，建议返回 UIImageView
-- (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index;
-
-
-/// 获取 item
-- (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index;
+/**
+ * @brief 长按cell事件
+ *
+ * @param index 触发长按的index
+ */
+- (void)browser:(AFBrowserViewController *)browser longPressActionAtIndex:(NSInteger)index;
 
 
 /**
@@ -65,20 +80,21 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
 
 
 /**
- * 分页加载数据，每次浏览到第一个或最后一个Item时，自动调用该方法获取数据
- * 如果图片数据量很大，建议实现该协议来分页加载数据源，以提升性能
- * 实现该方法后，addItem：添加的数据 将会无效，AFBrowser会从该协议返回的数据来展示
- *
- * @param identifier 标识符
- * 一般是数据库表的主键或某个索引，也可以是自定义的其他数据类型，用于标记来获取对应的数据
- * 当第一次获取数据时，identifier是空的
- * 当向左翻页时，identifier返回当前数组第一个Item的identifier
- * 当向右翻页时，identifier返回当前数据最后一个Item的identifier
+ * @brief 返回转场的View
+ * @note  如果是图片的类型，应该返回该图片所在的UIImageView
+ */
+- (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index;
+
+
+/**
+ * @brief 分页加载数据的实现，每次浏览到第一个或最后一个Item时，自动调用该方法获取数据
+ * @note  如果Item的数据量很大，建议实现该协议来分页加载数据源，以提升性能
  *
  * @param direction  翻页方向
- * @result           返回一组AFBrowserItem实例
+ * @param completionReload 数据加载完成后，需要调用completionReload(YES)刷新，之后AFBrowser会重新从 itemForBrowserAtIndex: 方法获取数据源
+ * @note  success 表示数据是否成功加载完毕，如果传了NO，是不会刷新数据的
  */
-- (NSArray<AFBrowserItem *> *)dataForItemWithIdentifier:(id)identifier direction:(AFBrowserDirection)direction;
+- (void)loadDataWithDirection:(AFBrowserDirection)direction completionReload:(void (^)(BOOL success))completionReload;
 
 
 @end

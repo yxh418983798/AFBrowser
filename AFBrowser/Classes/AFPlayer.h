@@ -4,11 +4,12 @@
 //
 //  Created by alfie on 2020/3/9.
 //
-//  简洁版 视频播放器，基于AVPlayer封装
+//  视频播放器，基于AVPlayer封装
 
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import "AFPlayerBottomBar.h"
+#import "AFBrowserItem.h"
 
 @class AFPlayer;
 @protocol AFPlayerDelegate <NSObject>
@@ -31,23 +32,20 @@
 /** 代理 */
 @property (weak, nonatomic) id <AFPlayerDelegate> delegate;
 
-/** 封面图 */
-@property (strong, nonatomic) id                  coverImage;
-
 /** 底部工具栏 */
 @property (strong, nonatomic) AFPlayerBottomBar   *bottomBar;
 
 /** 记录toolBar的显示状态 */
 @property (assign, nonatomic) BOOL                showToolBar;
 
+/** AFBrowserItem */
+@property (nonatomic, strong) AFBrowserItem       *item;
+
 /**
  * 准备播放
- *
- * @param url       播放地址
- * @param duration  视频时长，如果传0，则自动获取，会有延迟
  */
-- (void)prepareWithURL:(NSURL *)url duration:(float)duration;
-
+- (void)prepare;
+- (void)releasePlayer;
 
 /**
  * 播放视频
