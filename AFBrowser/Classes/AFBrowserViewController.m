@@ -163,6 +163,13 @@ static const CGFloat lineSpacing = 0.f; //间隔
     };
 }
 
+- (AFBrowserViewController * (^)(BOOL))makeUseCustomPlayer {
+    return ^id(BOOL useCustomPlayer) {
+        self.useCustomPlayer = useCustomPlayer;
+        return self;
+    };
+}
+
 - (AFBrowserViewController * (^)(BOOL))makeShowVideoControl {
     return ^id(BOOL showVideoControl) {
         self.showVideoControl = showVideoControl;
@@ -331,6 +338,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         item = [self.delegate browser:self itemForBrowserAtIndex:index];
         item.showVideoControl = self.showVideoControl;
         item.infiniteLoop = self.infiniteLoop;
+        item.useCustomPlayer = self.useCustomPlayer;
         [self.items setValue:item forKey:key];
     }
     return item;

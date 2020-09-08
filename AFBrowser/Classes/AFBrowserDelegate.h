@@ -82,6 +82,7 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
 /**
  * @brief 返回转场的View
  * @note  如果是图片的类型，应该返回该图片所在的UIImageView
+ * @note  如果是视频的类型，应该返回视频播放器的容器View
  */
 - (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index;
 

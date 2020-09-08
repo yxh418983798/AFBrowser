@@ -26,6 +26,9 @@
 /** 页码显示类型，默认不显示 */
 @property (nonatomic, assign) AFPageControlType        pageControlType;
 
+/** 视频转场时，是否使用外部播放器进行转场动画，如果为YES，则视频播放是连续的（前提条件是外部有提供播放器），默认NO */
+@property (assign, nonatomic) BOOL                     useCustomPlayer;
+
 /** 播放视频时，是否显示控制条，默认不显示 */
 @property (assign, nonatomic) BOOL                     showVideoControl;
 
@@ -78,6 +81,8 @@
 - (AFBrowserViewController * (^)(AFBrowserType))makeBrowserType;
 
 - (AFBrowserViewController * (^)(AFPageControlType))makePageControlType;
+
+- (AFBrowserViewController * (^)(BOOL))makeUseCustomPlayer;
 
 - (AFBrowserViewController * (^)(BOOL))makeShowVideoControl;
 
