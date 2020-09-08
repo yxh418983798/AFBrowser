@@ -197,7 +197,7 @@
 //        [transitionView removeFromSuperview];
         transitionView.frame = transitionFrame;
         [containerView addSubview:transitionView];
-        NSLog(@"-------------------------- 设置了frame --------------------------");
+//        NSLog(@"-------------------------- 设置了frame --------------------------");
         imageSize = [(AFPlayer *)transitionView transitionSize];
         self.trasitionViewOriginalFrame = transitionFrame;
     } else {

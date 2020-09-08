@@ -69,7 +69,7 @@
     if (self.currentItem.showVideoControl) {
         [self addSubview:self.bottomBar];
     }
-    NSLog(@"-------------------------- didMoveToSuperview:%@ --------------------------", self.superview);
+//    NSLog(@"-------------------------- didMoveToSuperview:%@ --------------------------", self.superview);
 }
 
 - (void)layoutSubviews {
@@ -90,7 +90,7 @@
 }
 
 - (void)dealloc {
-    NSLog(@"-------------------------- 哈哈释放了播放器 --------------------------");
+//    NSLog(@"-------------------------- 哈哈释放了播放器 --------------------------");
     if (self.playerObserver) {
         [self.player removeTimeObserver:self.playerObserver];
         self.playerObserver = nil;
@@ -317,6 +317,7 @@
         if (self.progress >= 1) {
             [self seekToTime:0.f];
         }
+        [self observeItemStatus:YES];
         [self.player play];
     }
 }
