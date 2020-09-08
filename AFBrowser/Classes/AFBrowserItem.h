@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
+@class AFPlayer;
+
 /// 数据类型
 typedef NS_ENUM(NSUInteger, AFBrowserItemType) {
     AFBrowserItemTypeImage,  /// 图片
@@ -51,7 +53,8 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 /** 播放视频时，是否无限循环播放 */
 @property (assign, nonatomic) BOOL              infiniteLoop;
 
-
+/** player */
+@property (nonatomic, weak) AFPlayer            *player;
 
 /**
  * @brief 构造图片数据

@@ -10,6 +10,7 @@
 #import "AFBrowserItem.h"
 #import "AFBrowserDelegate.h"
 #import "AFBrowserLoaderDelegate.h"
+#import "AFPlayer.h"
 
 
 @interface AFBrowserViewController : UIViewController
@@ -41,6 +42,7 @@
 /** 自定义参数 */
 @property (nonatomic, strong) id                       userInfo;
 
+
 /**
  * @brief 设置浏览器的加载器代理
  * @note  如果不设置的话，默认使用 SDWebImage 来加载图片
@@ -52,6 +54,8 @@
 /// 弹出浏览器，开始浏览
 - (void)browse;
 
+
++ (AFPlayer *)productPlayer;
 
 #pragma mark - 自定义UI
 /// 导航栏，用于开发者自定义导航栏样式 和 添加子视图

@@ -7,8 +7,40 @@
 //
 
 #import "AFBrowserTransformer.h"
+#import "AFBrowserItem.h"
+#import "AFPlayer.h"
 
 @interface AFBrowserTransformer ()
+
+/** 源控制器 */
+@property (nonatomic, weak) UIViewController  *sourceVc;
+
+/** 推出的控制器 */
+@property (nonatomic, weak) UIViewController  *presentedVc;
+
+/** 转场View */
+@property (strong, nonatomic) UIView          *transitionView;
+
+/** 转场View的父View */
+@property (weak, nonatomic) UIView            *transitionSuperView;
+
+/** 背景 */
+@property (strong, nonatomic) UIView          *backGroundView;
+
+/** presentedTrasitionView的原始frame */
+@property (assign, nonatomic) CGRect          presentedTrasitionViewFrame;
+
+/** 记录trasitionView的原始frame */
+@property (assign, nonatomic) CGRect          trasitionViewOriginalFrame;
+
+/** 记录trasitionView的原始frame */
+@property (assign, nonatomic) CGRect          originalFrameForTrasitionSuperView;
+
+/** 浏览器imageView的高度 */
+@property (assign, nonatomic) CGFloat         imgView_H;
+
+/** 记录tag */
+@property (nonatomic, assign) NSInteger       originalTag;
 
 /** 是否手势交互 */
 @property (assign, nonatomic) BOOL            isInteractive;
@@ -16,29 +48,11 @@
 /** 手势方向，是否从上往下 */
 @property (assign, nonatomic) BOOL            isDirectionDown;
 
-/** 浏览器imageView的高度 */
-@property (assign, nonatomic) CGFloat         imgView_H;
+/** YES：prensent -- NO：dismiss */
+@property (nonatomic, assign) BOOL            isPresenting;
 
 /** 百分比控制 */
 @property (nonatomic, strong) UIPercentDrivenInteractiveTransition *percentTransition;
-
-/** YES：prensent -- NO：dismiss */
-@property (nonatomic, assign) BOOL              isPresenting;
-
-/** 源控制器 */
-@property (nonatomic, weak) UIViewController    *sourceVc;
-
-/** 推出的控制器 */
-@property (nonatomic, weak) UIViewController    *presentedVc;
-
-/** 转场View */
-@property (strong, nonatomic) UIView            *transitionView;
-
-/** 背景 */
-@property (strong, nonatomic) UIView            *backGroundView;
-
-/** presentedTrasitionView的原始frame */
-@property (assign, nonatomic) CGRect            presentedTrasitionViewFrame;
 
 @end
 
@@ -68,7 +82,7 @@
 
 - (UIView *)presentedTransitionView {
     UIView *transitionView = [self.delegate transitionViewForPresentedController];
-    if (!transitionView && self.type == AFBrowserItemTypeImage) {
+    if (!transitionView && self.item.type == AFBrowserItemTypeImage) {
         UIImageView *imageView = [UIImageView new];
         imageView.image = [UIImage new];
         NSLog(@"-------------------------- presentedTransitionView是空的！请检查代码 --------------------------");
@@ -86,13 +100,12 @@
 
 #pragma mark - 转场时间
 - (NSTimeInterval)transitionDuration:(id<UIViewControllerContextTransitioning>)transitionContext {
-    return 0.5;
+    return 0.4;
 }
 
 
 #pragma mark - 自定义转场动画
 - (void)animateTransition:(id<UIViewControllerContextTransitioning>)transitionContext {
-    
     UIViewController *fromVC = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
     UIViewController *toVC = [transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
     UIView *fromView = fromVC.view;
@@ -120,7 +133,7 @@
             [containerView addSubview:fromView];
         }
         
-        if (self.type == AFBrowserItemTypeImage) {
+        if (self.item.type == AFBrowserItemTypeImage) {
             // 图片转场
             [self dismissImageWithAnimateTransition:transitionContext fromView:fromView toView:toView snapView:snapView];
         } else {
@@ -133,10 +146,14 @@
 
 #pragma mark - present转场动画
 - (void)presentWithAnimateTransition:(id<UIViewControllerContextTransitioning>)transitionContext fromVC:(UIViewController *)fromVC toVC:(UIViewController *)toVC fromView:(UIView *)fromView toView:(UIView *)toView {
-
     UIView *containerView = transitionContext.containerView;
     UIView *transitionView = [self.delegate transitionViewForSourceController];
     CGRect transitionFrame = [self transitionFrameWithView:transitionView];
+    UIView *presentedTransitionView;
+    if (self.item.useCustomPlayer && self.item.type == AFBrowserItemTypeVideo) {
+        self.item.player = transitionView;
+        self.item.player.muted = NO;
+    }
 
     // 添加交互手势
     UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:self action:@selector(panAction:)];
@@ -151,7 +168,7 @@
 
         toView.frame = CGRectMake(0, UIScreen.mainScreen.bounds.size.height, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         [containerView addSubview:toView];
-        [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
+        [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
             toView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         } completion:^(BOOL finished) {
             [transitionContext completeTransition:YES];
@@ -163,50 +180,72 @@
     self.sourceVc = fromVC;
     self.presentedVc = toVC;
     toView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
-    toView.hidden = YES;
+//    toView.hidden = YES;
     [containerView addSubview:toView];
 
     // 添加黑色背景
     [self addBackgroundViewToContainerView:containerView];
     
     CGSize imageSize;
+    CGRect originalFrame = transitionView.frame;
     // 拷贝一份用于转场的图片内容
-    if ([transitionView isKindOfClass:UIImageView.class]) {
-        self.transitionView = [[UIView alloc] initWithFrame:transitionFrame];
-        self.transitionView.layer.contents = (__bridge id)[(UIImageView *)transitionView image].CGImage;
-        imageSize = [(UIImageView *)transitionView image].size;
+    if (self.item.useCustomPlayer) {
+        self.transitionView = transitionView;
+        self.originalTag = transitionView.tag;
+        self.originalFrameForTrasitionSuperView = transitionView.frame;
+        self.transitionSuperView = transitionView.superview;
+//        [transitionView removeFromSuperview];
+        transitionView.frame = transitionFrame;
+        [containerView addSubview:transitionView];
+        NSLog(@"-------------------------- 设置了frame --------------------------");
+        imageSize = [(AFPlayer *)transitionView transitionSize];
+        self.trasitionViewOriginalFrame = transitionFrame;
     } else {
-        self.transitionView = [transitionView snapshotViewAfterScreenUpdates:NO];
-        self.transitionView.frame = transitionFrame;
+        if ([transitionView isKindOfClass:UIImageView.class]) {
+            self.transitionView = [[UIView alloc] initWithFrame:transitionFrame];
+            self.transitionView.layer.contents = (__bridge id)[(UIImageView *)transitionView image].CGImage;
+            imageSize = [(UIImageView *)transitionView image].size;
+        } else {
+            self.transitionView = [transitionView snapshotViewAfterScreenUpdates:NO];
+            self.transitionView.frame = transitionFrame;
+        }
+        if (CGSizeEqualToSize(imageSize, CGSizeZero)) imageSize = transitionView.frame.size;
+        [containerView addSubview:self.transitionView];
+        transitionView.hidden = YES;
     }
-    if (CGSizeEqualToSize(imageSize, CGSizeZero)) imageSize = transitionView.frame.size;
     
-    [containerView addSubview:self.transitionView];
-    transitionView.hidden = YES;
     // 执行动画
     CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
-    [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 usingSpringWithDamping:0.8 initialSpringVelocity:1 options:0 animations:^{
+    [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
 
         self.transitionView.frame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
         self.backGroundView.alpha = 1;
         
     } completion:^(BOOL finished) {
-        
+//        NSLog(@"-------------------------- 即将完成转场 --------------------------");
         [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
         transitionView.hidden = NO;
-        
         if ([transitionContext transitionWasCancelled]) {
             
             [self.backGroundView removeFromSuperview];
             [self.transitionView removeFromSuperview];
             self.backGroundView = nil;
             self.transitionView = nil;
+            
+            transitionView.frame = originalFrame;
+            [self.transitionSuperView addSubview:transitionView];
+            
         } else {
+//            NSLog(@"-------------------------- 完成转场 --------------------------");
+            [NSNotificationCenter.defaultCenter postNotificationName:@"AFBrowserFinishedTransaction" object:nil];
             toView.hidden = NO;
             [self.backGroundView removeFromSuperview];
             [self.transitionView removeFromSuperview];
             self.backGroundView = nil;
             self.transitionView = nil;
+            if (self.item.useCustomPlayer) {
+                [[self.delegate superViewForTransitionView:transitionView] addSubview:transitionView];
+            }
         }
     }];
 }
@@ -222,7 +261,7 @@
     if (!scrollView || !transitionView || self.userDefaultAnimation) {
         fromView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         [containerView addSubview:fromView];
-        [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
+        [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
             fromView.frame = CGRectMake(0, UIScreen.mainScreen.bounds.size.height, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         } completion:^(BOOL finished) {
             [transitionContext completeTransition:YES];
@@ -261,7 +300,7 @@
     fromView.hidden = YES;
     
     // 执行转场
-    [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
+    [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
         
         self.backGroundView.alpha = 0;
         if (!self.isInteractive) {
@@ -308,7 +347,7 @@
     if (!transitionView || self.userDefaultAnimation) {
         fromView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         [containerView addSubview:fromView];
-        [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
+        [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
             fromView.frame = CGRectMake(0, UIScreen.mainScreen.bounds.size.height, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         } completion:^(BOOL finished) {
             [transitionContext completeTransition:YES];
@@ -317,9 +356,16 @@
     }
 
     // 获取转场的源视图
-    UIView *sourceView = [self.delegate transitionViewForSourceController];
-    CGRect sourceFrame = [self transitionFrameWithView:sourceView];
-    sourceView.hidden = self.hideSourceViewWhenTransition;
+    UIView *sourceView;
+    CGRect sourceFrame;
+    if (self.item.useCustomPlayer) {
+        sourceView = transitionView;
+        sourceFrame = self.trasitionViewOriginalFrame;
+    } else {
+        sourceView = [self.delegate transitionViewForSourceController];
+        sourceFrame = [self transitionFrameWithView:sourceView];
+        sourceView.hidden = self.hideSourceViewWhenTransition;
+    }
 
     // 添加黑色背景
     [self addBackgroundViewToContainerView:containerView];
@@ -329,13 +375,14 @@
     UIView *superView = self.transitionView.superview;
     NSInteger index = [superView.subviews indexOfObject:self.transitionView];
     self.presentedTrasitionViewFrame = self.transitionView.frame;
+    
     // 将容器添加到containerView，保证转场过程中继续播放视频
-    [self.transitionView removeFromSuperview];
+//    [self.transitionView removeFromSuperview];
     [containerView addSubview:self.transitionView];
     fromView.hidden = YES;
     
     // 执行转场动画
-    [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 usingSpringWithDamping:0.8 initialSpringVelocity:1 options:0 animations:^{
+    [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:0 animations:^{
 
         self.backGroundView.alpha = 0;
         if (!self.isInteractive) {
@@ -361,6 +408,12 @@
             // 将视频播放容器 还原到转场后的容器
             [superView insertSubview:self.transitionView atIndex:index];
         } else {
+            if (self.item.useCustomPlayer) {
+                self.item.player.muted = YES;
+                self.transitionView.tag = self.originalTag;
+                [self.transitionSuperView addSubview:self.transitionView];
+                self.transitionView.frame = self.originalFrameForTrasitionSuperView;
+            }
         }
         self.transitionView = nil;
         self.backGroundView = nil;
@@ -412,7 +465,7 @@
             self.isDirectionDown = (point.y > 0);
             self.percentTransition = [[UIPercentDrivenInteractiveTransition alloc] init];
             [self.presentedVc dismissViewControllerAnimated:YES completion:nil];
-            if (self.type == AFBrowserItemTypeImage) {
+            if (self.item.type == AFBrowserItemTypeImage) {
                 UIImageView *transitionView  = (UIImageView *)self.presentedTransitionView;
                 NSAssert(transitionView, @"transitionView为空！");
                 self.imgView_H = UIScreen.mainScreen.bounds.size.width * fmax(transitionView.image.size.height, 1) / fmax(transitionView.image.size.width, 1);
@@ -421,7 +474,7 @@
                 NSAssert(self.transitionView, @"transitionView为空！");
                 self.imgView_H = self.transitionView.frame.size.height;
             }
-            sourceFrame = [self transitionFrameWithView:[self.delegate transitionViewForSourceController]];
+            sourceFrame = self.item.useCustomPlayer ? self.trasitionViewOriginalFrame : [self transitionFrameWithView:[self.delegate transitionViewForSourceController]];
         }
             break;
             
@@ -448,7 +501,7 @@
             if(progress > 0.2){
                 [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
                     self.backGroundView.alpha = 0;
-                    if (![self.delegate transitionViewForSourceController]) {
+                    if (![self.delegate transitionViewForSourceController] && !self.item.useCustomPlayer) {
                         // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
                         self.transitionView.alpha = 0;
                     } else {

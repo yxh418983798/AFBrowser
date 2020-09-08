@@ -14,15 +14,15 @@
 @class AFPlayer;
 @protocol AFPlayerDelegate <NSObject>
 
-/**
- * 播放器准备完成，进入可播放状态，建议在这里进行play
- */
+/// 播放器准备完成，进入可播放状态，建议在这里进行play
 - (void)prepareDoneWithPlayer:(AFPlayer *)player;
 
-/**
- * 播放结束，区别于Stop
- */
+/// 播放结束，区别于Stop
 - (void)finishWithPlayer:(AFPlayer *)player;
+
+/// 点击Player的回调
+- (void)tapActionInPlayer:(AFPlayer *)player;
+
 
 @end
 
@@ -38,13 +38,19 @@
 /** 记录toolBar的显示状态 */
 @property (assign, nonatomic) BOOL                showToolBar;
 
+/** 是否静音 */
+@property (nonatomic, assign) BOOL                muted;
+
 /** AFBrowserItem */
 @property (nonatomic, strong) AFBrowserItem       *item;
+
+- (CGSize)transitionSize;
 
 /**
  * 准备播放
  */
 - (void)prepare;
+
 - (void)releasePlayer;
 
 /**

@@ -48,6 +48,9 @@
 /** 记录item的数量 */
 @property (nonatomic, assign) NSInteger       numberOfItems;
 
+/** 记录转场是否已经完成 */
+@property (nonatomic, assign) BOOL            isFinishedTransaction;
+
 @end
 
 
@@ -58,7 +61,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (instancetype)init {
     self = [super init];
     if (self) {
-        
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedTransaction) name:@"AFBrowserFinishedTransaction" object:nil];
         self.transformer = [AFBrowserTransformer new];
         self.transformer.delegate = self;
         self.selectedIndex = 0;
@@ -71,6 +74,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.transformer.item = [self itemAtIndex:self.selectedIndex];
     self.automaticallyAdjustsScrollViewInsets = NO;
     self.view.backgroundColor = [UIColor blackColor];
     if (@available(iOS 11.0, *)) {
@@ -78,10 +82,11 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
     [self configSubViews];
     [self loadItems];
+//    NSLog(@"-------------------------- viewDidLoad --------------------------");
 }
 
 - (void)viewDidLayoutSubviews {
-    
+//    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
     layout.itemSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
     self.collectionView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
@@ -90,7 +95,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     [super viewDidLayoutSubviews];
     
     self.originalIndex = self.selectedIndex;
-    self.transformer.type = [self itemAtIndex:self.selectedIndex].type;
+    self.transformer.item = [self itemAtIndex:self.selectedIndex];
     AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
     cell.player.showToolBar = self.showToolBar;
 
@@ -217,6 +222,10 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.collectionView.delegate = self;
     self.collectionView.dataSource = self;
     [self.view addSubview:self.collectionView];
+}
+
++ (AFPlayer *)productPlayer {
+    return [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
 }
 
 - (UIView *)toolBar {
@@ -382,7 +391,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark UICollectionViewDataSource
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
-    return 1;
+    return self.isFinishedTransaction ? 1 : 0;
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
@@ -429,7 +438,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
     [self loadItems];
     AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
-    self.transformer.type = item.type;
+    self.transformer.item = item;
     if (item.type == AFBrowserItemTypeVideo) {
         AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
         [UIView animateWithDuration:0.25 animations:^{
@@ -534,6 +543,16 @@ static const CGFloat lineSpacing = 0.f; //间隔
     return [self.delegate browser:self viewForTransitionAtIndex:self.selectedIndex];
 }
 
+/// 返回父视图，用于添加播放器
+- (UIView *)superViewForTransitionView:(UIView *)transitionView {
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    if (!cell) {
+        cell = [self collectionView:self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    }
+    cell.player = (AFPlayer *)transitionView;
+    return cell;
+}
+
 
 #pragma mark - 弹出浏览器，开始浏览
 - (void)browse {
@@ -609,6 +628,11 @@ static Class _loaderProxy;
 //}
 
 
+#pragma mark - 完成转场，刷新UI
+- (void)finishedTransaction {
+    self.isFinishedTransaction = YES;
+    [self.collectionView reloadData];
+}
 @end
 
 

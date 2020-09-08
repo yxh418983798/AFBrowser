@@ -9,8 +9,12 @@
 #import <AVFoundation/AVFoundation.h>
 #import "AFBrowserLoaderProxy.h"
 #import "AFBrowserItem.h"
+#import "AFBrowserViewController.h"
 
 @interface AFPlayer ()
+
+/** contentView */
+@property (nonatomic, strong) UIView                  *contentView;
 
 /** 播放器 */
 @property (nonatomic, strong) AVPlayer                *player;
@@ -56,14 +60,16 @@
 #pragma mark - 生命周期
 - (void)didMoveToSuperview {
     self.clipsToBounds = YES;
-    self.frame = self.superview.bounds;
+//    self.frame = self.superview.bounds;
     [self.layer addSublayer:self.playerLayer];
-    [self addSubview:self.coverImgView];
+    [self addSubview:self.contentView];
+    [self.contentView addSubview:self.coverImgView];
     [self.coverImgView addSubview:self.activityView];
-    [self addSubview:self.playBtn];
+    [self.contentView addSubview:self.playBtn];
     if (self.currentItem.showVideoControl) {
         [self addSubview:self.bottomBar];
     }
+    NSLog(@"-------------------------- didMoveToSuperview:%@ --------------------------", self.superview);
 }
 
 - (void)layoutSubviews {
@@ -73,6 +79,7 @@
     self.playerLayer.frame = self.bounds;
     [CATransaction commit];
     CGFloat size = 50.f;
+    self.contentView.frame = self.bounds;
     self.coverImgView.frame = self.bounds;
     self.playBtn.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
     self.activityView.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
@@ -134,8 +141,27 @@
     }
 }
 
+- (void)setDelegate:(id<AFPlayerDelegate>)delegate {
+    _delegate = delegate;
+    _contentView.userInteractionEnabled = [delegate respondsToSelector:@selector(tapActionInPlayer:)];
+}
+
+- (void)setMuted:(BOOL)muted {
+    _muted = muted;
+    self.player.muted = muted;
+}
 
 #pragma mark - UI
+- (UIView *)contentView {
+    if (!_contentView) {
+        _contentView = UIView.new;
+        _contentView.backgroundColor = UIColor.clearColor;
+        [_contentView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction)]];
+        _contentView.userInteractionEnabled = [_delegate respondsToSelector:@selector(tapActionInPlayer:)];
+    }
+    return _contentView;
+}
+
 - (UIImageView *)coverImgView {
     if (!_coverImgView) {
         _coverImgView = [UIImageView new];
@@ -176,7 +202,7 @@
 - (AVPlayerLayer *)playerLayer {
     if (!_playerLayer) {
         _playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
-        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspect;
+        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
         _playerLayer.masksToBounds= YES;
     }
     return _playerLayer;
@@ -194,6 +220,17 @@
         [_bottomBar.slider addTarget:self action:@selector(sliderValueChangedAction:) forControlEvents:UIControlEventValueChanged];
     }
     return _bottomBar;
+}
+
+
+- (CGSize)transitionSize {
+    if (self.currentItem.width > 0 && self.currentItem.height > 0) {
+        return CGSizeMake(self.currentItem.width, self.currentItem.height);
+    }
+    if (self.coverImgView.image) {
+        return self.coverImgView.image.size;
+    }
+    return self.frame.size;
 }
 
 
@@ -397,5 +434,15 @@
 //        [self.delegate aliyunVodProgressView:self dragProgressSliderValue:sliderValue event:UIControlEventTouchDownRepeat]; //实际是点击事件
 //    }
 }
+
+
+#pragma mark - 点击player
+- (void)tapAction {
+    
+    if ([self.delegate respondsToSelector:@selector(tapActionInPlayer:)]) {
+        [self.delegate tapActionInPlayer:self];
+    }
+}
+
 
 @end

@@ -99,8 +99,12 @@ static CGFloat ScaleDistance = 0.3;
 #pragma mark - UI
 - (AFPlayer *)player {
     if (!_player) {
-        _player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
-        _player.hidden = self.item.type == AFBrowserItemTypeImage;
+        if (self.item.player) {
+            _player = self.item.player;
+        } else {
+            _player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
+            _player.hidden = self.item.type == AFBrowserItemTypeImage;
+        }
         [self addSubview:_player];
     }
     return _player;
@@ -109,6 +113,7 @@ static CGFloat ScaleDistance = 0.3;
 
 #pragma mark - 绑定数据
 - (void)attachItem:(AFBrowserItem *)item atIndexPath:(NSIndexPath *)indexPath {
+//    NSLog(@"-------------------------- attachItem --------------------------");
     self.item = item;
     self.indexPath = indexPath;
     self.loadImageStatus = AFLoadImageStatusNone;
@@ -172,7 +177,7 @@ static CGFloat ScaleDistance = 0.3;
             break;
             
         case AFBrowserItemTypeVideo: {
-            self.player.item = item; 
+            self.player.item = item;
             [self.player prepare];
             [self resizeSubviewSize];
         }
