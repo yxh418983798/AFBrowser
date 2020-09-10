@@ -9,6 +9,7 @@
 #import "AFBrowserViewController.h"
 #import "AFBrowserCollectionViewCell.h"
 #import "AFBrowserTransformer.h"
+#import "AFBrowserLoaderProxy.h"
 
 @interface AFBrowserViewController () <UICollectionViewDelegate, UICollectionViewDataSource, AFBrowserCollectionViewCellDelegate, AFBrowserTransformerDelegate>
 
@@ -101,6 +102,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
     //设置偏移量
     self.collectionView.contentOffset = CGPointMake(self.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
+    self.collectionView.contentSize = CGSizeMake(self.collectionView.frame.size.width * self.numberOfItems + 1, self.collectionView.frame.size.height);
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
     
     // pageControl
@@ -361,6 +363,13 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
 }
 
+- (NSInteger)numberOfItems {
+    if (_numberOfItems == 0) {
+        _numberOfItems = [self.delegate numberOfItemsInBrowser:self];
+    }
+    return _numberOfItems;
+}
+
 
 #pragma mark - 触发加载分页数据
 - (void)loadItems {
@@ -391,12 +400,16 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark UICollectionViewDataSource
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
+    self.numberOfItems = [self.delegate numberOfItemsInBrowser:self];
+    _pageControl.numberOfPages = self.numberOfItems;
+    if (self.isFinishedTransaction) {
+        self.collectionView.contentOffset = CGPointMake(self.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
+        self.collectionView.contentSize = CGSizeMake(self.collectionView.frame.size.width * self.numberOfItems + 1, self.collectionView.frame.size.height);
+    }
     return self.isFinishedTransaction ? 1 : 0;
 }
 
 - (NSInteger)collectionView:(UICollectionView *)collectionView numberOfItemsInSection:(NSInteger)section {
-    self.numberOfItems = [self.delegate numberOfItemsInBrowser:self];
-    _pageControl.numberOfPages = self.numberOfItems;
     return self.numberOfItems;
 }
 
@@ -416,7 +429,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark - 监听滚动
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     if (scrollView == self.collectionView) {
-        
+        if (!self.isFinishedTransaction) return;
         int currentPageNum = round(scrollView.contentOffset.x / (scrollView.frame.size.width + lineSpacing));
         switch (self.pageControlType) {
                 
@@ -557,6 +570,20 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark - 弹出浏览器，开始浏览
 - (void)browse {
     
+    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+    // 如果url为空，不弹出浏览器
+    if (!item.item) {
+        NSLog(@"-------------------------- Error：item的Url为空 --------------------------");
+        return;
+    }
+    // 没有加载图片到缓存的情况下，不弹出浏览器
+    if (![self hasImageWithKey:item.coverImage]) {
+        NSLog(@"-------------------------- Error：图片的缩略图没有加载到缓存 --------------------------");
+        if (![self hasImageWithKey:item.item]) {
+            NSLog(@"-------------------------- Error：图片的高清图也没有加载到缓存，不展示浏览器 --------------------------");
+            return;
+        }
+    }
     UIViewController *currentVc = AFBrowserViewController.currentVc;
     if (currentVc) {
         [currentVc presentViewController:self animated:YES completion:nil];
@@ -565,6 +592,13 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
 }
 
+- (BOOL)hasImageWithKey:(id)key {
+    if ([key isKindOfClass:NSString.class] || [key isKindOfClass:NSURL.class]) {
+        NSString *keyString = [key isKindOfClass:NSString.class] ? key : [(NSURL *)key absoluteString];
+        return [AFBrowserLoaderProxy hasImageCacheWithKey:keyString];
+    }
+    return YES;
+}
 
 #pragma mark - 获取 currentVc
 + (UIViewController *)currentVc {

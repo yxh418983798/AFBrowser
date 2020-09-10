@@ -41,6 +41,13 @@
 @property (weak, nonatomic) id <AFBrowserTransformerDelegate>  delegate;
 
 
+/**
+ * @brief 计算视图展示的frame
+ *
+ * @param size 图片或者转场视图的原大小
+ */
++ (CGRect)displayFrameWithSize:(CGSize)size;
+
 @end
 
 

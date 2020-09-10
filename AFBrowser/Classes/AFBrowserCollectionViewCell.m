@@ -45,7 +45,7 @@
 @end
 
 
-static CGFloat ScaleDistance = 0.3;
+static CGFloat ScaleDistance = 0.4;
 
 @implementation AFBrowserCollectionViewCell
 
@@ -126,7 +126,9 @@ static CGFloat ScaleDistance = 0.3;
             }
             [_scrollView setZoomScale:1.0];
             if ([item.item isKindOfClass:NSString.class]) {
+                NSLog(@"-------------------------- 开始加载 高清图 --------------------------");
                 [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.item] completion:^(UIImage *image) {
+                    NSLog(@"-------------------------- 完成加载 高清图 --------------------------");
                     self.imageView.image = image;
                     self.loadImageStatus = AFLoadImageStatusOriginal;
                     [self resizeSubviewSize];
@@ -149,8 +151,10 @@ static CGFloat ScaleDistance = 0.3;
                 [self resizeSubviewSize];
             }
             if (item.coverImage) {
+                NSLog(@"-------------------------- 开始加载 缩略图 --------------------------");
                 if ([item.coverImage isKindOfClass:NSString.class]) {
                     [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image) {
+                        NSLog(@"-------------------------- 完成加载 缩略图 --------------------------");
                         if (self.loadImageStatus == AFLoadImageStatusNone && image) {
                             self.loadImageStatus = AFLoadImageStatusCover;
                             self.imageView.image = image;
@@ -204,7 +208,7 @@ static CGFloat ScaleDistance = 0.3;
 //        [_player pause];
 //        _player.hidden = YES;
         _scrollView.hidden = NO;
-        _imageContainerView.frame = CGRectMake(0, 0, _scrollView.frame.size.width, _imageContainerView.frame.size.height);
+        _imageContainerView.frame = CGRectMake(0, 0, _scrollView.frame.size.width, _scrollView.frame.size.height);
         UIImage *image = _imageView.image;
         // 如果图片自适应屏幕宽度后得到的高度 大于 屏幕高度，设置高度为自适应高度
         CGRect frame = _imageContainerView.frame;
@@ -229,7 +233,7 @@ static CGFloat ScaleDistance = 0.3;
         }
         
         if (isFitHeight) {
-
+            // 自适应高度
             CGFloat height = floor(imageScale * (isPortrait ? portraitW : portraitH)); // 向下取整
             if (height < 1 || isnan(height)) height = _scrollView.frame.size.height;
             height = floor(height);
@@ -242,18 +246,20 @@ static CGFloat ScaleDistance = 0.3;
             width = floor(width);
             frame.size.width = width;
             _imageContainerView.frame = frame;
+            
+            if (_imageContainerView.frame.size.height > _scrollView.frame.size.height) {
+                frame.size.height = _scrollView.frame.size.height;
+                _imageContainerView.frame = frame;
+            }
+            CGPoint center = _imageContainerView.center;
+            if (isPortrait) {
+                center.x = _scrollView.frame.size.width / 2;
+            } else {
+                center.y = _scrollView.frame.size.height / 2;
+            }
+            _imageContainerView.center = center;
         }
-        if (_imageContainerView.frame.size.height > _scrollView.frame.size.height) {
-            frame.size.height = _scrollView.frame.size.height;
-            _imageContainerView.frame = frame;
-        }
-        CGPoint center = _imageContainerView.center;
-        if (isPortrait) {
-            center.y = _scrollView.frame.size.height / 2;
-        } else {
-            center.x = _scrollView.frame.size.width / 2;
-        }
-        _imageContainerView.center = center;
+
         _scrollView.contentSize = CGSizeMake(_scrollView.frame.size.width, MAX(_imageContainerView.frame.size.height, _scrollView.frame.size.height));
         [_scrollView scrollRectToVisible:_scrollView.bounds animated:NO];
         

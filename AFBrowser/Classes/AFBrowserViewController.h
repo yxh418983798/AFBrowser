@@ -51,11 +51,15 @@
 @property (nonatomic, class) Class <AFBrowserLoaderDelegate>   loaderProxy;
 
 
+/// 获取指定index的item数据源，如果缓存为空，会从代理方法中取
+- (AFBrowserItem *)itemAtIndex:(NSInteger)index;
+
 /// 弹出浏览器，开始浏览
 - (void)browse;
 
-
+/// 构造播放器
 + (AFPlayer *)productPlayer;
+
 
 #pragma mark - 自定义UI
 /// 导航栏，用于开发者自定义导航栏样式 和 添加子视图

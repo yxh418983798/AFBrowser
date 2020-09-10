@@ -187,6 +187,7 @@
     [self addBackgroundViewToContainerView:containerView];
     
     CGSize imageSize;
+    CGRect resultFrame;
     CGRect originalFrame = transitionView.frame;
     // 拷贝一份用于转场的图片内容
     if (self.item.useCustomPlayer) {
@@ -200,14 +201,19 @@
 //        NSLog(@"-------------------------- 设置了frame --------------------------");
         imageSize = [(AFPlayer *)transitionView transitionSize];
         self.trasitionViewOriginalFrame = transitionFrame;
+        CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
+        resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
     } else {
-        if ([transitionView isKindOfClass:UIImageView.class]) {
+        if ([transitionView isKindOfClass:UIImageView.class] && [(UIImageView *)transitionView image]) {
+            UIImage *image = [(UIImageView *)transitionView image];
             self.transitionView = [[UIView alloc] initWithFrame:transitionFrame];
-            self.transitionView.layer.contents = (__bridge id)[(UIImageView *)transitionView image].CGImage;
-            imageSize = [(UIImageView *)transitionView image].size;
+            self.transitionView.layer.contents = (__bridge id)image.CGImage;
+            resultFrame = [AFBrowserTransformer displayFrameWithSize:image.size];
         } else {
             self.transitionView = [transitionView snapshotViewAfterScreenUpdates:NO];
             self.transitionView.frame = transitionFrame;
+            CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
+            resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
         }
         if (CGSizeEqualToSize(imageSize, CGSizeZero)) imageSize = transitionView.frame.size;
         [containerView addSubview:self.transitionView];
@@ -215,10 +221,9 @@
     }
     
     // 执行动画
-    CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
 
-        self.transitionView.frame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
+        self.transitionView.frame = resultFrame;
         self.backGroundView.alpha = 1;
         
     } completion:^(BOOL finished) {
@@ -293,8 +298,12 @@
     self.transitionView.clipsToBounds = YES;
 //    CGFloat height = scrollView.contentSize.height;
 //    self.transitionView.frame = CGRectMake(-scrollView.contentOffset.x, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), scrollView.contentSize.width, scrollView.contentSize.height);
-    CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(transitionView.image.size.height, 1) / fmax(transitionView.image.size.width, 1);
-    self.transitionView.frame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
+    if (transitionView.image) {
+        self.transitionView.frame = [AFBrowserTransformer displayFrameWithSize:transitionView.image.size];
+    } else {
+        CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(transitionView.image.size.height, 1) / fmax(transitionView.image.size.width, 1);
+        self.transitionView.frame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
+    }
     self.presentedTrasitionViewFrame = self.transitionView.frame;
     [containerView addSubview:self.transitionView];
     fromView.hidden = YES;
@@ -459,20 +468,25 @@
     CGFloat progress = fabs(point.y / [UIApplication sharedApplication].keyWindow.bounds.size.height);
     progress = fmin(1, progress);
     static CGRect sourceFrame;
+    static CGRect beginFrame;
+
     switch (pan.state) {
         case UIGestureRecognizerStateBegan: {
             self.isInteractive = YES;
             self.isDirectionDown = (point.y > 0);
             self.percentTransition = [[UIPercentDrivenInteractiveTransition alloc] init];
             [self.presentedVc dismissViewControllerAnimated:YES completion:nil];
+            self.transitionView = self.presentedTransitionView;
             if (self.item.type == AFBrowserItemTypeImage) {
                 UIImageView *transitionView  = (UIImageView *)self.presentedTransitionView;
                 NSAssert(transitionView, @"transitionView为空！");
                 self.imgView_H = UIScreen.mainScreen.bounds.size.width * fmax(transitionView.image.size.height, 1) / fmax(transitionView.image.size.width, 1);
+                beginFrame = self.transitionView.superview.frame;
             } else {
-                self.transitionView = self.presentedTransitionView;
+//                self.transitionView = self.presentedTransitionView;
                 NSAssert(self.transitionView, @"transitionView为空！");
                 self.imgView_H = self.transitionView.frame.size.height;
+                beginFrame = self.transitionView.frame;
             }
             sourceFrame = self.item.useCustomPlayer ? self.trasitionViewOriginalFrame : [self transitionFrameWithView:[self.delegate transitionViewForSourceController]];
         }
@@ -486,10 +500,10 @@
             } else {
                 original_Y = fmax((UIScreen.mainScreen.bounds.size.height - self.imgView_H)/2, self.imgView_H - UIScreen.mainScreen.bounds.size.height);
             }
-            CGFloat distance_W = (UIScreen.mainScreen.bounds.size.width - sourceFrame.size.width) * progress;
-            CGFloat current_W = UIScreen.mainScreen.bounds.size.width - distance_W;
-            CGFloat scale = current_W / UIScreen.mainScreen.bounds.size.width;
-            self.transitionView.frame = CGRectMake(distance_W/2 + point.x, original_Y + point.y, current_W, self.imgView_H * scale);
+            CGFloat distance_W = (beginFrame.size.width - sourceFrame.size.width) * progress;
+            CGFloat current_W = beginFrame.size.width - distance_W;
+            CGFloat scale = current_W / beginFrame.size.width;
+            self.transitionView.frame = CGRectMake(distance_W/2 + point.x + beginFrame.origin.x, original_Y + point.y, current_W, self.imgView_H * scale);
             [self.percentTransition updateInteractiveTransition:progress];
         }
             break;
@@ -528,6 +542,59 @@
 }
 
 - (void)startInteractiveTransition:(nonnull id<UIViewControllerContextTransitioning>)transitionContext {}
+
+
+
+#pragma mark - 计算图片 展示的frame
+static CGFloat ScaleDistance = 0.4;
++ (CGRect)displayFrameWithSize:(CGSize)size {
+    
+    // 如果图片自适应屏幕宽度后得到的高度 大于 屏幕高度，设置高度为自适应高度
+    CGRect frame = UIScreen.mainScreen.bounds; // 初始frame
+    CGRect resultFrame = frame;
+    BOOL isPortrait = UIScreen.mainScreen.bounds.size.height > UIScreen.mainScreen.bounds.size.width; // 是否竖屏
+    CGFloat portraitW = fmin(frame.size.height, frame.size.width); // 竖屏下的宽度
+    CGFloat portraitH = fmax(frame.size.height, frame.size.width); // 竖屏下的高度
+    CGFloat portraitScale = portraitH/portraitW; // 竖屏下的高宽比
+    CGFloat scale = size.height / size.width; // 图片的高宽比
+    BOOL isFitHeight = NO; // 记录是否自适应高度
+    if (scale - portraitScale > ScaleDistance) {
+        // 如果图片的比例 - 屏幕的比例 > 限制的差距，代表这张图是比较长的长图，此时要自适应高度
+        isFitHeight = YES;
+    } else {
+        if (isPortrait) {
+            // 如果图片的高宽比例 <= 屏幕的高宽比例 && 竖屏，此时要自适应高度
+            if (scale <= portraitScale) isFitHeight = YES;
+        } else {
+            // 如果图片的宽高比例 > 屏幕的宽高比例 && 横屏，此时要自适应高度
+            if (1/scale > (portraitScale)) isFitHeight = YES;
+        }
+    }
+    
+    if (isFitHeight) {
+        // 自适应高度
+        CGFloat height = floor(scale * (isPortrait ? portraitW : portraitH)); // 向下取整
+        if (height < 1 || isnan(height)) height = frame.size.height;
+        height = floor(height);
+        resultFrame.size.height = height;
+    } else {
+        // 如果图片的比例 > 屏幕的比例 且 不超过限制差距，代表这张图不是很长的的长图，此时要自适应宽度
+        CGFloat width = floor((isPortrait ? portraitH : portraitW) / scale);
+        if (width < 1 || isnan(width)) width = frame.size.width;
+        width = floor(width);
+        resultFrame.size.width = width;
+        if (resultFrame.size.height > frame.size.height) {
+            resultFrame.size.height = frame.size.height;
+        }
+        if (isPortrait) {
+            resultFrame.origin.x = (frame.size.width - resultFrame.size.width)/2;
+        } else {
+            resultFrame.origin.y = (frame.size.height - resultFrame.size.height)/2;
+        }
+    }
+    return resultFrame;
+}
+
 
 
 @end
