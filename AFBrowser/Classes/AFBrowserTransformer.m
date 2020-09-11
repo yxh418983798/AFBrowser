@@ -577,6 +577,11 @@ static CGFloat ScaleDistance = 0.4;
         if (height < 1 || isnan(height)) height = frame.size.height;
         height = floor(height);
         resultFrame.size.height = height;
+        if (isPortrait) {
+            resultFrame.origin.y = (frame.size.height - resultFrame.size.height)/2;
+        } else {
+            resultFrame.origin.x = (frame.size.width - resultFrame.size.width)/2;
+        }
     } else {
         // 如果图片的比例 > 屏幕的比例 且 不超过限制差距，代表这张图不是很长的的长图，此时要自适应宽度
         CGFloat width = floor((isPortrait ? portraitH : portraitW) / scale);

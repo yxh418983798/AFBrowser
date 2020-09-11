@@ -32,6 +32,9 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 /** item */
 @property (strong, nonatomic) id                item;
 
+/** content */
+@property (strong, nonatomic) id                content;
+
 /** 缩略图/封面图 */
 @property (strong, nonatomic) id                coverImage;
 
@@ -56,6 +59,13 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 /** player */
 @property (nonatomic, weak) AFPlayer            *player;
 
+
+/**
+ * @brief 返回已下载的视频或图片的本地地址
+ */
+- (NSString *)filePath;
+
+
 /**
  * @brief 构造图片数据
  *
@@ -79,7 +89,6 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 + (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height;
 
 
-- (NSURL *)url;
 
 @end
 

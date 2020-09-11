@@ -7,6 +7,7 @@
 //
 
 #import "AFBrowserItem.h"
+#import "AFDownloader.h"
 
 @interface AFBrowserItem ()
 
@@ -17,6 +18,17 @@
 
 
 @implementation AFBrowserItem
+
+#pragma mark - 返回已下载的视频或图片的本地地址
+- (NSString *)filePath {
+    NSString *url = [self.content isKindOfClass:NSString.class] ? self.content : [(NSURL *)self.content absoluteString];
+    return [AFDownloader filePathWithUrl:url];
+}
+
+
+- (id)content {
+    return self.item;
+}
 
 + (instancetype)itemWithImage:(id)image coverImage:(id)coverImage width:(CGFloat)width height:(CGFloat)height {
     AFBrowserItem *browser = [AFBrowserItem new];
@@ -41,16 +53,6 @@
 }
 
 
-- (NSURL *)url {
-    if (!_url) {
-        if ([self.item isKindOfClass:NSString.class]) {
-            _url = [NSURL URLWithString:(NSString *)self.item];
-        } else if ([self.item isKindOfClass:NSURL.class]) {
-            _url = self.item;
-        }
-    }
-    return _url;
-}
 
 
 @end

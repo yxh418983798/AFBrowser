@@ -11,6 +11,19 @@
 #import "AFPlayerBottomBar.h"
 #import "AFBrowserItem.h"
 
+/// 播放器状态
+typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
+    AFPlayerStatusNone,         /// 初始状态
+    AFPlayerStatusPrepare,      /// 准备播放
+    AFPlayerStatusPrepareDone,  /// 准备完成
+    AFPlayerStatusPlay,         /// 播放中
+    AFPlayerStatusPause,        /// 暂停
+    AFPlayerStatusStop,         /// 停止
+    AFPlayerStatusFinished,     /// 播放结束
+
+};
+
+
 @class AFPlayer;
 @protocol AFPlayerDelegate <NSObject>
 
@@ -23,11 +36,13 @@
 /// 点击Player的回调
 - (void)tapActionInPlayer:(AFPlayer *)player;
 
-
 @end
 
 
 @interface AFPlayer : UIView
+
+/** 播放器状态 */
+@property (nonatomic, assign) AFPlayerStatus      status;
 
 /** 代理 */
 @property (weak, nonatomic) id <AFPlayerDelegate> delegate;
@@ -44,49 +59,49 @@
 /** AFBrowserItem */
 @property (nonatomic, strong) AFBrowserItem       *item;
 
-- (CGSize)transitionSize;
 
 /**
- * 准备播放
+ * @brief 准备播放
  */
 - (void)prepare;
 
-- (void)releasePlayer;
-
 /**
- * 播放视频
+ * @brief 播放视频
  */
 - (void)play;
 
-
 /**
- * 暂停视频
+ * @brief 暂停视频
  */
 - (void)pause;
 
-
 /**
- * 停止视频
+ * @brief 停止视频
  */
 - (void)stop;
 
-
 /**
- * 跳转进度
+ * @brief 跳转进度
  */
 - (void)seekToTime:(NSTimeInterval)time;
 
+/// 释放播放器
+//- (void)releasePlayer;
 
-/**
- * 控制器即将Dismiss，做一些转场动画的处理
- */
+/// 返回转场动画使用的size
+- (CGSize)transitionSize;
+
+/// 控制器即将Dismiss，做一些转场动画的处理
 - (void)browserWillDismiss;
 
-
-/**
- * 控制器取消Dismiss，做一些恢复处理
- */
+/// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss;
+
+/// 暂停所有正在播放的播放器
++ (void)pauseAllPlayer;
+
+/// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
++ (void)resumeAllPlayer;
 
 @end
 

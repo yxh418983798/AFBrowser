@@ -127,14 +127,14 @@ static CGFloat ScaleDistance = 0.4;
             [_scrollView setZoomScale:1.0];
             if ([item.item isKindOfClass:NSString.class]) {
                 NSLog(@"-------------------------- 开始加载 高清图 --------------------------");
-                [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.item] completion:^(UIImage *image) {
+                [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.item] completion:^(UIImage *image, NSError *error) {
                     NSLog(@"-------------------------- 完成加载 高清图 --------------------------");
                     self.imageView.image = image;
                     self.loadImageStatus = AFLoadImageStatusOriginal;
                     [self resizeSubviewSize];
                 }];
             } else if ([item.item isKindOfClass:NSURL.class]) {
-                [AFBrowserLoaderProxy loadImage:item.item completion:^(UIImage *image) {
+                [AFBrowserLoaderProxy loadImage:item.item completion:^(UIImage *image, NSError *error) {
                     self.imageView.image = image;
                     self.loadImageStatus = AFLoadImageStatusOriginal;
                     [self resizeSubviewSize];
@@ -153,7 +153,7 @@ static CGFloat ScaleDistance = 0.4;
             if (item.coverImage) {
                 NSLog(@"-------------------------- 开始加载 缩略图 --------------------------");
                 if ([item.coverImage isKindOfClass:NSString.class]) {
-                    [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image) {
+                    [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image, NSError *error) {
                         NSLog(@"-------------------------- 完成加载 缩略图 --------------------------");
                         if (self.loadImageStatus == AFLoadImageStatusNone && image) {
                             self.loadImageStatus = AFLoadImageStatusCover;
@@ -162,7 +162,7 @@ static CGFloat ScaleDistance = 0.4;
                         }
                     }];
                 } else if ([item.coverImage isKindOfClass:NSURL.class]) {
-                    [AFBrowserLoaderProxy loadImage:item.coverImage completion:^(UIImage *image) {
+                    [AFBrowserLoaderProxy loadImage:item.coverImage completion:^(UIImage *image, NSError *error) {
                         if (self.loadImageStatus == AFLoadImageStatusNone && image) {
                             self.loadImageStatus = AFLoadImageStatusCover;
                             self.imageView.image = image;
@@ -239,6 +239,13 @@ static CGFloat ScaleDistance = 0.4;
             height = floor(height);
             frame.size.height = height;
             _imageContainerView.frame = frame;
+            CGPoint center = _imageContainerView.center;
+            if (isPortrait) {
+                center.y = _scrollView.frame.size.height / 2;
+            } else {
+                center.x = _scrollView.frame.size.width / 2;
+            }
+            _imageContainerView.center = center;
         } else {
             // 如果图片的比例 > 屏幕的比例 且 不超过限制差距，代表这张图不是很长的的长图，此时要自适应宽度
             CGFloat width = floor((isPortrait ? portraitH : portraitW) / imageScale);

@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 #import "AFBrowserLoaderDelegate.h"
+#import "AFDownloader.h"
 
 @interface AFBrowserLoaderProxy : NSObject <AFBrowserLoaderDelegate>
 
