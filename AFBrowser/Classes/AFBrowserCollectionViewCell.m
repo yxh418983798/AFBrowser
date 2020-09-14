@@ -28,7 +28,7 @@
 @end
 
 
-@interface AFBrowserCollectionViewCell () <UIScrollViewDelegate, UIGestureRecognizerDelegate>
+@interface AFBrowserCollectionViewCell () <UIScrollViewDelegate, UIGestureRecognizerDelegate, AFPlayerDelegate>
 
 /** 图片容器 */
 @property (nonatomic, strong) UIView             *imageContainerView;
@@ -182,6 +182,7 @@ static CGFloat ScaleDistance = 0.4;
             
         case AFBrowserItemTypeVideo: {
             self.player.item = item;
+            self.player.browserDelegate = self;
             [self.player prepare];
             [self resizeSubviewSize];
         }
@@ -285,6 +286,14 @@ static CGFloat ScaleDistance = 0.4;
 }
 
 
+#pragma mark - AFPlayerDelegate
+- (void)tapActionInPlayer:(AFPlayer *)player {
+    if ([self.delegate respondsToSelector:@selector(singleTapAction)]) {
+        [self.delegate singleTapAction];
+    }
+}
+
+
 #pragma mark - 单击手势
 - (void)singleTap:(UITapGestureRecognizer *)tap {
     if ([self.delegate respondsToSelector:@selector(singleTapAction)]) {
@@ -310,6 +319,7 @@ static CGFloat ScaleDistance = 0.4;
 
 #pragma mark - 长按事件
 - (void)longPressAction:(UILongPressGestureRecognizer *)longPress {
+    if (_player.isSliderTouch) return;
     switch (longPress.state) {
         case UIGestureRecognizerStateBegan:
             if ([self.delegate respondsToSelector:@selector(longPressActionAtCollectionViewCell:)]) {
@@ -346,7 +356,9 @@ static CGFloat ScaleDistance = 0.4;
 
     // 播放视频
     if ([@(self.indexPath.item) isEqualToNumber:notification.object]) {
-        [self.player play];
+        if (self.item.autoPlay) {
+            [self.player play];
+        }
     }
     
     // 暂停视频

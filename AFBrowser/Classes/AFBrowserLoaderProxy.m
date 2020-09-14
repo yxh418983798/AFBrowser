@@ -14,12 +14,12 @@
 
 @implementation AFBrowserLoaderProxy
 
-#pragma mark - 判断图片是否在缓存中
-+ (BOOL)hasImageCacheWithKey:(NSString *)key {
-    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(hasImageCacheWithKey:)]) {
-        return [AFBrowserViewController.loaderProxy hasImageCacheWithKey:key];
+#pragma mark - 判断图片是否在缓存中 
++ (UIImage *)imageFromCacheForKey:(NSString *)key {
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(imageFromCacheForKey:)]) {
+        return [AFBrowserViewController.loaderProxy imageFromCacheForKey:key];
     } else {
-        return [SDImageCache.sharedImageCache diskImageDataExistsWithKey:key];
+        return [SDImageCache.sharedImageCache imageFromCacheForKey:key];
     }
 }
 

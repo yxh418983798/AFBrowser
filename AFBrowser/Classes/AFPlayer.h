@@ -47,6 +47,9 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
 /** 代理 */
 @property (weak, nonatomic) id <AFPlayerDelegate> delegate;
 
+/** 代理 */
+@property (weak, nonatomic) id <AFPlayerDelegate> browserDelegate;
+
 /** 底部工具栏 */
 @property (strong, nonatomic) AFPlayerBottomBar   *bottomBar;
 
@@ -84,6 +87,8 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
  * @brief 跳转进度
  */
 - (void)seekToTime:(NSTimeInterval)time;
+
+- (BOOL)isSliderTouch;
 
 /// 释放播放器
 //- (void)releasePlayer;

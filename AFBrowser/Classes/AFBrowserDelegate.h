@@ -10,30 +10,28 @@
 @class AFBrowserViewController;
 @class AFBrowserItem;
 
-
-/**
- * 浏览模式
- */
+/// 浏览模式
 typedef NS_ENUM(NSUInteger, AFBrowserType){
     AFBrowserTypeDefault,  // 浏览模式，没有操作
 //    AFBrowserTypeSelect,   // 选择模式，可以选中图片
     AFBrowserTypeDelete,   // 删除模式，可以删除图片
 };
 
-
-/**
- * 显示页码的方式
- */
+/// 显示页码的方式
 typedef NS_ENUM(NSUInteger, AFPageControlType){
     AFPageControlTypeNone,    // 不显示页码
     AFPageControlTypeCircle,  // 小圆点
     AFPageControlTypeText,    // 文字
 };
 
+/// 播放器的播放方式
+typedef NS_ENUM(NSUInteger, AFBrowserPlayOption){
+    AFBrowserPlayOptionDefault,       /// 默认，刚进入浏览器时，如果是视频会自动播放，后续的翻页不会自动播放
+    AFBrowserPlayOptionAutoPlay,      /// 自动播放，放大浏览和翻页切换视频的时候都会自动播放
+    AFBrowserPlayOptionNeverAutoPlay, /// 不自动播放，只能通过 点击播放按钮 来播放视频
+};
 
-/**
- * 翻页的方向
- */
+/// 翻页的方向
 typedef NS_ENUM(NSUInteger, AFBrowserDirection){
     AFBrowserDirectionLeft,   // 向左翻页
     AFBrowserDirectionRight,  // 向右翻页
@@ -97,6 +95,13 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
  */
 - (void)loadDataWithDirection:(AFBrowserDirection)direction completionReload:(void (^)(BOOL success))completionReload;
 
+
+/**
+ * @brief dismiss控制器的回调
+ *
+ * @note  如果频的类型，应该返回视频播放器的容器View
+ */
+- (void)didDismissBrowser:(AFBrowserViewController *)browser;
 
 @end
 

@@ -1,8 +1,7 @@
 {
   "name": "AFBrowser",
-  "version": "0.1.0",
-  "summary": "A short description of AFBrowser.",
-  "description": "TODO: Add long description of the pod here.",
+  "version": "1.0.3",
+  "summary": "图片/视频浏览器",
   "homepage": "https://github.com/yxh418983798/AFBrowser",
   "license": {
     "type": "MIT",
@@ -13,7 +12,7 @@
   },
   "source": {
     "git": "https://github.com/yxh418983798/AFBrowser.git",
-    "tag": "0.1.0"
+    "tag": "1.0.3"
   },
   "platforms": {
     "ios": "8.0"

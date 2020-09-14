@@ -63,6 +63,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self = [super init];
     if (self) {
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedTransaction) name:@"AFBrowserFinishedTransaction" object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationWillEnterForegroundNotification) name:UIApplicationWillEnterForegroundNotification object:nil];
         self.transformer = [AFBrowserTransformer new];
         self.transformer.delegate = self;
         self.selectedIndex = 0;
@@ -83,6 +84,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
     [self configSubViews];
     [self loadItems];
+    self.browserType = self.browserType;
 //    NSLog(@"-------------------------- viewDidLoad --------------------------");
 }
 
@@ -140,6 +142,12 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
 }
 
+- (void)dealloc {
+    if ([self.delegate respondsToSelector:@selector(didDismissBrowser:)]) {
+        [self.delegate didDismissBrowser:self];
+    }
+}
+
 
 #pragma mark - 链式调用
 - (AFBrowserViewController * (^)(id <AFBrowserDelegate>))makeDelegate {
@@ -166,6 +174,13 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (AFBrowserViewController * (^)(AFPageControlType))makePageControlType {
     return ^id(AFPageControlType pageControlType) {
         self.pageControlType = pageControlType;
+        return self;
+    };
+}
+
+- (AFBrowserViewController * (^)(AFBrowserPlayOption))makePlayOption {
+    return ^id(AFBrowserPlayOption playOption) {
+        self.playOption = playOption;
         return self;
     };
 }
@@ -304,6 +319,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         switch (_browserType) {
                 
             case AFBrowserTypeDelete:
+                if (!_collectionView) return;
                 [self.view addSubview:self.toolBar];
                 [self.toolBar addSubview:self.deleteBtn];
                 [self.toolBar addSubview:self.dismissBtn];
@@ -350,6 +366,14 @@ static const CGFloat lineSpacing = 0.f; //间隔
         item.showVideoControl = self.showVideoControl;
         item.infiniteLoop = self.infiniteLoop;
         item.useCustomPlayer = self.useCustomPlayer;
+        if (self.playOption == AFBrowserPlayOptionDefault) {
+            self.playOption = AFBrowserPlayOptionNeverAutoPlay;
+            if (index == self.selectedIndex) {
+                item.autoPlay = YES;
+            }
+        } else if (self.playOption == AFBrowserPlayOptionAutoPlay) {
+            item.autoPlay = YES;
+        }
         [self.items setValue:item forKey:key];
     }
     return item;
@@ -363,6 +387,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
 }
 
+/// 获取item的数量
 - (NSInteger)numberOfItems {
     if (_numberOfItems == 0) {
         _numberOfItems = [self.delegate numberOfItemsInBrowser:self];
@@ -400,6 +425,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark UICollectionViewDataSource
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self endScroll];
+    });
     self.numberOfItems = [self.delegate numberOfItemsInBrowser:self];
     _pageControl.numberOfPages = self.numberOfItems;
     if (self.isFinishedTransaction) {
@@ -448,7 +476,16 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
 }
 
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+    if (!decelerate) [self endScroll];
+}
+
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
+    [self endScroll];
+}
+
+/// 结束滚动
+- (void)endScroll {
     [self loadItems];
     AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
     self.transformer.item = item;
@@ -572,33 +609,38 @@ static const CGFloat lineSpacing = 0.f; //间隔
     
     AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
     // 如果url为空，不弹出浏览器
-    if (!item.item) {
+    if (!item.content) {
         NSLog(@"-------------------------- Error：item的Url为空 --------------------------");
         return;
     }
     // 没有加载图片到缓存的情况下，不弹出浏览器
-    if (![self hasImageWithKey:item.coverImage]) {
-        NSLog(@"-------------------------- Error：图片的缩略图没有加载到缓存 --------------------------");
-        if (![self hasImageWithKey:item.item]) {
-            NSLog(@"-------------------------- Error：图片的高清图也没有加载到缓存，不展示浏览器 --------------------------");
+    if (![self imageFromCacheForKey:item.coverImage]) {
+        NSLog(@"-------------------------- Error：图片的缩略图没有加载到缓存：%@ --------------------------", item.coverImage);
+        if (![self imageFromCacheForKey:item.content]) {
+            NSLog(@"-------------------------- Error：图片的高清图也没有加载到缓存，不展示浏览器:%@ --------------------------", item.content);
             return;
         }
     }
     UIViewController *currentVc = AFBrowserViewController.currentVc;
     if (currentVc) {
+        if (item.type == AFBrowserItemTypeVideo) {
+            [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
+        }
         [currentVc presentViewController:self animated:YES completion:nil];
     } else {
         NSAssert(currentVc, @"找不到CurrentVc，无法跳转");
     }
 }
 
-- (BOOL)hasImageWithKey:(id)key {
+/// 查询是否有图片缓存
+- (UIImage *)imageFromCacheForKey:(id)key {
     if ([key isKindOfClass:NSString.class] || [key isKindOfClass:NSURL.class]) {
         NSString *keyString = [key isKindOfClass:NSString.class] ? key : [(NSURL *)key absoluteString];
-        return [AFBrowserLoaderProxy hasImageCacheWithKey:keyString];
+        return [AFBrowserLoaderProxy imageFromCacheForKey:keyString];
     }
-    return YES;
+    return key;
 }
+
 
 #pragma mark - 获取 currentVc
 + (UIViewController *)currentVc {
@@ -667,6 +709,17 @@ static Class _loaderProxy;
     self.isFinishedTransaction = YES;
     [self.collectionView reloadData];
 }
+
+
+#pragma mark - 进入前台的通知
+- (void)applicationWillEnterForegroundNotification {
+    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+    if (item.type == AFBrowserItemTypeVideo) {
+        [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
+    }
+}
+
+
 @end
 
 

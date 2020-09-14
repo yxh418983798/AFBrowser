@@ -11,12 +11,11 @@
 @protocol AFBrowserLoaderDelegate <NSObject>
 
 /**
- * @brief 判断图片是否存在缓存中
+ * @brief 从缓存中获取图片
  *
  * @param key   图片地址
  */
-+ (BOOL)hasImageCacheWithKey:(NSString *)key;
-
++ (UIImage *)imageFromCacheForKey:(NSString *)key;
 
 /**
  * @brief 自定义加载图片

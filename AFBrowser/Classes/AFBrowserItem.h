@@ -47,6 +47,9 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 /** 高度 */
 @property (nonatomic, assign) CGFloat           height;
 
+/** 是否自动播放视频，默认NO */
+@property (assign, nonatomic) BOOL              autoPlay;
+
 /** 视频转场时，是否使用外部播放器进行转场动画，如果为YES，则视频播放是连续的（前提条件是外部有提供播放器），默认NO */
 @property (assign, nonatomic) BOOL              useCustomPlayer;
 
@@ -58,7 +61,6 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 
 /** player */
 @property (nonatomic, weak) AFPlayer            *player;
-
 
 /**
  * @brief 返回已下载的视频或图片的本地地址

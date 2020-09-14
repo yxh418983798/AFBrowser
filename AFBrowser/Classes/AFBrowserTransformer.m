@@ -202,6 +202,7 @@
         imageSize = [(AFPlayer *)transitionView transitionSize];
         self.trasitionViewOriginalFrame = transitionFrame;
         CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
+        height = fmin(height, UIScreen.mainScreen.bounds.size.height);
         resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
     } else {
         if ([transitionView isKindOfClass:UIImageView.class] && [(UIImageView *)transitionView image]) {

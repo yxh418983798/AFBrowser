@@ -84,9 +84,9 @@
     if (!_slider) {
         _slider = [[AFPlayerSlider alloc] init];
         _slider.value = 0.0;
-        _slider.minimumTrackTintColor = [UIColor colorWithRed:(193)/255.0 green:(136)/255.0 blue:(92)/255.0 alpha:(1)];
+        _slider.minimumTrackTintColor = UIColor.whiteColor;
         _slider.maximumTrackTintColor = [UIColor colorWithWhite:0.5 alpha:0.2];
-        [_slider setThumbImage:[self imageWithColor:[UIColor colorWithRed:(193)/255.0 green:(136)/255.0 blue:(92)/255.0 alpha:(1)] size:(CGSizeMake(15, 15))] forState:UIControlStateNormal];
+        [_slider setThumbImage:[self imageWithColor:UIColor.whiteColor size:(CGSizeMake(15, 15))] forState:UIControlStateNormal];
     }
     return _slider;
 }
@@ -118,7 +118,7 @@
 #pragma mark - 更新进度和时间
 - (void)updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime {
     self.leftTimeLb.text = [self timeformatFromSeconds:roundf(currentTime)];
-    self.rightTimeLb.text = [self timeformatFromSeconds:roundf(durationTime)];
+    self.rightTimeLb.text = [self timeformatFromSeconds:ceil(durationTime)];
     if (!self.isSliderTouch) {
         [self.slider setValue:durationTime > 0 ? currentTime/durationTime : 0 animated:YES];
     }
