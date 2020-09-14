@@ -202,7 +202,8 @@
         imageSize = [(AFPlayer *)transitionView transitionSize];
         self.trasitionViewOriginalFrame = transitionFrame;
         CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
-        height = fmin(height, UIScreen.mainScreen.bounds.size.height);
+        height = UIScreen.mainScreen.bounds.size.height;
+//        height = fmin(height, UIScreen.mainScreen.bounds.size.height);
         resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
     } else {
         if ([transitionView isKindOfClass:UIImageView.class] && [(UIImageView *)transitionView image]) {
@@ -579,9 +580,13 @@ static CGFloat ScaleDistance = 0.4;
         height = floor(height);
         resultFrame.size.height = height;
         if (isPortrait) {
-            resultFrame.origin.y = (frame.size.height - resultFrame.size.height)/2;
+            if (height < portraitH) {
+                resultFrame.origin.y = (frame.size.height - resultFrame.size.height)/2;
+            }
         } else {
-            resultFrame.origin.x = (frame.size.width - resultFrame.size.width)/2;
+            if (height < portraitW) {
+                resultFrame.origin.x = (frame.size.width - resultFrame.size.width)/2;
+            }
         }
     } else {
         // 如果图片的比例 > 屏幕的比例 且 不超过限制差距，代表这张图不是很长的的长图，此时要自适应宽度

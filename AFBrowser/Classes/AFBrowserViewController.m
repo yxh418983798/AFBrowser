@@ -85,6 +85,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     [self configSubViews];
     [self loadItems];
     self.browserType = self.browserType;
+    self.pageControlType = self.pageControlType;
 //    NSLog(@"-------------------------- viewDidLoad --------------------------");
 }
 
@@ -106,24 +107,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.collectionView.contentOffset = CGPointMake(self.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
     self.collectionView.contentSize = CGSizeMake(self.collectionView.frame.size.width * self.numberOfItems + 1, self.collectionView.frame.size.height);
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
-    
-    // pageControl
-    switch (self.pageControlType) {
-        case AFPageControlTypeCircle:
-            self.pageControl.hidden = NO;
-            _pageLabel.hidden = YES;
-            break;
-            
-        case AFPageControlTypeText:
-            _pageControl.hidden = YES;
-            self.pageLabel.hidden = NO;
-            break;
-            
-        default:
-            _pageControl.hidden = YES;
-            _pageLabel.hidden   = YES;
-            break;
-    }
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -259,7 +242,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if (!_dismissBtn) {
         _dismissBtn = [[UIButton alloc] initWithFrame:(CGRectMake(0, [UIApplication sharedApplication].statusBarFrame.size.height, 50, 44))];
         NSBundle *bundle = [NSBundle bundleWithURL:[[NSBundle bundleForClass:self.class] URLForResource:@"AFBrowser" withExtension:@"bundle"]];
-        [_dismissBtn setImage:[UIImage imageNamed:@"browser_dismiss" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
+        [_dismissBtn setImage:[UIImage imageNamed:@"browser_arrow_left" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
         [_dismissBtn addTarget:self action:@selector(dismissBtnAction) forControlEvents:(UIControlEventTouchUpInside)];
         [self.toolBar addSubview:_dismissBtn];
     }
@@ -314,12 +297,11 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 设置浏览类型
 - (void)setBrowserType:(AFBrowserType)browserType {
-    if (_browserType != browserType) {
-        _browserType = browserType;
+    _browserType = browserType;
+    if (_collectionView) {
         switch (_browserType) {
                 
             case AFBrowserTypeDelete:
-                if (!_collectionView) return;
                 [self.view addSubview:self.toolBar];
                 [self.toolBar addSubview:self.deleteBtn];
                 [self.toolBar addSubview:self.dismissBtn];
@@ -335,6 +317,47 @@ static const CGFloat lineSpacing = 0.f; //间隔
                 if (_toolBar.superview) [_toolBar removeFromSuperview];
                 if (_deleteBtn.superview) [_deleteBtn removeFromSuperview];
                 if (_dismissBtn.superview) [_dismissBtn removeFromSuperview];
+                break;
+        }
+    }
+}
+
+
+#pragma mark - 设置页码类型
+- (void)setPageControlType:(AFPageControlType)pageControlType {
+    _pageControlType = pageControlType;
+    // pageControl
+    if (_collectionView) {
+        switch (self.pageControlType) {
+            case AFPageControlTypeCircle:
+                [self.view addSubview:self.toolBar];
+                [self.toolBar addSubview:self.dismissBtn];
+                [self.toolBar addSubview:self.pageControl];
+                if (_pageLabel.superview) {
+                    [_pageLabel removeFromSuperview];
+                    _pageLabel = nil;
+                }
+                break;
+                
+            case AFPageControlTypeText:
+                [self.view addSubview:self.toolBar];
+                [self.toolBar addSubview:self.dismissBtn];
+                [self.toolBar addSubview:self.pageLabel];
+                if (_pageControl.superview) {
+                    [_pageControl removeFromSuperview];
+                    _pageControl = nil;
+                }
+                break;
+                
+            default:
+                if (_pageLabel.superview) {
+                    [_pageLabel removeFromSuperview];
+                    _pageLabel = nil;
+                }
+                if (_pageControl.superview) {
+                    [_pageControl removeFromSuperview];
+                    _pageControl = nil;
+                }
                 break;
         }
     }
@@ -501,30 +524,25 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 单击图片 AFBrowserCollectionViewCellDelegate
 - (void)singleTapAction {
-    switch (self.browserType) {
-            
-        case AFBrowserTypeDefault:
-            [self dismissBtnAction];
-            break;
-            
-        default:
-            //隐藏
-            _showToolBar = !_showToolBar;
+    if (_toolBar.superview) {
+        //隐藏
+        _showToolBar = !_showToolBar;
 //            CGRect frame = self.toolBar.frame;
 //            frame.origin.y = self.showToolBar ? 0 : -[UIApplication sharedApplication].statusBarFrame.size.height - 44.f;
-            [UIView animateWithDuration:0.25 animations:^{
+        [UIView animateWithDuration:0.25 animations:^{
 //                self.toolBar.frame = frame;
 //                self.pageControl.y = UIScreen.mainScreen.bounds.size.height;
 //                [self setNeedsStatusBarAppearanceUpdate];
-                self.toolBar.alpha = self.showToolBar ? 1 : 0;
-                if (self.pageControlType == AFPageControlTypeCircle) self.pageControl.alpha = self.showToolBar ? 1 : 0;
-                AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
-                if (item.type == AFBrowserItemTypeVideo) {
-                    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
-                    cell.player.showToolBar = self.showToolBar;
-                }
-            }];
-            break;
+            self.toolBar.alpha = self.showToolBar ? 1 : 0;
+            if (self.pageControlType == AFPageControlTypeCircle) self.pageControl.alpha = self.showToolBar ? 1 : 0;
+            AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+            if (item.type == AFBrowserItemTypeVideo) {
+                AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+                cell.player.showToolBar = self.showToolBar;
+            }
+        }];
+    } else {
+        [self dismissBtnAction];
     }
 }
 
@@ -534,6 +552,12 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if ([self.delegate respondsToSelector:@selector(browser:longPressActionAtIndex:)]) {
         [self.delegate browser:self longPressActionAtIndex:[self.collectionView indexPathForCell:cell].item];
     }
+}
+
+
+#pragma mark -  dismiss事件
+- (void)dismissActionAtCollectionViewCell:(AFBrowserCollectionViewCell *)cell {
+    [self dismissViewControllerAnimated:YES completion:nil];
 }
 
 

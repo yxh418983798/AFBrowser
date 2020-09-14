@@ -16,6 +16,9 @@
 /** 单击事件 */
 - (void)singleTapAction;
 
+/** 退出事件 */
+- (void)dismissActionAtCollectionViewCell:(AFBrowserCollectionViewCell *)cell;
+
 /** 长按事件 */
 - (void)longPressActionAtCollectionViewCell:(AFBrowserCollectionViewCell *)cell;
 

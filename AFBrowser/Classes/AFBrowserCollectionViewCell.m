@@ -242,9 +242,13 @@ static CGFloat ScaleDistance = 0.4;
             _imageContainerView.frame = frame;
             CGPoint center = _imageContainerView.center;
             if (isPortrait) {
-                center.y = _scrollView.frame.size.height / 2;
+                if (height < portraitH) {
+                    center.y = _scrollView.frame.size.height / 2;
+                }
             } else {
-                center.x = _scrollView.frame.size.width / 2;
+                if (height < portraitW) {
+                    center.x = _scrollView.frame.size.width / 2;
+                }
             }
             _imageContainerView.center = center;
         } else {
@@ -287,9 +291,17 @@ static CGFloat ScaleDistance = 0.4;
 
 
 #pragma mark - AFPlayerDelegate
+/// 点击cell
 - (void)tapActionInPlayer:(AFPlayer *)player {
     if ([self.delegate respondsToSelector:@selector(singleTapAction)]) {
         [self.delegate singleTapAction];
+    }
+}
+
+/// dismissPlayer的回调
+- (void)dismissActionInPlayer:(AFPlayer *)player {
+    if ([self.delegate respondsToSelector:@selector(dismissActionAtCollectionViewCell:)]) {
+        [self.delegate dismissActionAtCollectionViewCell:self];
     }
 }
 

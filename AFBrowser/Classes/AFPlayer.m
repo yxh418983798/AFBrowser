@@ -28,6 +28,9 @@
 /** 中间的播放按钮 */
 @property (strong, nonatomic) UIButton                *playBtn;
 
+/** 左上角X按钮 */
+@property (nonatomic, strong) UIButton                *dismissBtn;
+
 /** 加载进度提示 */
 @property (strong, nonatomic) UIActivityIndicatorView *activityView;
 
@@ -85,6 +88,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     [self.coverImgView addSubview:self.activityView];
     [self.contentView addSubview:self.playBtn];
     if (self.currentItem.showVideoControl) {
+        [self.contentView addSubview:self.dismissBtn];
         [self addSubview:self.bottomBar];
     }
 //    NSLog(@"-------------------------- didMoveToSuperview:%@ --------------------------", self.superview);
@@ -102,6 +106,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     self.playBtn.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
     self.activityView.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
     if (self.currentItem.showVideoControl) {
+        self.dismissBtn.frame = CGRectMake(0, UIApplication.sharedApplication.statusBarFrame.size.height == 44 ? 44 : 20, 50, 44);
         self.bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
     }
     [super layoutSubviews];
@@ -122,6 +127,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 - (void)browserWillDismiss {
     if (self.currentItem.showVideoControl) {
         self.bottomBar.alpha = 0;
+        self.dismissBtn.alpha = 0;
     }
 //    self.playBtn.hidden = YES;
 //    [self stopLoading];
@@ -155,6 +161,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     _showToolBar = showToolBar;
     if (self.currentItem.showVideoControl) {
         self.bottomBar.alpha = _showToolBar ? 1 : 0;
+        self.dismissBtn.alpha = _showToolBar ? 1 : 0;
     }
 }
 
@@ -206,6 +213,16 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
         [_playBtn addTarget:self action:@selector(play) forControlEvents:(UIControlEventTouchUpInside)];
     }
     return _playBtn;
+}
+
+- (UIButton *)dismissBtn {
+    if (!_dismissBtn) {
+        _dismissBtn = [UIButton new];
+        NSBundle *bundle = [NSBundle bundleWithURL:[[NSBundle bundleForClass:self.class] URLForResource:@"AFBrowser" withExtension:@"bundle"]];
+        [_dismissBtn setImage:[UIImage imageNamed:@"browser_dismiss" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
+        [_dismissBtn addTarget:self action:@selector(dismissBtnAction) forControlEvents:(UIControlEventTouchUpInside)];
+    }
+    return _dismissBtn;
 }
 
 - (UIActivityIndicatorView *)activityView {
@@ -658,6 +675,17 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     }
     if ([self.delegate respondsToSelector:@selector(tapActionInPlayer:)]) {
         [self.delegate tapActionInPlayer:self];
+    }
+}
+
+
+#pragma mark - 左上角退出按钮
+- (void)dismissBtnAction {
+    if ([self.browserDelegate respondsToSelector:@selector(dismissActionInPlayer:)]) {
+        [self.browserDelegate dismissActionInPlayer:self];
+    }
+    if ([self.delegate respondsToSelector:@selector(dismissActionInPlayer:)]) {
+        [self.delegate dismissActionInPlayer:self];
     }
 }
 

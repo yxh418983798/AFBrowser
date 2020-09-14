@@ -36,7 +36,11 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
 /// 点击Player的回调
 - (void)tapActionInPlayer:(AFPlayer *)player;
 
+/// dismissPlayer的回调
+- (void)dismissActionInPlayer:(AFPlayer *)player;
+
 @end
+
 
 
 @interface AFPlayer : UIView

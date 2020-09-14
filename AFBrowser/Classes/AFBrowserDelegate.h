@@ -13,8 +13,8 @@
 /// 浏览模式
 typedef NS_ENUM(NSUInteger, AFBrowserType){
     AFBrowserTypeDefault,  // 浏览模式，没有操作
-//    AFBrowserTypeSelect,   // 选择模式，可以选中图片
     AFBrowserTypeDelete,   // 删除模式，可以删除图片
+    //    AFBrowserTypeSelect,   // 选择模式，可以选中图片
 };
 
 /// 显示页码的方式
