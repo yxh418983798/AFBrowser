@@ -159,10 +159,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 
 - (void)setShowToolBar:(BOOL)showToolBar {
     _showToolBar = showToolBar;
-    if (self.currentItem.showVideoControl) {
-        self.bottomBar.alpha = _showToolBar ? 1 : 0;
-        self.dismissBtn.alpha = _showToolBar ? 1 : 0;
-    }
+    self.bottomBar.alpha = _showToolBar ? 1 : 0;
+    self.dismissBtn.alpha = _showToolBar ? 1 : 0;
 }
 
 - (void)setMuted:(BOOL)muted {

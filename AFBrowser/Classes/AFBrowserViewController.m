@@ -542,7 +542,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
             }
         }];
     } else {
-        [self dismissBtnAction];
+        if (![self itemAtIndex:self.selectedIndex].showVideoControl) {
+            [self dismissBtnAction];
+        }
     }
 }
 
