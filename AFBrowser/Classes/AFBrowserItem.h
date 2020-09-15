@@ -29,9 +29,6 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 /** 类型 */
 @property (assign, nonatomic) AFBrowserItemType type;
 
-/** item */
-@property (strong, nonatomic) id                item;
-
 /** content */
 @property (strong, nonatomic) id                content;
 

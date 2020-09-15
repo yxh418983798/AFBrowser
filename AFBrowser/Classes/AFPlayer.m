@@ -300,6 +300,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
         self.playBtn.hidden = YES;
         [self observeItemStatus:NO];
         [self observePlayerTime:NO];
+        [self.player replaceCurrentItemWithPlayerItem:nil];
         return;
     }
     switch (self.status) {
@@ -317,7 +318,11 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
             self.status = AFPlayerStatusPrepare;
             [self startLoading];
             self.playBtn.hidden = YES;
+            self.coverImgView.image = nil;
             self.coverImgView.hidden = NO;
+            if (self.player.currentItem) {
+                [self.player replaceCurrentItemWithPlayerItem:nil];
+            }
             NSString *urlString = [self.item.content isKindOfClass:NSString.class] ? self.item.content : [(NSURL *)self.item.content absoluteString];
             [AFBrowserLoaderProxy loadVideo:urlString progress:nil completion:^(NSString *url, NSError *error) {
                 if (error) {

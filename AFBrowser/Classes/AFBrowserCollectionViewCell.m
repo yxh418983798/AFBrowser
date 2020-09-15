@@ -125,23 +125,23 @@ static CGFloat ScaleDistance = 0.4;
                 _player = nil;
             }
             [_scrollView setZoomScale:1.0];
-            if ([item.item isKindOfClass:NSString.class]) {
+            if ([item.content isKindOfClass:NSString.class]) {
                 NSLog(@"-------------------------- 开始加载 高清图 --------------------------");
-                [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.item] completion:^(UIImage *image, NSError *error) {
+                [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.content] completion:^(UIImage *image, NSError *error) {
                     NSLog(@"-------------------------- 完成加载 高清图 --------------------------");
                     self.imageView.image = image;
                     self.loadImageStatus = AFLoadImageStatusOriginal;
                     [self resizeSubviewSize];
                 }];
-            } else if ([item.item isKindOfClass:NSURL.class]) {
-                [AFBrowserLoaderProxy loadImage:item.item completion:^(UIImage *image, NSError *error) {
+            } else if ([item.content isKindOfClass:NSURL.class]) {
+                [AFBrowserLoaderProxy loadImage:item.content completion:^(UIImage *image, NSError *error) {
                     self.imageView.image = image;
                     self.loadImageStatus = AFLoadImageStatusOriginal;
                     [self resizeSubviewSize];
                 }];
-            } else if ([item.item isKindOfClass:UIImage.class])  {
+            } else if ([item.content isKindOfClass:UIImage.class])  {
                 self.loadImageStatus = AFLoadImageStatusOriginal;
-                self.imageView.image = item.item;
+                self.imageView.image = item.content;
                 [self resizeSubviewSize];
                 //设置缩放比例为适应屏幕高度
                 //    self.scrollView.maximumZoomScale = HScreen_Height/(HScreen_Width * image.size.height/image.size.width);

@@ -26,13 +26,9 @@
 }
 
 
-- (id)content {
-    return self.item;
-}
-
 + (instancetype)itemWithImage:(id)image coverImage:(id)coverImage width:(CGFloat)width height:(CGFloat)height {
     AFBrowserItem *browser = [AFBrowserItem new];
-    browser.item = image;
+    browser.content = image;
     browser.coverImage = coverImage;
     browser.width = width;
     browser.height = height;
@@ -43,7 +39,7 @@
 
 + (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height {
     AFBrowserItem *browser = [AFBrowserItem new];
-    browser.item = video;
+    browser.content = video;
     browser.coverImage = coverImage;
     browser.type = AFBrowserItemTypeVideo;
     browser.duration = duration;
