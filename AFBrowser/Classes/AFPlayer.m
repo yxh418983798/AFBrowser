@@ -535,7 +535,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 
 
 - (float)duration {
-    if (self.currentItem.duration > 0) {
+    if (self.currentItem.duration > 1) {
         return self.currentItem.duration;
     } else {
         return CMTimeGetSeconds(self.player.currentItem.duration);
