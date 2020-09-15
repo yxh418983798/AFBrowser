@@ -154,13 +154,16 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
         self.playWhenPrepareDone = NO;
         if (_item.showVideoControl && _bottomBar.superview) [self addSubview:self.bottomBar];
         self.status = AFPlayerStatusNone;
+        self.showToolBar = self.showToolBar;
     }
 }
 
 - (void)setShowToolBar:(BOOL)showToolBar {
     _showToolBar = showToolBar;
-    self.bottomBar.alpha = _showToolBar ? 1 : 0;
-    self.dismissBtn.alpha = _showToolBar ? 1 : 0;
+    if (self.currentItem.showVideoControl) {
+        self.bottomBar.alpha = _showToolBar ? 1 : 0;
+        self.dismissBtn.alpha = _showToolBar ? 1 : 0;
+    }
 }
 
 - (void)setMuted:(BOOL)muted {
@@ -216,6 +219,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 - (UIButton *)dismissBtn {
     if (!_dismissBtn) {
         _dismissBtn = [UIButton new];
+        _dismissBtn.alpha = _showToolBar ? 1 : 0;
         NSBundle *bundle = [NSBundle bundleWithURL:[[NSBundle bundleForClass:self.class] URLForResource:@"AFBrowser" withExtension:@"bundle"]];
         [_dismissBtn setImage:[UIImage imageNamed:@"browser_dismiss" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
         [_dismissBtn addTarget:self action:@selector(dismissBtnAction) forControlEvents:(UIControlEventTouchUpInside)];
@@ -257,6 +261,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     if (!_bottomBar) {
         _bottomBar = [AFPlayerBottomBar new];
         _bottomBar.slider.delegate = self;
+        _bottomBar.alpha = _showToolBar ? 1 : 0;
         [_bottomBar.playBtn addTarget:self action:@selector(playBtnAction:) forControlEvents:UIControlEventTouchUpInside];
         [_bottomBar.slider addTarget:self action:@selector(sliderTouchDownAction:) forControlEvents:UIControlEventTouchDown];
         [_bottomBar.slider addTarget:self action:@selector(sliderValueChangedAction:) forControlEvents:UIControlEventValueChanged];

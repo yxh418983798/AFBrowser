@@ -10,6 +10,16 @@
 #import "SDImageCache.h"
 #import "AFDownloader.h"
 #import "AFBrowserViewController.h"
+#import <objc/runtime.h>
+
+@interface AFBrowserLoaderProxy ()
+
+/** 执行方法 */
+@property (assign, nonatomic) SEL                selector;
+
+@property (nonatomic, weak) id target;
+
+@end
 
 
 @implementation AFBrowserLoaderProxy
@@ -53,7 +63,34 @@
 
 
 
++ (instancetype)aVPlayerItemDidPlayToEndTimeNotificationWithTarget:(id)target selector:(SEL)selector {
+    AFBrowserLoaderProxy *proxy = AFBrowserLoaderProxy.new;
+    proxy.target = target;
+    proxy.selector = selector;
+    [NSNotificationCenter.defaultCenter addObserver:proxy selector:@selector(finishedPlayAction:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+    return proxy;
+}
 
+- (void)finishedPlayAction:(NSNotification *)notification {
+    if (self.target) {
+        [self.target performSelector:@selector(finishedPlayAction:) withObject:notification];
+    } else {
+        [NSNotificationCenter.defaultCenter removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+    }
+}
+
+
++ (void)addLogString:(NSString *)log {
+#ifdef DEBUG
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(addLogString:)]) {
+        [AFBrowserViewController.loaderProxy addLogString:log];
+    }
+#endif
+}
+
+- (void)dealloc {
+    NSLog(@"-------------------------- Proxy释放了 --------------------------");
+}
 
 
 @end

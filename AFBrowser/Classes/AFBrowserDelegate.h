@@ -103,5 +103,8 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
  */
 - (void)didDismissBrowser:(AFBrowserViewController *)browser;
 
+
+
+
 @end
 

@@ -118,7 +118,7 @@
 #pragma mark - 更新进度和时间
 - (void)updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime {
     self.leftTimeLb.text = [self timeformatFromSeconds:roundf(currentTime)];
-    self.rightTimeLb.text = [self timeformatFromSeconds:ceil(durationTime)];
+    self.rightTimeLb.text = [self timeformatFromSeconds:roundf(durationTime)];
     if (!self.isSliderTouch) {
         [self.slider setValue:durationTime > 0 ? currentTime/durationTime : 0 animated:YES];
     }

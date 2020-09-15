@@ -11,6 +11,8 @@
 
 @interface AFBrowserLoaderProxy : NSObject <AFBrowserLoaderDelegate>
 
++ (instancetype)aVPlayerItemDidPlayToEndTimeNotificationWithTarget:(id)target selector:(SEL)selector;
+
 @end
 
 

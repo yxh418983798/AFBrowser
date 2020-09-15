@@ -9,6 +9,7 @@
 
 
 @protocol AFBrowserLoaderDelegate <NSObject>
+@optional;
 
 /**
  * @brief 从缓存中获取图片
@@ -33,6 +34,12 @@
  * @param completion 视频加载完后，需要保存到本地，然后调用completion(本地的Url)来展示
  */
 + (void)loadVideo:(NSString *)videoUrl progress:(void (^)(NSProgress *))progress completion:(void (^)(NSString *url, NSError *error))completion;
+
+
+/**
+ * @brief 添加日志
+ */
++ (void)addLogString:(NSString *)log;
 
 
 @end
