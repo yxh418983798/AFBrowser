@@ -103,6 +103,9 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
 /// 控制器即将Dismiss，做一些转场动画的处理
 - (void)browserWillDismiss;
 
+/// 控制器已经Dismiss，做一些转场动画的处理
+- (void)browserDidDismiss;
+
 /// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss;
 

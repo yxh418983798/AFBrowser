@@ -78,6 +78,14 @@
     return _session;
 }
 
+/// 获取本地视频的地址
++ (NSString *)videoPathWithUrl:(NSString *)url {
+    if (!url.length) return nil;
+    NSString *cachesPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
+    NSString *filePath = [NSString stringWithFormat:@"%@/af-download/video/%@.mp4", cachesPath, [self md5String:url]];
+    return [NSFileManager.defaultManager fileExistsAtPath:filePath] ? filePath : nil;
+}
+
 /// 完成下载的路径
 + (NSString *)filePathWithUrl:(NSString *)url {
     NSString *cachesPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
@@ -85,7 +93,7 @@
     if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {
         [NSFileManager.defaultManager createDirectoryAtPath:filePath withIntermediateDirectories:YES attributes:nil error:nil];
     }
-    return [filePath stringByAppendingFormat:@"/%@.mp4", [self md5String:url]];;
+    return [filePath stringByAppendingFormat:@"/%@.mp4", [self md5String:url]];
 }
 
 /// 未完成下载的路径

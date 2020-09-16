@@ -45,6 +45,9 @@
 /** 是否手势交互 */
 @property (assign, nonatomic) BOOL            isInteractive;
 
+/** 是否取消转场 */
+@property (assign, nonatomic) BOOL            isCancel;
+
 /** 手势方向，是否从上往下 */
 @property (assign, nonatomic) BOOL            isDirectionDown;
 
@@ -385,8 +388,11 @@
     self.transitionView = self.presentedTransitionView;
     UIView *superView = self.transitionView.superview;
     NSInteger index = [superView.subviews indexOfObject:self.transitionView];
-    self.presentedTrasitionViewFrame = self.transitionView.frame;
-    
+    if (!self.isCancel) {
+//        NSLog(@"-------------------------- 设置presentedTrasitionViewFrame：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(self.presentedTrasitionViewFrame));
+        self.presentedTrasitionViewFrame = self.transitionView.frame;
+    }
+
     // 将容器添加到containerView，保证转场过程中继续播放视频
 //    [self.transitionView removeFromSuperview];
     [containerView addSubview:self.transitionView];
@@ -394,15 +400,19 @@
     
     // 执行转场动画
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:0 animations:^{
-
-        self.backGroundView.alpha = 0;
+        if (!self.isCancel) {
+            self.backGroundView.alpha = 0;
+        }
+//        NSLog(@"--------------------------是否取消：%d--------------------------", self.isCancel);
         if (!self.isInteractive) {
             if (!sourceView || CGRectEqualToRect(sourceFrame, CGRectZero)) {
                 // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
                 self.transitionView.alpha = 0;
+//                NSLog(@"-------------------------- 动画11：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(sourceFrame));
             } else {
                 // 使用位移的动画效果
-                self.transitionView.frame = sourceFrame;
+                self.transitionView.frame = self.isCancel ? self.presentedTrasitionViewFrame : sourceFrame;
+//                NSLog(@"-------------------------- 动画22：%@ -- %@--------------------------", NSStringFromCGRect(self.presentedTrasitionViewFrame), NSStringFromCGRect(sourceFrame));
             }
         }
         
@@ -413,6 +423,7 @@
         [self.backGroundView removeFromSuperview];
         [snapView removeFromSuperview];
         if ([transitionContext transitionWasCancelled]) {
+//            NSLog(@"-------------------------- 取消：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(self.presentedTrasitionViewFrame));
             fromView.hidden = NO;
             self.transitionView.frame = self.presentedTrasitionViewFrame;
             self.transitionView.alpha = 1;
@@ -426,6 +437,7 @@
                 self.transitionView.frame = self.originalFrameForTrasitionSuperView;
             }
         }
+        self.isCancel = NO;
         self.transitionView = nil;
         self.backGroundView = nil;
     }];
@@ -475,6 +487,7 @@
     switch (pan.state) {
         case UIGestureRecognizerStateBegan: {
             self.isInteractive = YES;
+            self.isCancel = NO;
             self.isDirectionDown = (point.y > 0);
             self.percentTransition = [[UIPercentDrivenInteractiveTransition alloc] init];
             [self.presentedVc dismissViewControllerAnimated:YES completion:nil];
@@ -489,6 +502,7 @@
                 NSAssert(self.transitionView, @"transitionView为空！");
                 self.imgView_H = self.transitionView.frame.size.height;
                 beginFrame = self.transitionView.frame;
+                NSLog(@"-------------------------- beginFrame：%@ --------------------------", NSStringFromCGRect(beginFrame));
             }
             sourceFrame = self.item.useCustomPlayer ? self.trasitionViewOriginalFrame : [self transitionFrameWithView:[self.delegate transitionViewForSourceController]];
         }
@@ -529,9 +543,12 @@
                     self.percentTransition = nil;
                 }];
             }else{
+                self.isCancel = YES;
                 self.backGroundView.alpha = 1;
+                self.presentedTrasitionViewFrame = beginFrame;
+//                NSLog(@"-------------------------- 来了取消：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
                 [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
-                    self.transitionView.frame = self.presentedTrasitionViewFrame;
+                    self.transitionView.frame = beginFrame;
                 } completion:^(BOOL finished) {
                     [self.percentTransition cancelInteractiveTransition];
                     self.percentTransition = nil;

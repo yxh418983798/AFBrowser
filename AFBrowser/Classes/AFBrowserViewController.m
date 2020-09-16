@@ -118,11 +118,12 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 - (void)dismissViewControllerAnimated:(BOOL)flag completion:(void (^)(void))completion {
-    [super dismissViewControllerAnimated:flag completion:completion];
-    if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) {
-        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
-        [cell.player browserWillDismiss];
-    }
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) [cell.player browserWillDismiss];
+    [super dismissViewControllerAnimated:flag completion:^{
+        if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) [cell.player browserDidDismiss];
+        if (completion) completion();
+    }];
 }
 
 - (void)dealloc {
@@ -449,7 +450,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark UICollectionViewDataSource
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [self endScroll];
+        [self startCurrentPlayer];
     });
     self.numberOfItems = [self.delegate numberOfItemsInBrowser:self];
     _pageControl.numberOfPages = self.numberOfItems;
@@ -514,11 +515,23 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.transformer.item = item;
     if (item.type == AFBrowserItemTypeVideo) {
         AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
-        [UIView animateWithDuration:0.25 animations:^{
-            cell.player.showToolBar = self.showToolBar;
-        }];
+        cell.player.showToolBar = self.showToolBar;
     }
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
+}
+
+
+#pragma mark - 刚进入时，播放当前的播放器
+- (void)startCurrentPlayer {
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    if (!cell) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self startCurrentPlayer];
+        });
+    } else {
+        cell.player.showToolBar = self.showToolBar;
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
+    }
 }
 
 
@@ -611,6 +624,11 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if (item.type == AFBrowserItemTypeImage) {
         return cell.imageView;
     }
+    if (!cell) {
+        NSLog(@"-------------------------- cell是空的 --------------------------");
+    } else if (!cell.player) {
+        NSLog(@"-------------------------- cel.player是空的 --------------------------");
+    }
     return cell.player;
 }
 
@@ -650,6 +668,10 @@ static const CGFloat lineSpacing = 0.f; //间隔
     UIViewController *currentVc = AFBrowserViewController.currentVc;
     if (currentVc) {
         if (item.type == AFBrowserItemTypeVideo) {
+            if (![AFDownloader videoPathWithUrl:item.content]) {
+                NSLog(@"-------------------------- Error：视频没有加载完成，不展示浏览器:%@ --------------------------", item.content);
+                return;
+            }
             [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
         }
         [currentVc presentViewController:self animated:YES completion:nil];

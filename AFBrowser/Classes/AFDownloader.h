@@ -22,10 +22,28 @@ typedef void(^AFDownloaderProgress)(NSProgress *progress);
  */
 + (void)downloadVideo:(NSString *)url progress:(AFDownloaderProgress)progress completion:(AFDownloaderCompletion)completion;
 
+
+/**
+ * @brief 取消下载
+ *
+ * @param url 视频的url地址
+ */
 + (void)cancelTask:(NSString *)url;
 
 
-/// 完成下载的路径
+/**
+ * @brief 获取本地视频的地址，如果不存在，返回空
+ *
+ * @param url 视频的url地址
+ */
++ (NSString *)videoPathWithUrl:(NSString *)url;
+
+
+/**
+ * @brief 返回完成下载的本地路径
+ *
+ * @param url 视频的url地址
+ */
 + (NSString *)filePathWithUrl:(NSString *)url;
 
 @end

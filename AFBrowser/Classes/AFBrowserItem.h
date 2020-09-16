@@ -59,6 +59,9 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 /** player */
 @property (nonatomic, weak) AFPlayer            *player;
 
+/** 播放时间 */
+@property (nonatomic, assign) NSTimeInterval    currentTime;
+
 /**
  * @brief 返回已下载的视频或图片的本地地址
  */
