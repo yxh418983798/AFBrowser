@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.0.12'
+  s.version          = '1.0.13'
   s.summary          = '图片/视频浏览器'
   s.homepage         = 'https://github.com/yxh418983798/AFBrowser'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
@@ -17,7 +17,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '8.0'
   s.source_files = 'AFBrowser/Classes/**/*'
   s.dependency 'SDWebImage'
-  s.dependency 'KVOController'
+#  s.dependency 'KVOController'
   s.resource_bundles = {
    'AFBrowser' => ['AFBrowser/Assets/*']
   }

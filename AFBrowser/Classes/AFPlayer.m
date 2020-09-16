@@ -11,7 +11,7 @@
 #import "AFBrowserItem.h"
 #import "AFBrowserViewController.h"
 #import "AFBrowserLoaderProxy.h"
-#import <KVOController/KVOController.h>
+//#import <KVOController/KVOController.h>
 
 @interface AFPlayer ()
 
@@ -65,6 +65,8 @@
 
 static NSString * const AFPlayerNotificationPauseAllPlayer = @"AFPlayerNotificationPauseAllPlayer";
 static NSString * const AFPlayerNotificationResumeAllPlayer = @"AFPlayerNotificationResumeAllPlayer";
+static NSString * const AFPlayerNotificationItemBusy = @"AFPlayerNotificationItemBusy";
+
 static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 
 
@@ -76,13 +78,16 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
+        NSLog(@"-------------------------- 创建播放器 --------------------------");
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayerNotification) name:AFPlayerNotificationPauseAllPlayer object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayerNotification) name:AFPlayerNotificationResumeAllPlayer object:nil];
 //        self.proxy = [AFBrowserLoaderProxy aVPlayerItemDidPlayToEndTimeNotificationWithTarget:self selector:@selector(finishedPlayAction:)];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedPlayAction:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(playerBusy:) name:AFPlayerNotificationItemBusy object:nil];
     }
     return self;
 }
+
 
 - (void)didMoveToSuperview {
     self.clipsToBounds = YES;
@@ -634,38 +639,62 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     if (item && !self.player.currentItem) {
         NSLog(@"-------------------------- 啊哈哈：%@ --------------------------", self.player.currentItem);
     }
-    if (item) {
-        [self.KVOController observe:self.player.currentItem keyPath:@"status" options:NSKeyValueObservingOptionNew block:^(id  _Nullable observer, id  _Nonnull object, NSDictionary<NSString *,id> * _Nonnull change) {
-            switch (self.player.currentItem.status) {
-                    
-                case AVPlayerItemStatusReadyToPlay:
-                    [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
-                    if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
-                        [self.delegate prepareDoneWithPlayer:self];
-                    }
-                    if (self.playWhenPrepareDone) {
-                        [self play];
-                    } else {
-                        self.playBtn.hidden = NO;
-                    }
-                    [self stopLoading];
-                    break;
-                    
-                case AVPlayerItemStatusFailed:
-                    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误 ,%@\n %@", self.player.error, self.description]];
-                    NSLog(@"-------------------------- 播放错误：%@  %@  %@--------------------------", self.url, self.player.error, self.player.currentItem.error);
-                    break;
-                    
-                default:
-                    break;
+    if (self.player.currentItem) {
+        if (self.isObserving) return;
+        self.isObserving = YES;
+        [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+    } else {
+        if (self.isObserving) {
+            self.isObserving = NO;
+            [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+        }
+    }
+//    if (item) {
+//        [(NSObject *)self.browserDelegate observe:self.player.currentItem keyPath:@"status" options:NSKeyValueObservingOptionNew block:^(id  _Nullable observer, id  _Nonnull object, NSDictionary<NSString *,id> * _Nonnull change) {
+//            [self handleKVO];
+//        }];
+//    }
+}
+
+
+- (void)handleKVO {
+    switch (self.player.currentItem.status) {
+            
+        case AVPlayerItemStatusReadyToPlay:
+            [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
+            if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
+                [self.delegate prepareDoneWithPlayer:self];
             }
-        }];
+            if (self.playWhenPrepareDone) {
+                [self play];
+            } else {
+                self.playBtn.hidden = NO;
+            }
+            [self stopLoading];
+            break;
+            
+        case AVPlayerItemStatusFailed:
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误 ,%@\n %@", self.player.error, self.description]];
+//            if (self.player.currentItem.error.code == -11839) {
+                // 无法解码，解码器正忙
+                [NSNotificationCenter.defaultCenter postNotificationName:AFPlayerNotificationItemBusy object:self];
+                if (self.status == AFPlayerStatusPlay || self.status == AFPlayerStatusPrepareDone) {
+                    [self play];
+                }
+//            }
+            NSLog(@"-------------------------- 播放错误：%@  %@  %@--------------------------", self.url, self.player.error, self.player.currentItem.error);
+            break;
+            
+        default:
+            break;
     }
 }
+
 
 /// 监听播放器状态
 - (void)observeItemStatus:(BOOL)isAdd {
     return;
+//    return;
     if (isAdd) {
         if (self.isObserving) return;
         self.isObserving = YES;
@@ -707,29 +736,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 /// 监听回调
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     if ([keyPath isEqualToString:@"status"]) {
-        switch (self.player.currentItem.status) {
-                
-            case AVPlayerItemStatusReadyToPlay:
-                [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
-                if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
-                    [self.delegate prepareDoneWithPlayer:self];
-                }
-                if (self.playWhenPrepareDone) {
-                    [self play];
-                } else {
-                    self.playBtn.hidden = NO;
-                }
-                [self stopLoading];
-                break;
-                
-            case AVPlayerItemStatusFailed:
-                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误 ,%@\n %@", self.player.error, self.description]];
-                NSLog(@"-------------------------- 播放错误：%@  %@  %@--------------------------", self.url, self.player.error, self.player.currentItem.error);
-                break;
-                
-            default:
-                break;
-        }
+        [self handleKVO];
     }
 }
 
@@ -833,5 +840,19 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
         [self startPlay];
     }
 }
+
+
+#pragma mark - 播放器忙，无法解码
+- (void)playerBusy:(NSNotification *)notification {
+//    if (notification.object == self) {
+//        return;
+//    }
+//    if (self.status == AFPlayerStatusPlay && self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
+//        [self pause];
+//        [_player replaceCurrentItemWithPlayerItem:nil];
+//        _player = nil;
+//    }
+}
+
 
 @end
