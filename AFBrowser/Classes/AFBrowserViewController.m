@@ -631,9 +631,11 @@ static const CGFloat lineSpacing = 0.f; //间隔
         return cell.imageView;
     }
     if (!cell) {
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场cell是空的, %@", self.description]];
         NSLog(@"-------------------------- cell是空的 --------------------------");
     } else if (!cell.player) {
-        NSLog(@"-------------------------- cel.player是空的 --------------------------");
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场的player是空的, %@", self.description]];
+        NSLog(@"-------------------------- cell.player是空的 --------------------------");
     }
     return cell.player;
 }

@@ -11,6 +11,7 @@
 #import "AFBrowserItem.h"
 #import "AFBrowserViewController.h"
 #import "AFBrowserLoaderProxy.h"
+#import <KVOController/KVOController.h>
 
 @interface AFPlayer ()
 
@@ -121,7 +122,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     NSLog(@"-------------------------- 哈哈释放了播放器 --------------------------");
     [self observePlayerTime:NO];
     [self observeItemStatus:NO];
-    [_player replaceCurrentItemWithPlayerItem:nil];
+//    [_player replaceCurrentItemWithPlayerItem:nil];
+    [self replacePlayerItem:nil];
     [_playerLayer removeFromSuperlayer];
     _player = nil;
     _playerLayer = nil;
@@ -173,7 +175,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     if (!_item || _item.content != item.content) {
         _item = item;
         _url = nil;
-        [self.player replaceCurrentItemWithPlayerItem:nil];
+//        [self.player replaceCurrentItemWithPlayerItem:nil];
+        [self replacePlayerItem:nil];
         self.playWhenPrepareDone = NO;
         if (_item.showVideoControl && _bottomBar.superview) [self addSubview:self.bottomBar];
         self.status = AFPlayerStatusNone;
@@ -332,14 +335,16 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
         self.playBtn.hidden = YES;
         [self observeItemStatus:NO];
         [self observePlayerTime:NO];
-        [self.player replaceCurrentItemWithPlayerItem:nil];
+//        [self.player replaceCurrentItemWithPlayerItem:nil];
+        [self replacePlayerItem:nil];
         return;
     } else {
         if (self.player.currentItem) {
             if (![self.url isEqualToString:[NSString stringWithFormat:@"file://%@", [AFDownloader filePathWithUrl:self.item.content]]]) {
                 [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"数据错误, %@", self.description]];
                 self.url = nil;
-                [self.player replaceCurrentItemWithPlayerItem:nil];
+//                [self.player replaceCurrentItemWithPlayerItem:nil];
+                [self replacePlayerItem:nil];
                 self.coverImgView.image = nil;
                 self.status = AFPlayerStatusNone;
             }
@@ -364,7 +369,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
             self.coverImgView.image = nil;
             self.coverImgView.hidden = NO;
             if (self.player.currentItem) {
-                [self.player replaceCurrentItemWithPlayerItem:nil];
+//                [self.player replaceCurrentItemWithPlayerItem:nil];
+                [self replacePlayerItem:nil];
             }
             NSString *urlString = [self.item.content isKindOfClass:NSString.class] ? self.item.content : [(NSURL *)self.item.content absoluteString];
             if ([urlString containsString:@"file://"]) {
@@ -410,7 +416,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 //    }
     [self stopLoading];
     if (self.url.length) {
-        [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
+//        [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
+        [self replacePlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
         [self observeItemStatus:YES];
 //        self.progress = self.duration > 0 ? self.item.currentTime / self.duration : 0;
         [self seekToTime:self.item.currentTime];
@@ -421,7 +428,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
             [self play];
         }
     } else {
-        [self.player replaceCurrentItemWithPlayerItem:nil];
+//        [self.player replaceCurrentItemWithPlayerItem:nil];
+        [self replacePlayerItem:nil];
         NSLog(@"-------------------------- 准备完成，url为空 --------------------------");
     }
 }
@@ -478,7 +486,9 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     
     if (!self.item) {
         if (self.url) {
-            [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url] ?: NSURL.new]];
+//            [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url] ?: NSURL.new]];
+            [self replacePlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
+
         } else {
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误URL为空, %@", self.description]];
             NSLog(@"-------------------------- 播放错误：url为空 --------------------------");
@@ -562,7 +572,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 //        [self.player removeTimeObserver:self.playerObserver];
 //        self.playerObserver = nil;
 //    }
-    [self.player replaceCurrentItemWithPlayerItem:nil];
+//    [self.player replaceCurrentItemWithPlayerItem:nil];
+    [self replacePlayerItem:nil];
 }
 
 /// 停止播放
@@ -618,9 +629,43 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 
 
 #pragma mark - KVO
+- (void)replacePlayerItem:(AVPlayerItem *)item {
+    [self.player replaceCurrentItemWithPlayerItem:item];
+    if (item && !self.player.currentItem) {
+        NSLog(@"-------------------------- 啊哈哈：%@ --------------------------", self.player.currentItem);
+    }
+    if (item) {
+        [self.KVOController observe:self.player.currentItem keyPath:@"status" options:NSKeyValueObservingOptionNew block:^(id  _Nullable observer, id  _Nonnull object, NSDictionary<NSString *,id> * _Nonnull change) {
+            switch (self.player.currentItem.status) {
+                    
+                case AVPlayerItemStatusReadyToPlay:
+                    [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
+                    if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
+                        [self.delegate prepareDoneWithPlayer:self];
+                    }
+                    if (self.playWhenPrepareDone) {
+                        [self play];
+                    } else {
+                        self.playBtn.hidden = NO;
+                    }
+                    [self stopLoading];
+                    break;
+                    
+                case AVPlayerItemStatusFailed:
+                    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误 ,%@\n %@", self.player.error, self.description]];
+                    NSLog(@"-------------------------- 播放错误：%@  %@  %@--------------------------", self.url, self.player.error, self.player.currentItem.error);
+                    break;
+                    
+                default:
+                    break;
+            }
+        }];
+    }
+}
+
 /// 监听播放器状态
 - (void)observeItemStatus:(BOOL)isAdd {
-
+    return;
     if (isAdd) {
         if (self.isObserving) return;
         self.isObserving = YES;

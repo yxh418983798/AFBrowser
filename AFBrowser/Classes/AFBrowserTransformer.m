@@ -9,6 +9,7 @@
 #import "AFBrowserTransformer.h"
 #import "AFBrowserItem.h"
 #import "AFPlayer.h"
+#import "AFBrowserLoaderProxy.h"
 
 @interface AFBrowserTransformer ()
 
@@ -502,6 +503,7 @@
                 beginFrame = self.transitionView.superview.frame;
             } else {
 //                self.transitionView = self.presentedTransitionView;
+//                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场的transitionView为空 ,%@", self.presentedTransitionView]];
                 NSAssert(self.transitionView, @"transitionView为空！");
                 self.imgView_H = self.transitionView.frame.size.height;
                 beginFrame = self.transitionView.frame;
@@ -550,8 +552,9 @@
                 self.backGroundView.alpha = 1;
                 self.presentedTrasitionViewFrame = beginFrame;
 //                NSLog(@"-------------------------- 来了取消：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
+                CGRect resultFrame = beginFrame; /// 避免beginFrame在下次的手势中被修改，这里要拷贝一个新的frame
                 [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
-                    self.transitionView.frame = beginFrame;
+                    self.transitionView.frame = resultFrame;
                 } completion:^(BOOL finished) {
                     [self.percentTransition cancelInteractiveTransition];
                     self.percentTransition = nil;
