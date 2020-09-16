@@ -135,6 +135,9 @@
             [containerView addSubview:toView];
             fromView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
             [containerView addSubview:fromView];
+            snapView = [toView snapshotViewAfterScreenUpdates:YES];
+            snapView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
+            [containerView addSubview:snapView];
         }
         
         if (self.item.type == AFBrowserItemTypeImage) {
@@ -423,6 +426,8 @@
         [self.transitionView removeFromSuperview];
         [self.backGroundView removeFromSuperview];
         [snapView removeFromSuperview];
+        NSLog(@"-------------------------- 转场完成了：%@ --------------------------", self.transitionView);
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场完成了, %@", self.transitionView]];
         if ([transitionContext transitionWasCancelled]) {
 //            NSLog(@"-------------------------- 取消：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(self.presentedTrasitionViewFrame));
             fromView.hidden = NO;
@@ -436,6 +441,7 @@
         } else {
             if (self.item.useCustomPlayer) {
                 self.item.player.muted = YES;
+                self.item.player.showToolBar = NO;
                 self.transitionView.tag = self.originalTag;
                 [self.transitionSuperView addSubview:self.transitionView];
                 self.transitionView.frame = self.originalFrameForTrasitionSuperView;

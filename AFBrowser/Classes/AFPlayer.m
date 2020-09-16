@@ -487,8 +487,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 //    NSLog(@"-------------------------- startPlay：%g --------------------------", self.progress);
     if (!_AllPlayerSwitch) return;
     self.status = AFPlayerStatusPlay;
-    self.coverImgView.hidden = YES;
-    self.playBtn.hidden = YES;
     
     if (!self.item) {
         if (self.url) {
@@ -506,6 +504,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     if (self.item.showVideoControl) {
         self.bottomBar.playBtn.selected = YES;
     }
+    self.coverImgView.hidden = YES;
+    self.playBtn.hidden = YES;
 }
 
 /// 点击播放/暂停按钮
@@ -662,6 +662,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     switch (self.player.currentItem.status) {
             
         case AVPlayerItemStatusReadyToPlay:
+            NSLog(@"-------------------------- 播放器可以播放的状态 --------------------------");
             [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
             if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
                 [self.delegate prepareDoneWithPlayer:self];
