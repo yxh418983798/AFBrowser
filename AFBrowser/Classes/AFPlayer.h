@@ -20,8 +20,16 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
     AFPlayerStatusPause,        /// 暂停
     AFPlayerStatusStop,         /// 停止
     AFPlayerStatusFinished,     /// 播放结束
-
 };
+
+
+/// 播放器转场状态
+typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
+    AFPlayerTransitionStatusSmall,      /// 小屏
+    AFPlayerTransitionStatusTransitioning,  /// 转场中
+    AFPlayerTransitionStatusFullScreen,         /// 全屏
+};
+
 
 
 @class AFPlayer;
@@ -66,6 +74,8 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
 /** AFBrowserItem */
 @property (nonatomic, strong) AFBrowserItem       *item;
 
+/** 是否在转场 */
+@property (nonatomic, assign) AFPlayerTransitionStatus          transitionStatus;
 
 /**
  * @brief 准备播放

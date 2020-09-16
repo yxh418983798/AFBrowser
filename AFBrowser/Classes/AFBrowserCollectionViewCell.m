@@ -182,6 +182,7 @@ static CGFloat ScaleDistance = 0.4;
             
         case AFBrowserItemTypeVideo: {
             self.player.item = item;
+            self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
             self.player.browserDelegate = self;
             [self.player prepare];
             [self resizeSubviewSize];

@@ -50,9 +50,6 @@
 /** 记录是否在监听 */
 @property (nonatomic, assign) BOOL          isObserving;
 
-/** 是否在转场 */
-@property (nonatomic, assign) BOOL          isDismissing;
-
 /** 播放的url */
 @property (nonatomic, copy) NSString        *url;
 
@@ -138,27 +135,29 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 // 控制器即将销毁，做一些转场动画的处理
 - (void)browserWillDismiss {
     self.showToolBar = NO;
-    self.isDismissing = YES;
+    self.transitionStatus = AFPlayerTransitionStatusTransitioning;
     [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"willDismiss转场隐藏Toolbar, %@", self.description]];
 }
 
 /// 控制器已经Dismiss，做一些转场动画的处理
 - (void)browserDidDismiss {
     self.showToolBar = NO;
-    self.isDismissing = NO;
+    self.transitionStatus = AFPlayerTransitionStatusSmall;
     [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"didDismiss转场隐藏Toolbar, %@", self.description]];
 }
 
 /// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss {
     self.showToolBar = self.showToolBar;
+    self.transitionStatus = AFPlayerTransitionStatusFullScreen;
     [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"取消转场恢复Toolbar, %@", self.description]];
 }
 
 
 #pragma mark - setter
 - (void)setShowToolBar:(BOOL)showToolBar {
-    if (self.isDismissing && showToolBar) {
+    BOOL isFull = (self.frame.size.width == UIScreen.mainScreen.bounds.size.width) || (self.frame.size.height == UIScreen.mainScreen.bounds.size.height);
+    if ((!isFull || self.transitionStatus != AFPlayerTransitionStatusFullScreen) && showToolBar) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"异常Toolbar, %@", self.description]];
         return;
     } else {
@@ -368,15 +367,23 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
                 [self.player replaceCurrentItemWithPlayerItem:nil];
             }
             NSString *urlString = [self.item.content isKindOfClass:NSString.class] ? self.item.content : [(NSURL *)self.item.content absoluteString];
+            if ([urlString containsString:@"file://"]) {
+                self.url = urlString;
+                [self prepareDone];
+                return;
+            }
             [AFBrowserLoaderProxy loadVideo:urlString progress:nil completion:^(NSString *url, NSError *error) {
                 if (error) {
                     NSLog(@"-------------------------- 下载错误：%@ --------------------------", error);
                 } else {
-                    if (!url.length) {
-                        NSLog(@"-------------------------- 下载视频结果错误：url为空 --------------------------");
-                    } else {
+                    if (![url isEqualToString:[NSString stringWithFormat:@"file://%@", [AFDownloader filePathWithUrl:self.item.content]]]) {
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"URL已切换:%@, %@", url, self.description]];
+                    } else if (url.length) {
                         self.url = url;
                         [self prepareDone];
+                    } else {
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"下载视频结果错误：url为空 , %@", self.description]];
+                        NSLog(@"-------------------------- 下载视频结果错误：url为空 --------------------------");
                     }
                 }
             }];
@@ -406,9 +413,9 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
         [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
         [self observeItemStatus:YES];
 //        self.progress = self.duration > 0 ? self.item.currentTime / self.duration : 0;
-//        [self seekToTime:self.item.currentTime];
-//        [self updateProgressWithCurrentTime:self.item.currentTime durationTime:self.duration];
-        [self updateProgressWithCurrentTime:0 durationTime:self.duration];
+        [self seekToTime:self.item.currentTime];
+        [self updateProgressWithCurrentTime:self.item.currentTime durationTime:self.duration];
+//        [self updateProgressWithCurrentTime:0 durationTime:self.duration];
         if (self.playWhenPrepareDone) {
             // 准备完成，直接播放
             [self play];

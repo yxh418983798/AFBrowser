@@ -118,10 +118,15 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 - (void)dismissViewControllerAnimated:(BOOL)flag completion:(void (^)(void))completion {
+    if (_toolBar.superview && _showToolBar) {
+        [self singleTapAction]; // 隐藏toolBar
+    }
     AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
     if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) [cell.player browserWillDismiss];
     [super dismissViewControllerAnimated:flag completion:^{
-        if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) [cell.player browserDidDismiss];
+        if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) {
+            [cell.player browserDidDismiss];
+        }
         if (completion) completion();
     }];
 }
@@ -619,6 +624,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark -- AFBrowserTransformerDelegate
 - (UIView *)transitionViewForPresentedController {
+    [self.collectionView layoutIfNeeded];
     AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
     AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
     if (item.type == AFBrowserItemTypeImage) {
@@ -668,7 +674,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
     UIViewController *currentVc = AFBrowserViewController.currentVc;
     if (currentVc) {
         if (item.type == AFBrowserItemTypeVideo) {
-            if (![AFDownloader videoPathWithUrl:item.content]) {
+            NSString *url = [item.content isKindOfClass:NSString.class] ? item.content : [(NSURL *)item.content absoluteString];
+            if (![url containsString:@"file://"] && ![AFDownloader videoPathWithUrl:item.content]) {
                 NSLog(@"-------------------------- Error：视频没有加载完成，不展示浏览器:%@ --------------------------", item.content);
                 return;
             }

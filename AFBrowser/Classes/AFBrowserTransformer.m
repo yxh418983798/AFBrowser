@@ -429,6 +429,9 @@
             self.transitionView.alpha = 1;
             // 将视频播放容器 还原到转场后的容器
             [superView insertSubview:self.transitionView atIndex:index];
+            if ([self.transitionView respondsToSelector:@selector(browserCancelDismiss)]) {
+                [self.transitionView performSelector:@selector(browserCancelDismiss)];
+            }
         } else {
             if (self.item.useCustomPlayer) {
                 self.item.player.muted = YES;
