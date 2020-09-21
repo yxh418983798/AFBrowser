@@ -36,11 +36,23 @@
 /** 加载进度提示 */
 @property (strong, nonatomic) UIActivityIndicatorView *activityView;
 
+/** 播放的url */
+@property (nonatomic, copy) NSString                  *url;
+
+/** AFBrowserLoaderProxy */
+@property (nonatomic, strong) AFBrowserLoaderProxy    *proxy;
+
+/** 记录playerItem */
+@property (nonatomic, strong) AVPlayerItem            *playerItem;
+
 /** 准备完成后是否自动播放，默认No */
 @property (assign, nonatomic) BOOL          playWhenPrepareDone;
 
-/** 监听进度对象 */
-@property (strong, nonatomic) id            playerObserver;
+/** 记录是否在监听 */
+@property (nonatomic, assign) BOOL          isObserving;
+
+/** 是否活跃，默认YES */
+@property (nonatomic, assign) BOOL          isActive;
 
 /** 记录进度 */
 @property (assign, nonatomic) CGFloat       progress;
@@ -48,17 +60,11 @@
 /** 记录时长 */
 @property (assign, nonatomic) float         duration;
 
-/** 记录是否在监听 */
-@property (nonatomic, assign) BOOL          isObserving;
-
-/** 播放的url */
-@property (nonatomic, copy) NSString        *url;
-
-/** AFBrowserLoaderProxy */
-@property (nonatomic, strong) AFBrowserLoaderProxy            *proxy;
-
+/** 监听进度对象 */
+@property (strong, nonatomic) id            playerObserver;
 
 @end
+
 
 
 @implementation AFPlayer
@@ -66,9 +72,8 @@
 static NSString * const AFPlayerNotificationPauseAllPlayer = @"AFPlayerNotificationPauseAllPlayer";
 static NSString * const AFPlayerNotificationResumeAllPlayer = @"AFPlayerNotificationResumeAllPlayer";
 static NSString * const AFPlayerNotificationItemBusy = @"AFPlayerNotificationItemBusy";
-
 static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
-
+static int MaxPlayer = 5;
 
 #pragma mark - 生命周期
 + (void)initialize {
@@ -85,6 +90,7 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 //        self.proxy = [AFBrowserLoaderProxy aVPlayerItemDidPlayToEndTimeNotificationWithTarget:self selector:@selector(finishedPlayAction:)];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedPlayAction:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(playerBusy:) name:AFPlayerNotificationItemBusy object:nil];
+        self.isActive = YES;
     }
     return self;
 }
@@ -125,14 +131,13 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 
 - (void)dealloc {
     [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放器释放了, %@", self.description]];
-    NSLog(@"-------------------------- 哈哈释放了播放器 --------------------------");
+    NSLog(@"-------------------------- 释放了播放器 --------------------------");
     [self observePlayerTime:NO];
-    [self observeItemStatus:NO];
-//    [_player replaceCurrentItemWithPlayerItem:nil];
     [self replacePlayerItem:nil];
     [_playerLayer removeFromSuperlayer];
     _player = nil;
     _playerLayer = nil;
+    [AFPlayer resumeActiveExcludePlayer:self];
 }
 
 - (NSString *)description {
@@ -214,6 +219,35 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     }
 }
 
+- (void)setIsActive:(BOOL)isActive {
+    if (_isActive != isActive) {
+        _isActive = isActive;
+        if (isActive) {
+            if (self.playerItem) {
+                [self addToPlayerArray];
+                [self.player replaceCurrentItemWithPlayerItem:self.playerItem];
+                if (!self.isObserving) {
+                    self.isObserving = YES;
+                    [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+                }
+                [self seekToTime:self.item.currentTime];
+                if (self.status == AFPlayerStatusPlay) {
+                    [self startPlay];
+                }
+            }
+        } else {
+
+            [self.player pause];
+            if (self.player.currentItem) {
+                if (self.isObserving) {
+                    self.isObserving = NO;
+                    [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+                }
+                [self.player replaceCurrentItemWithPlayerItem:nil];
+            }
+        }
+    }
+}
 
 #pragma mark - UI
 - (UIView *)contentView {
@@ -300,16 +334,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     return _bottomBar;
 }
 
-- (CGSize)transitionSize {
-    if (self.item.width > 0 && self.item.height > 0) {
-        return CGSizeMake(self.item.width, self.item.height);
-    }
-    if (self.coverImgView.image) {
-        return self.coverImgView.image.size;
-    }
-    return self.frame.size;
-}
-
 /// 开始加载动画
 - (void)startLoading {
     [self.activityView startAnimating];
@@ -321,12 +345,92 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 }
 
 
-#pragma mark - Getter
+#pragma mark - 数据
 - (float)duration {
     if (self.item.duration > 1) {
         return self.item.duration;
     } else {
         return _player.currentItem ? CMTimeGetSeconds(self.player.currentItem.duration) : 0.f;
+    }
+}
+
+- (CGSize)transitionSize {
+    if (self.item.width > 0 && self.item.height > 0) {
+        return CGSizeMake(self.item.width, self.item.height);
+    }
+    if (self.coverImgView.image) {
+        return self.coverImgView.image.size;
+    }
+    return self.frame.size;
+}
+
+/// 保存播放器的数组
++ (NSPointerArray *)playerArray {
+    static NSPointerArray *_playerArray;
+    if (!_playerArray) {
+        _playerArray = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
+    }
+    return _playerArray;
+}
+
+/// 添加到数组
+- (void)addToPlayerArray {
+    NSArray *playerArray = AFPlayer.playerArray.allObjects;
+    if (![playerArray containsObject:self]) {
+        // 没有在数组中，则直接添加在首位
+        [AFPlayer.playerArray insertPointer:(__bridge void *)(self) atIndex:0];
+        // 添加后播放器后，检查是否超过了限制数量，如果超过，需要设置成不活跃状态，避免播放器数量太多造成解码失败
+        if (playerArray.count > MaxPlayer) {
+            for (int i = MaxPlayer; i < playerArray.count; i++) {
+                AFPlayer *player = playerArray[i];
+                player.isActive = NO;
+            }
+        }
+    } else {
+        // 如果已经存在，更新index到首位
+        NSInteger index = [playerArray indexOfObject:self];
+        [AFPlayer.playerArray removePointerAtIndex:index];
+        [AFPlayer.playerArray insertPointer:(__bridge void *)(self) atIndex:0];
+    }
+}
+
+/// 有播放器释放的时候，将等待中的不活跃播放器重新设置为活跃
++ (void)resumeActiveExcludePlayer:(AFPlayer *)excludePlayer {
+    NSArray *playerArray = AFPlayer.playerArray.allObjects;
+    for (int i = 0; i < playerArray.count && i < MaxPlayer; i++) {
+        AFPlayer *player = playerArray[i];
+        if (player != excludePlayer) {
+            player.isActive = YES;
+        }
+    }
+}
+
+
+#pragma mark - 切换PlayerItem
+- (void)replacePlayerItem:(AVPlayerItem *)item {
+    
+    if (item == self.player.currentItem) return;
+    self.playerItem = item;
+    
+    if (self.player.currentItem) {
+        if (self.isObserving) {
+            self.isObserving = NO;
+            [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+        }
+        [self.player replaceCurrentItemWithPlayerItem:nil];
+        if (item) {
+            [self addToPlayerArray];
+            [self.player replaceCurrentItemWithPlayerItem:item];
+            self.isObserving = YES;
+            [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+        }
+    } else {
+        if (item) {
+            [self addToPlayerArray];
+            [self.player replaceCurrentItemWithPlayerItem:item];
+            self.isObserving = YES;
+            [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+        }
     }
 }
 
@@ -339,7 +443,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
         [self attachCoverImage:self.item.coverImage];
         self.coverImgView.hidden = NO;
         self.playBtn.hidden = YES;
-        [self observeItemStatus:NO];
         [self observePlayerTime:NO];
 //        [self.player replaceCurrentItemWithPlayerItem:nil];
         [self replacePlayerItem:nil];
@@ -413,18 +516,15 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 - (void)prepareDone {
     [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepareDone数据准备完成, %@", self.description]];
     self.status = AFPlayerStatusPrepareDone;
-    [self observeItemStatus:NO];
 //    [self.player replaceCurrentItemWithPlayerItem:nil];
     
 //    if (self.player.currentItem) {
 //        if (self.currentItem == self.item) return;
-//        [self observeItemStatus:NO];
 //    }
     [self stopLoading];
     if (self.url.length) {
 //        [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
         [self replacePlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
-        [self observeItemStatus:YES];
 //        self.progress = self.duration > 0 ? self.item.currentTime / self.duration : 0;
         [self seekToTime:self.item.currentTime];
         [self updateProgressWithCurrentTime:self.item.currentTime durationTime:self.duration];
@@ -434,7 +534,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
             [self play];
         }
     } else {
-//        [self.player replaceCurrentItemWithPlayerItem:nil];
         [self replacePlayerItem:nil];
         NSLog(@"-------------------------- 准备完成，url为空 --------------------------");
     }
@@ -498,7 +597,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
             NSLog(@"-------------------------- 播放错误：url为空 --------------------------");
         }
     }
-    [self observeItemStatus:YES];
     [self observePlayerTime:YES];
     [self.player play];
     if (self.item.showVideoControl) {
@@ -547,7 +645,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     self.playBtn.hidden = NO;
     [self.player pause];
     self.coverImgView.hidden = self.progress < 1;
-    [self observeItemStatus:NO];
     [self observePlayerTime:NO];
 }
 
@@ -571,7 +668,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     
     if (self.player.currentItem) {
         [self.player pause];
-        [self observeItemStatus:NO];
     }
     self.item.currentTime = 0;
 //    if (self.playerObserver) {
@@ -591,10 +687,8 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
     self.status = AFPlayerStatusStop;
     self.playBtn.hidden = NO;
     [self.player pause];
-    [self observeItemStatus:NO];
     self.coverImgView.hidden = NO;
     [self seekToTime:0.f];
-    [self observeItemStatus:NO];
     [self observePlayerTime:NO];
 //    [self.player replaceCurrentItemWithPlayerItem:nil];
 }
@@ -635,29 +729,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 
 
 #pragma mark - KVO
-- (void)replacePlayerItem:(AVPlayerItem *)item {
-    [self.player replaceCurrentItemWithPlayerItem:item];
-    if (item && !self.player.currentItem) {
-        NSLog(@"-------------------------- 啊哈哈：%@ --------------------------", self.player.currentItem);
-    }
-    if (self.player.currentItem) {
-        if (self.isObserving) return;
-        self.isObserving = YES;
-        [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
-    } else {
-        if (self.isObserving) {
-            self.isObserving = NO;
-            [self.player.currentItem removeObserver:self forKeyPath:@"status"];
-        }
-    }
-//    if (item) {
-//        [(NSObject *)self.browserDelegate observe:self.player.currentItem keyPath:@"status" options:NSKeyValueObservingOptionNew block:^(id  _Nullable observer, id  _Nonnull object, NSDictionary<NSString *,id> * _Nonnull change) {
-//            [self handleKVO];
-//        }];
-//    }
-}
-
-
 - (void)handleKVO {
     switch (self.player.currentItem.status) {
             
@@ -689,23 +760,6 @@ static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
             
         default:
             break;
-    }
-}
-
-
-/// 监听播放器状态
-- (void)observeItemStatus:(BOOL)isAdd {
-    return;
-//    return;
-    if (isAdd) {
-        if (self.isObserving) return;
-        self.isObserving = YES;
-        [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
-    } else {
-        if (self.isObserving) {
-            self.isObserving = NO;
-            [self.player.currentItem removeObserver:self forKeyPath:@"status"];
-        }
     }
 }
 

@@ -12,18 +12,76 @@
 @interface AFViewController () <UITableViewDelegate, UITableViewDataSource, AFBrowserDelegate>
 /** i */
 @property (nonatomic, strong) UITableView            *tableView;
+
+/** av */
+@property (nonatomic, strong) AVPlayer            *player;
+
+/** av */
+@property (nonatomic, strong) AVPlayerLayer           *playerLayer;
+
+/** aa */
+@property (nonatomic, strong) AVPlayerItem            *playerItem;
+
+/** af */
+@property (nonatomic, strong) AFPlayer            *afplayer;
+
+/** asd */
+@property (nonatomic, strong) NSObject            *obj1;
 @end
 
 @implementation AFViewController
-
+static NSPointerArray *arr;
+static NSArray *array;
+- (void)action {
+    self.obj1 = nil;
+    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
+//    [self.navigationController pushViewController:AFViewController.new animated:YES];
+}
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    NSIndexPath *i1 = [NSIndexPath indexPathForRow:0 inSection:0];
-    NSIndexPath *i2 = [NSIndexPath indexPathForRow:0 inSection:0];
-
-    NSArray *aa = @[[NSIndexPath indexPathForRow:0 inSection:0], [NSIndexPath indexPathForRow:1 inSection:1]];
-    NSLog(@"-------------------------- 是否包含：%d --------------------------", [aa containsObject:[NSIndexPath indexPathForRow:0 inSection:0]]);
+    
+    self.obj1 = NSObject.new;
+    arr = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
+    [arr addPointer:(__bridge void *)(self.obj1)];
+    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
+    
+    
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"push" style:(UIBarButtonItemStylePlain) target:self action:@selector(action)];
+    
+//    self.playerItem = [AVPlayerItem playerItemWithURL:[NSURL URLWithString:@"http://alicfc1.mowang.online/vid/9E9BE3FCEBB93BBDC1956E666506E493.mp4"]];
+//    self.player = [AVPlayer playerWithPlayerItem:self.playerItem];
+//    AVPlayerLayer *playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
+//    self.playerLayer = playerLayer;
+////    playerLayer.videoGravity = AVLayerVideoGravityResizeAspect;
+////        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+////    playerLayer.masksToBounds= YES;
+//    playerLayer.frame = CGRectMake(10, 100, 200, 200);
+//    [self.view.layer addSublayer:self.playerLayer];
+//    [self.player play];
+//    return;
+    
+    
+//    AFPlayer *player = [AFBrowserViewController productPlayer];
+//    player.frame = CGRectMake(15, 100, 300, 300);
+////    player.tag = 100;
+//    [self.view addSubview:player];
+//    player.item = [AFBrowserItem itemWithVideo:@"http://alicfc1.mowang.online/vid/9E9BE3FCEBB93BBDC1956E666506E493.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
+////z    player.item.useCustomPlayer = YES;
+//    [player prepare];
+//    [player play];
+//    self.afplayer = player;
+//    return;
+    
+    
+//    NSString *string = @"12";
+//    NSString *string1 = string.copy;
+//    NSString *string2 = string.mutableCopy;
+//    NSString *string3 = string2.mutableCopy;
+//    NSString *string4 = string3.copy;
+//    NSLog(@"-------------------------- 来了：%p  %p  %p -%p %p-------------------------", string, string1, string2, string3, string4);
+//    return;
+    
     
     _tableView = [[UITableView alloc] initWithFrame:(CGRectMake(0, 40, self.view.frame.size.width, self.view.frame.size.height)) style:(UITableViewStylePlain)];
     _tableView.delegate = self;
@@ -31,6 +89,8 @@
     [self.view addSubview:_tableView];
     
 }
+
+
 
 #pragma mark -- 旋转控制
 - (BOOL)shouldAutorotate{
@@ -48,12 +108,12 @@
 
 #pragma mark - UITableViewDelegate
 - (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 1;
+    return 5;
 }
 
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 10;
+    return 1;
 }
 
 
@@ -65,7 +125,7 @@
 //            make.left.offset(15);
 //            make.width.height.offset(100);
 //            make.centerY.offset(0);
-//        }];
+//        }];http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4
         AFPlayer *player = [AFBrowserViewController productPlayer];
         player.frame = CGRectMake(15, 10, 100, 100);
         player.tag = 100;
@@ -73,10 +133,11 @@
     }
     AFPlayer *player = [cell viewWithTag:100];
     player.frame = CGRectMake(15, 10, 100, 100);
-    player.item = [AFBrowserItem itemWithVideo:@"http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
+    player.item = [AFBrowserItem itemWithVideo:@"http://alicfc1.mowang.online/vid/9E9BE3FCEBB93BBDC1956E666506E493.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
+    player.item.infiniteLoop = YES;
     player.item.useCustomPlayer = YES;
     [player prepare];
-    [player play];
+//    [player play];
 //    cell.imageView.image = [UIImage imageNamed:@"image"];
 //    cell.textLabel.text = [NSString stringWithFormat:@"第%lu个Cell", indexPath.row];
     return cell;
@@ -89,7 +150,10 @@
 
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(YES).makeSelectedIndex(indexPath.item) browse];
+    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+    AFPlayer *player = [cell viewWithTag:100];
+    [player play];
+//    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(YES).makeSelectedIndex(indexPath.item) browse];
 }
 
 

@@ -1,5 +1,5 @@
 PODS:
-  - AFBrowser (1.0.6):
+  - AFBrowser (1.1.0):
     - SDWebImage
   - Masonry (1.1.0)
   - SDWebImage (5.9.0):
@@ -20,7 +20,7 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  AFBrowser: 0ca7bb646f403f0475bd2f1816c330b323ec93b9
+  AFBrowser: 4b88d023ba35912ee025cee6eb29b6e4e211f182
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   SDWebImage: 62ae4a18473520c67b79e9724c31a63599cc9423
 

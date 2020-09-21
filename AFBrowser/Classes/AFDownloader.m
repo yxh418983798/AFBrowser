@@ -103,7 +103,7 @@
     if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {
         [NSFileManager.defaultManager createDirectoryAtPath:filePath withIntermediateDirectories:YES attributes:nil error:nil];
     }
-    return [filePath stringByAppendingFormat:@"/%@", [self md5String:url]];;
+    return [filePath stringByAppendingFormat:@"/%@", [self md5String:url]];
 }
 
 

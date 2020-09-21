@@ -77,6 +77,8 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 /** 是否在转场 */
 @property (nonatomic, assign) AFPlayerTransitionStatus          transitionStatus;
 
+@property (class) int          maxPlayer;
+
 /**
  * @brief 准备播放
  */

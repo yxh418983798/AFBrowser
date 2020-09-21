@@ -7,12 +7,16 @@
 //
 
 #import "AFAppDelegate.h"
+#import "AFViewController.h"
 
 @implementation AFAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
     // Override point for customization after application launch.
+    UINavigationController *navi = [[UINavigationController alloc] initWithRootViewController:AFViewController.new];
+    self.window.rootViewController = navi;
+    [self.window makeKeyAndVisible];
     return YES;
 }
 
