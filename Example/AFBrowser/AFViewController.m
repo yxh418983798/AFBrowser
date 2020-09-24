@@ -33,9 +33,13 @@
 static NSPointerArray *arr;
 static NSArray *array;
 - (void)action {
-    self.obj1 = nil;
+    if ([arr.allObjects containsObject:self.obj1]) {
+        [arr removePointerAtIndex:0];
+    }
+//    self.obj1 = nil;
+//    [arr removePointerAtIndex:0];
     NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
-//    [self.navigationController pushViewController:AFViewController.new animated:YES];
+    [self.navigationController pushViewController:AFViewController.new animated:YES];
 }
 - (void)viewDidLoad
 {
@@ -44,6 +48,7 @@ static NSArray *array;
     self.obj1 = NSObject.new;
     arr = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
     [arr addPointer:(__bridge void *)(self.obj1)];
+    
     NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
     
     

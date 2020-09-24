@@ -71,7 +71,6 @@
 
 static NSString * const AFPlayerNotificationPauseAllPlayer = @"AFPlayerNotificationPauseAllPlayer";
 static NSString * const AFPlayerNotificationResumeAllPlayer = @"AFPlayerNotificationResumeAllPlayer";
-static NSString * const AFPlayerNotificationItemBusy = @"AFPlayerNotificationItemBusy";
 static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 static int MaxPlayer = 5;
 
@@ -84,12 +83,11 @@ static int MaxPlayer = 5;
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
         NSLog(@"-------------------------- 创建播放器 --------------------------");
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"创建播放器, %@", self.description]];
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"创建播放器, %@", self.displayDescription]];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayerNotification) name:AFPlayerNotificationPauseAllPlayer object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayerNotification) name:AFPlayerNotificationResumeAllPlayer object:nil];
 //        self.proxy = [AFBrowserLoaderProxy aVPlayerItemDidPlayToEndTimeNotificationWithTarget:self selector:@selector(finishedPlayAction:)];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedPlayAction:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(playerBusy:) name:AFPlayerNotificationItemBusy object:nil];
         self.isActive = YES;
     }
     return self;
@@ -130,9 +128,8 @@ static int MaxPlayer = 5;
 }
 
 - (void)dealloc {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放器释放了, %@", self.description]];
-    NSLog(@"-------------------------- 释放了播放器 --------------------------");
-    [self observePlayerTime:NO];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放器释放了, %@", self.displayDescription]];
+    NSLog(@"-------------------------- 释放了播放器:%p --------------------------", self);
     [self replacePlayerItem:nil];
     [_playerLayer removeFromSuperlayer];
     _player = nil;
@@ -140,7 +137,7 @@ static int MaxPlayer = 5;
     [AFPlayer resumeActiveExcludePlayer:self];
 }
 
-- (NSString *)description {
+- (NSString *)displayDescription {
     return [NSString stringWithFormat:@"播放器描述：%p\n showToolBar:%d, status:%d, hidden:%d\nProgress：%g, \ncover:%@, \nduration:%g, width:%g, height:%g\ncurrentItem:%@", self, self.showToolBar, self.status, self.hidden, self.progress, self.item.coverImage, self.duration, self.item.width, self.item.height, self.player.currentItem];
 }
 
@@ -149,21 +146,21 @@ static int MaxPlayer = 5;
 - (void)browserWillDismiss {
     self.showToolBar = NO;
     self.transitionStatus = AFPlayerTransitionStatusTransitioning;
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"willDismiss转场隐藏Toolbar, %@", self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"willDismiss转场隐藏Toolbar, %@", self.displayDescription]];
 }
 
 /// 控制器已经Dismiss，做一些转场动画的处理
 - (void)browserDidDismiss {
     self.showToolBar = NO;
     self.transitionStatus = AFPlayerTransitionStatusSmall;
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"didDismiss转场隐藏Toolbar, %@", self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"didDismiss转场隐藏Toolbar, %@", self.displayDescription]];
 }
 
 /// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss {
     self.showToolBar = self.showToolBar;
     self.transitionStatus = AFPlayerTransitionStatusFullScreen;
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"取消转场恢复Toolbar, %@", self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"取消转场恢复Toolbar, %@", self.displayDescription]];
 }
 
 
@@ -171,14 +168,14 @@ static int MaxPlayer = 5;
 - (void)setShowToolBar:(BOOL)showToolBar {
     BOOL isFull = (self.frame.size.width == UIScreen.mainScreen.bounds.size.width) || (self.frame.size.height == UIScreen.mainScreen.bounds.size.height);
     if ((!isFull || self.transitionStatus != AFPlayerTransitionStatusFullScreen) && showToolBar) {
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"异常Toolbar, %@", self.description]];
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"异常Toolbar, %@", self.displayDescription]];
         return;
     } else {
         _showToolBar = showToolBar;
     }
     _bottomBar.alpha = _showToolBar ? 1 : 0;
     _dismissBtn.alpha = _showToolBar ? 1 : 0;
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"设置了ToolBar:%d, %@", showToolBar, self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"设置了ToolBar:%d, %@", showToolBar, self.displayDescription]];
 }
 
 - (void)setItem:(AFBrowserItem *)item {
@@ -192,7 +189,7 @@ static int MaxPlayer = 5;
         if (_item.showVideoControl && _bottomBar.superview) [self addSubview:self.bottomBar];
         self.status = AFPlayerStatusNone;
         _coverImgView.image = nil;
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"设置item: %@", self.description]];
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"设置item: %@", self.displayDescription]];
     } else {
         _item = item;
     }
@@ -234,16 +231,19 @@ static int MaxPlayer = 5;
                 if (self.status == AFPlayerStatusPlay) {
                     [self startPlay];
                 }
+                NSLog(@"-------------------------- 设置成活跃：%@ %@--------------------------", self, NSThread.currentThread);
             }
         } else {
-
-            [self.player pause];
+            AFPlayerStatus status = self.status;
+            [self pausePlay];
+            self.status = status;
             if (self.player.currentItem) {
                 if (self.isObserving) {
                     self.isObserving = NO;
                     [self.player.currentItem removeObserver:self forKeyPath:@"status"];
                 }
                 [self.player replaceCurrentItemWithPlayerItem:nil];
+                NSLog(@"-------------------------- 设置成不活跃：%@ --------------------------", self);
             }
         }
     }
@@ -376,9 +376,11 @@ static int MaxPlayer = 5;
 /// 添加到数组
 - (void)addToPlayerArray {
     NSArray *playerArray = AFPlayer.playerArray.allObjects;
+    self.isActive = YES;
     if (![playerArray containsObject:self]) {
         // 没有在数组中，则直接添加在首位
         [AFPlayer.playerArray insertPointer:(__bridge void *)(self) atIndex:0];
+        playerArray = AFPlayer.playerArray.allObjects;
         // 添加后播放器后，检查是否超过了限制数量，如果超过，需要设置成不活跃状态，避免播放器数量太多造成解码失败
         if (playerArray.count > MaxPlayer) {
             for (int i = MaxPlayer; i < playerArray.count; i++) {
@@ -388,7 +390,14 @@ static int MaxPlayer = 5;
         }
     } else {
         // 如果已经存在，更新index到首位
-        NSInteger index = [playerArray indexOfObject:self];
+        if (AFPlayer.playerArray.count != playerArray.count) {
+            for (NSInteger i = AFPlayer.playerArray.count - 1; i >= 0 ; i--) {
+                if (![AFPlayer.playerArray pointerAtIndex:i]) {
+                    [AFPlayer.playerArray removePointerAtIndex:i];
+                }
+            }
+        }
+        NSInteger index = [AFPlayer.playerArray.allObjects indexOfObject:self];
         [AFPlayer.playerArray removePointerAtIndex:index];
         [AFPlayer.playerArray insertPointer:(__bridge void *)(self) atIndex:0];
     }
@@ -406,6 +415,48 @@ static int MaxPlayer = 5;
 }
 
 
+#pragma mark - KVO
+- (void)statusDidChange {
+    switch (self.player.currentItem.status) {
+            
+        case AVPlayerItemStatusReadyToPlay:
+            NSLog(@"-------------------------- 播放器可以播放的状态 --------------------------");
+            [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
+            if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
+                [self.delegate prepareDoneWithPlayer:self];
+            }
+            if (self.playWhenPrepareDone) {
+                [self play];
+            } else {
+                self.playBtn.hidden = NO;
+            }
+            [self stopLoading];
+            break;
+            
+        case AVPlayerItemStatusFailed:
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误 ,%@\n %@", self.player.error, self.displayDescription]];
+//            if (self.player.currentItem.error.code == -11839) {
+                // 无法解码，解码器正忙
+//                if (self.status == AFPlayerStatusPlay || self.status == AFPlayerStatusPrepareDone) {
+//                    [self play];
+//                }
+//            }
+            NSLog(@"-------------------------- 播放错误：%@  %@  %@--------------------------", self.url, self.player.error, self.player.currentItem.error);
+            break;
+            
+        default:
+            break;
+    }
+}
+
+/// 监听回调
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"status"]) {
+        [self statusDidChange];
+    }
+}
+
+
 #pragma mark - 切换PlayerItem
 - (void)replacePlayerItem:(AVPlayerItem *)item {
     
@@ -417,19 +468,59 @@ static int MaxPlayer = 5;
             self.isObserving = NO;
             [self.player.currentItem removeObserver:self forKeyPath:@"status"];
         }
+        if (self.playerObserver) {
+            [self.player removeTimeObserver:self.playerObserver];
+            self.playerObserver = nil;
+        }
         [self.player replaceCurrentItemWithPlayerItem:nil];
         if (item) {
             [self addToPlayerArray];
             [self.player replaceCurrentItemWithPlayerItem:item];
             self.isObserving = YES;
-            [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+            [item addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+            if (!self.playerObserver) {
+                __weak typeof(self) weakSelf = self;
+                self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+                    weakSelf.progress = CMTimeGetSeconds(time) / weakSelf.duration;
+    //                NSLog(@"-------------------------- progress：%g--------------------------", weakSelf.progress);
+                    if (isnan(weakSelf.progress) || weakSelf.progress > 1.0) {
+                        weakSelf.progress = 0.f;
+                        weakSelf.item.currentTime = 0;
+                    } else {
+                        weakSelf.item.currentTime = CMTimeGetSeconds(time);
+                    }
+                    [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration];
+                }];
+            }
         }
     } else {
         if (item) {
             [self addToPlayerArray];
+            [item addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
             [self.player replaceCurrentItemWithPlayerItem:item];
             self.isObserving = YES;
-            [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+            if (self.isObserving) {
+                self.isObserving = NO;
+                [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+            }
+            if (self.playerObserver) {
+                [self.player removeTimeObserver:self.playerObserver];
+                self.playerObserver = nil;
+            }
+            if (!self.playerObserver) {
+                __weak typeof(self) weakSelf = self;
+                self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+                    weakSelf.progress = CMTimeGetSeconds(time) / weakSelf.duration;
+    //                NSLog(@"-------------------------- progress：%g--------------------------", weakSelf.progress);
+                    if (isnan(weakSelf.progress) || weakSelf.progress > 1.0) {
+                        weakSelf.progress = 0.f;
+                        weakSelf.item.currentTime = 0;
+                    } else {
+                        weakSelf.item.currentTime = CMTimeGetSeconds(time);
+                    }
+                    [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration];
+                }];
+            }
         }
     }
 }
@@ -437,20 +528,18 @@ static int MaxPlayer = 5;
 
 #pragma mark - 准备播放
 - (void)prepare {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepare准备数据, %@", self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepare准备数据, %@", self.displayDescription]];
     if (!self.item.content) {
         [self stopLoading];
         [self attachCoverImage:self.item.coverImage];
         self.coverImgView.hidden = NO;
         self.playBtn.hidden = YES;
-        [self observePlayerTime:NO];
-//        [self.player replaceCurrentItemWithPlayerItem:nil];
         [self replacePlayerItem:nil];
         return;
     } else {
         if (self.player.currentItem) {
             if (![self.url isEqualToString:[NSString stringWithFormat:@"file://%@", [AFDownloader filePathWithUrl:self.item.content]]]) {
-                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"数据错误, %@", self.description]];
+                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"数据错误, %@", self.displayDescription]];
                 self.url = nil;
 //                [self.player replaceCurrentItemWithPlayerItem:nil];
                 [self replacePlayerItem:nil];
@@ -492,12 +581,12 @@ static int MaxPlayer = 5;
                     NSLog(@"-------------------------- 下载错误：%@ --------------------------", error);
                 } else {
                     if (![url isEqualToString:[NSString stringWithFormat:@"file://%@", [AFDownloader filePathWithUrl:self.item.content]]]) {
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"URL已切换:%@, %@", url, self.description]];
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"URL已切换:%@, %@", url, self.displayDescription]];
                     } else if (url.length) {
                         self.url = url;
                         [self prepareDone];
                     } else {
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"下载视频结果错误：url为空 , %@", self.description]];
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"下载视频结果错误：url为空 , %@", self.displayDescription]];
                         NSLog(@"-------------------------- 下载视频结果错误：url为空 --------------------------");
                     }
                 }
@@ -514,15 +603,11 @@ static int MaxPlayer = 5;
 
 #pragma mark - 准备完成
 - (void)prepareDone {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepareDone数据准备完成, %@", self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepareDone数据准备完成, %@", self.displayDescription]];
     self.status = AFPlayerStatusPrepareDone;
-//    [self.player replaceCurrentItemWithPlayerItem:nil];
-    
-//    if (self.player.currentItem) {
-//        if (self.currentItem == self.item) return;
-//    }
     [self stopLoading];
     if (self.url.length) {
+        if (!self.isActive) return;
 //        [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
         [self replacePlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
 //        self.progress = self.duration > 0 ? self.item.currentTime / self.duration : 0;
@@ -532,6 +617,7 @@ static int MaxPlayer = 5;
         if (self.playWhenPrepareDone) {
             // 准备完成，直接播放
             [self play];
+            NSLog(@"-------------------------- 准备完成，调用play --------------------------");
         }
     } else {
         [self replacePlayerItem:nil];
@@ -542,7 +628,11 @@ static int MaxPlayer = 5;
 
 #pragma mark - 播放
 - (void)play {
-//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"play：播放, %@", self.description]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"play：播放, %@", self.displayDescription]];
+    if (!self.isActive) {
+        [self addToPlayerArray];
+    }
+    
     self.playWhenPrepareDone = YES;
     switch (self.status) {
             
@@ -593,17 +683,17 @@ static int MaxPlayer = 5;
             [self replacePlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
 
         } else {
-            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误URL为空, %@", self.description]];
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误URL为空, %@", self.displayDescription]];
             NSLog(@"-------------------------- 播放错误：url为空 --------------------------");
         }
     }
-    [self observePlayerTime:YES];
     [self.player play];
     if (self.item.showVideoControl) {
         self.bottomBar.playBtn.selected = YES;
     }
     self.coverImgView.hidden = YES;
     self.playBtn.hidden = YES;
+    NSLog(@"-------------------------- 隐藏图片 --------------------------");
 }
 
 /// 点击播放/暂停按钮
@@ -620,7 +710,7 @@ static int MaxPlayer = 5;
 
 #pragma mark - 暂停
 - (void)pause {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"暂停播放, %@", self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"暂停播放, %@", self.displayDescription]];
     self.playWhenPrepareDone = NO;
     switch (self.status) {
             
@@ -644,14 +734,13 @@ static int MaxPlayer = 5;
     self.status = AFPlayerStatusPause;
     self.playBtn.hidden = NO;
     [self.player pause];
-    self.coverImgView.hidden = self.progress < 1;
-    [self observePlayerTime:NO];
+    self.coverImgView.hidden = self.isActive ? self.progress < 1 : NO;
 }
 
 
 #pragma mark - 停止
 - (void)stop {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"停止播放, %@", self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"停止播放, %@", self.displayDescription]];
     self.playWhenPrepareDone = NO;
     [AFDownloader cancelTask:self.url];
     
@@ -689,14 +778,12 @@ static int MaxPlayer = 5;
     [self.player pause];
     self.coverImgView.hidden = NO;
     [self seekToTime:0.f];
-    [self observePlayerTime:NO];
-//    [self.player replaceCurrentItemWithPlayerItem:nil];
 }
 
 
 #pragma mark - 播放结束
 - (void)finishedPlay {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放结束 , %@", self.description]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放结束 , %@", self.displayDescription]];
 //    NSLog(@"-------------------------- finishedPlay --------------------------");
     if (self.item.showVideoControl) {
         self.bottomBar.playBtn.selected = NO;
@@ -724,75 +811,6 @@ static int MaxPlayer = 5;
     } else {
         if (_bottomBar.superview) [_bottomBar removeFromSuperview];
         _bottomBar = nil;
-    }
-}
-
-
-#pragma mark - KVO
-- (void)handleKVO {
-    switch (self.player.currentItem.status) {
-            
-        case AVPlayerItemStatusReadyToPlay:
-            NSLog(@"-------------------------- 播放器可以播放的状态 --------------------------");
-            [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
-            if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
-                [self.delegate prepareDoneWithPlayer:self];
-            }
-            if (self.playWhenPrepareDone) {
-                [self play];
-            } else {
-                self.playBtn.hidden = NO;
-            }
-            [self stopLoading];
-            break;
-            
-        case AVPlayerItemStatusFailed:
-            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误 ,%@\n %@", self.player.error, self.description]];
-//            if (self.player.currentItem.error.code == -11839) {
-                // 无法解码，解码器正忙
-                [NSNotificationCenter.defaultCenter postNotificationName:AFPlayerNotificationItemBusy object:self];
-                if (self.status == AFPlayerStatusPlay || self.status == AFPlayerStatusPrepareDone) {
-                    [self play];
-                }
-//            }
-            NSLog(@"-------------------------- 播放错误：%@  %@  %@--------------------------", self.url, self.player.error, self.player.currentItem.error);
-            break;
-            
-        default:
-            break;
-    }
-}
-
-/// 监听播放进度
-- (void)observePlayerTime:(BOOL)isAdd {
-
-    if (isAdd) {
-        if (!self.playerObserver) {
-            __weak typeof(self) weakSelf = self;
-            self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-                weakSelf.progress = CMTimeGetSeconds(time) / weakSelf.duration;
-//                NSLog(@"-------------------------- progress：%g--------------------------", weakSelf.progress);
-                if (isnan(weakSelf.progress) || weakSelf.progress > 1.0) {
-                    weakSelf.progress = 0.f;
-                    weakSelf.item.currentTime = 0;
-                } else {
-                    weakSelf.item.currentTime = CMTimeGetSeconds(time);
-                }
-                [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration];
-            }];
-        }
-    } else {
-        if (self.playerObserver) {
-            [self.player removeTimeObserver:self.playerObserver];
-            self.playerObserver = nil;
-        }
-    }
-}
-
-/// 监听回调
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
-    if ([keyPath isEqualToString:@"status"]) {
-        [self handleKVO];
     }
 }
 
@@ -851,7 +869,7 @@ static int MaxPlayer = 5;
 }
 
 
-#pragma mark - 播放器 播放结束
+#pragma mark - 收到通知：播放器 播放结束
 - (void)finishedPlayAction:(NSNotification *)notification {
     if (notification.object != self.player.currentItem) {
         return;
@@ -870,7 +888,7 @@ static int MaxPlayer = 5;
 }
 
 
-#pragma mark - 暂停所有正在播放的播放器
+#pragma mark - 收到通知：暂停所有正在播放的播放器
 + (void)pauseAllPlayer {
     _AllPlayerSwitch = NO;
     [NSNotificationCenter.defaultCenter postNotificationName:AFPlayerNotificationPauseAllPlayer object:nil];
@@ -885,7 +903,7 @@ static int MaxPlayer = 5;
 }
 
 
-#pragma mark - 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
+#pragma mark - 收到通知：恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer {
     _AllPlayerSwitch = YES;
     [NSNotificationCenter.defaultCenter postNotificationName:AFPlayerNotificationResumeAllPlayer object:nil];
@@ -896,19 +914,5 @@ static int MaxPlayer = 5;
         [self startPlay];
     }
 }
-
-
-#pragma mark - 播放器忙，无法解码
-- (void)playerBusy:(NSNotification *)notification {
-//    if (notification.object == self) {
-//        return;
-//    }
-//    if (self.status == AFPlayerStatusPlay && self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
-//        [self pause];
-//        [_player replaceCurrentItemWithPlayerItem:nil];
-//        _player = nil;
-//    }
-}
-
 
 @end

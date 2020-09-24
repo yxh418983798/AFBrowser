@@ -106,6 +106,8 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 
 - (BOOL)isSliderTouch;
 
+- (BOOL)isActive;
+
 /// 释放播放器
 //- (void)releasePlayer;
 
