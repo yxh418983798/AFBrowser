@@ -236,7 +236,7 @@
         self.backGroundView.alpha = 1;
         
     } completion:^(BOOL finished) {
-//        NSLog(@"-------------------------- 即将完成转场 --------------------------");
+        NSLog(@"-------------------------- 即将完成转场 --------------------------");
         [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
         transitionView.hidden = NO;
         if ([transitionContext transitionWasCancelled]) {
@@ -250,7 +250,7 @@
             [self.transitionSuperView addSubview:transitionView];
             
         } else {
-//            NSLog(@"-------------------------- 完成转场 --------------------------");
+            NSLog(@"-------------------------- 完成转场 --------------------------");
             [NSNotificationCenter.defaultCenter postNotificationName:@"AFBrowserFinishedTransaction" object:nil];
             toView.hidden = NO;
             [self.backGroundView removeFromSuperview];
@@ -344,7 +344,7 @@
             self.transitionView = nil;
 
         } else {
-//                MOLog(@"-------------------------- 完成转场:%@ --------------------------", toVC.view);
+            NSLog(@"-------------------------- 完成转场:--------------------------");
             [self.transitionView removeFromSuperview];
             [self.backGroundView removeFromSuperview];
             [snapView removeFromSuperview];
@@ -550,6 +550,7 @@
                         self.transitionView.frame = sourceFrame;
                     }
                 } completion:^(BOOL finished) {
+                    NSLog(@"-------------------------- 完成手势：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
                     [self.percentTransition finishInteractiveTransition];
                     self.percentTransition = nil;
                 }];
@@ -557,7 +558,7 @@
                 self.isCancel = YES;
                 self.backGroundView.alpha = 1;
                 self.presentedTrasitionViewFrame = beginFrame;
-//                NSLog(@"-------------------------- 来了取消：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
+                NSLog(@"-------------------------- 来了取消：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
                 CGRect resultFrame = beginFrame; /// 避免beginFrame在下次的手势中被修改，这里要拷贝一个新的frame
                 [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
                     self.transitionView.frame = resultFrame;

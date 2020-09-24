@@ -126,25 +126,26 @@ static NSArray *array;
     UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"UITableViewCell"];
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:(UITableViewCellStyleValue1) reuseIdentifier:@"UITableViewCell"];
-//        [cell.imageView mas_remakeConstraints:^(MASConstraintMaker *make) {
-//            make.left.offset(15);
-//            make.width.height.offset(100);
-//            make.centerY.offset(0);
-//        }];http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4
-        AFPlayer *player = [AFBrowserViewController productPlayer];
-        player.frame = CGRectMake(15, 10, 100, 100);
-        player.tag = 100;
-        [cell addSubview:player];
+        [cell.imageView mas_remakeConstraints:^(MASConstraintMaker *make) {
+            make.left.offset(15);
+            make.width.height.offset(100);
+            make.centerY.offset(0);
+        }];
+//    http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4
+//        AFPlayer *player = [AFBrowserViewController productPlayer];
+//        player.frame = CGRectMake(15, 10, 100, 100);
+//        player.tag = 100;
+//        [cell addSubview:player];
     }
-    AFPlayer *player = [cell viewWithTag:100];
-    player.frame = CGRectMake(15, 10, 100, 100);
-    player.item = [AFBrowserItem itemWithVideo:@"http://alicfc1.mowang.online/vid/9E9BE3FCEBB93BBDC1956E666506E493.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
-    player.item.infiniteLoop = YES;
-    player.item.useCustomPlayer = YES;
-    [player prepare];
+//    AFPlayer *player = [cell viewWithTag:100];
+//    player.frame = CGRectMake(15, 10, 100, 100);
+//    player.item = [AFBrowserItem itemWithVideo:@"http://alicfc1.mowang.online/vid/9E9BE3FCEBB93BBDC1956E666506E493.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
+//    player.item.infiniteLoop = YES;
+//    player.item.useCustomPlayer = YES;
+//    [player prepare];
 //    [player play];
-//    cell.imageView.image = [UIImage imageNamed:@"image"];
-//    cell.textLabel.text = [NSString stringWithFormat:@"第%lu个Cell", indexPath.row];
+    cell.imageView.image = [UIImage imageNamed:@"image"];
+    cell.textLabel.text = [NSString stringWithFormat:@"第%lu个Cell", indexPath.row];
     return cell;
 }
 
@@ -155,10 +156,10 @@ static NSArray *array;
 
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
-    AFPlayer *player = [cell viewWithTag:100];
-    [player play];
-//    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(YES).makeSelectedIndex(indexPath.item) browse];
+//    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+//    AFPlayer *player = [cell viewWithTag:100];
+//    [player play];
+    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(NO).makeSelectedIndex(indexPath.item) browse];
 }
 
 
@@ -167,6 +168,7 @@ static NSArray *array;
 }
 
 - (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index {
+            return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
     if (index > 2) {
         return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
     }
@@ -176,7 +178,7 @@ static NSArray *array;
 /// 返回转场的View
 - (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index {
     UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0]];
-//    return cell.imageView;
+    return cell.imageView;
     return [cell viewWithTag:100];
 }
 

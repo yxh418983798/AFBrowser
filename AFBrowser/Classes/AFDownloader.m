@@ -245,10 +245,3 @@ static NSMutableDictionary *_downloadTasks;
 }
 
 @end
-
-
-//    //3，保存视频到相册
-//    if (UIVideoAtPathIsCompatibleWithSavedPhotosAlbum(file)) {
-//        //保存相册核心代码
-//        UISaveVideoAtPathToSavedPhotosAlbum(file, self, nil, nil);
-//    }

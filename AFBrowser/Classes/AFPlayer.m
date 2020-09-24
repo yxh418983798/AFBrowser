@@ -204,6 +204,7 @@ static int MaxPlayer = 5;
     if ([self.item.coverImage isKindOfClass:NSString.class]) {
         [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:(NSString *)self.item.coverImage] completion:^(UIImage *image, NSError *error) {
             self.coverImgView.image = image;
+            NSLog(@"-------------------------- 显示图片 --------------------------");
         }];
     } else if ([self.item.coverImage isKindOfClass:NSURL.class]) {
         [AFBrowserLoaderProxy loadImage:(NSURL *)self.item.coverImage completion:^(UIImage *image, NSError *error) {
@@ -311,7 +312,8 @@ static int MaxPlayer = 5;
 - (AVPlayerLayer *)playerLayer {
     if (!_playerLayer) {
         _playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
-        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspect;
+        _playerLayer.videoGravity = AVLayerVideoGravityResize;
+//        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspect;
 //        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
         _playerLayer.masksToBounds= YES;
     }
@@ -416,14 +418,56 @@ static int MaxPlayer = 5;
 
 
 #pragma mark - KVO
+/// 添加观察者
+- (void)addKVOWithItem:(AVPlayerItem *)item {
+    [item addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
+    [self.player replaceCurrentItemWithPlayerItem:item];
+    self.isObserving = YES;
+    if (!self.playerObserver) {
+        __weak typeof(self) weakSelf = self;
+        self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+            weakSelf.progress = CMTimeGetSeconds(time) / weakSelf.duration;
+//                NSLog(@"-------------------------- progress：%g--------------------------", weakSelf.progress);
+            if (isnan(weakSelf.progress) || weakSelf.progress > 1.0) {
+                weakSelf.progress = 0.f;
+                weakSelf.item.currentTime = 0;
+            } else {
+                weakSelf.item.currentTime = CMTimeGetSeconds(time);
+            }
+            [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration];
+        }];
+    }
+}
+
+/// 移除观察者
+- (void)removeKVO {
+    if (self.isObserving) {
+        self.isObserving = NO;
+        [self.player.currentItem removeObserver:self forKeyPath:@"status"];
+    }
+    if (self.playerObserver) {
+        [self.player removeTimeObserver:self.playerObserver];
+        self.playerObserver = nil;
+    }
+}
+
+/// 监听回调
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
+    if ([keyPath isEqualToString:@"status"]) {
+        [self statusDidChange];
+    }
+}
+
+/// 状态改变
 - (void)statusDidChange {
     switch (self.player.currentItem.status) {
             
         case AVPlayerItemStatusReadyToPlay:
-            NSLog(@"-------------------------- 播放器可以播放的状态 --------------------------");
+            NSLog(@"-------------------------- 播放器可以播放的状态:%@ --------------------------", _coverImgView);
             [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
             if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
                 [self.delegate prepareDoneWithPlayer:self];
+                
             }
             if (self.playWhenPrepareDone) {
                 [self play];
@@ -449,13 +493,6 @@ static int MaxPlayer = 5;
     }
 }
 
-/// 监听回调
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
-    if ([keyPath isEqualToString:@"status"]) {
-        [self statusDidChange];
-    }
-}
-
 
 #pragma mark - 切换PlayerItem
 - (void)replacePlayerItem:(AVPlayerItem *)item {
@@ -464,63 +501,17 @@ static int MaxPlayer = 5;
     self.playerItem = item;
     
     if (self.player.currentItem) {
-        if (self.isObserving) {
-            self.isObserving = NO;
-            [self.player.currentItem removeObserver:self forKeyPath:@"status"];
-        }
-        if (self.playerObserver) {
-            [self.player removeTimeObserver:self.playerObserver];
-            self.playerObserver = nil;
-        }
+        [self removeKVO];
         [self.player replaceCurrentItemWithPlayerItem:nil];
         if (item) {
             [self addToPlayerArray];
-            [self.player replaceCurrentItemWithPlayerItem:item];
-            self.isObserving = YES;
-            [item addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
-            if (!self.playerObserver) {
-                __weak typeof(self) weakSelf = self;
-                self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-                    weakSelf.progress = CMTimeGetSeconds(time) / weakSelf.duration;
-    //                NSLog(@"-------------------------- progress：%g--------------------------", weakSelf.progress);
-                    if (isnan(weakSelf.progress) || weakSelf.progress > 1.0) {
-                        weakSelf.progress = 0.f;
-                        weakSelf.item.currentTime = 0;
-                    } else {
-                        weakSelf.item.currentTime = CMTimeGetSeconds(time);
-                    }
-                    [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration];
-                }];
-            }
+            [self addKVOWithItem:item];
         }
     } else {
         if (item) {
             [self addToPlayerArray];
-            [item addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
-            [self.player replaceCurrentItemWithPlayerItem:item];
-            self.isObserving = YES;
-            if (self.isObserving) {
-                self.isObserving = NO;
-                [self.player.currentItem removeObserver:self forKeyPath:@"status"];
-            }
-            if (self.playerObserver) {
-                [self.player removeTimeObserver:self.playerObserver];
-                self.playerObserver = nil;
-            }
-            if (!self.playerObserver) {
-                __weak typeof(self) weakSelf = self;
-                self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-                    weakSelf.progress = CMTimeGetSeconds(time) / weakSelf.duration;
-    //                NSLog(@"-------------------------- progress：%g--------------------------", weakSelf.progress);
-                    if (isnan(weakSelf.progress) || weakSelf.progress > 1.0) {
-                        weakSelf.progress = 0.f;
-                        weakSelf.item.currentTime = 0;
-                    } else {
-                        weakSelf.item.currentTime = CMTimeGetSeconds(time);
-                    }
-                    [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration];
-                }];
-            }
+            [self removeKVO];
+            [self addKVOWithItem:item];
         }
     }
 }
@@ -573,6 +564,7 @@ static int MaxPlayer = 5;
             NSString *urlString = [self.item.content isKindOfClass:NSString.class] ? self.item.content : [(NSURL *)self.item.content absoluteString];
             if ([urlString containsString:@"file://"]) {
                 self.url = urlString;
+                [self attachCoverImage:self.item.coverImage];
                 [self prepareDone];
                 return;
             }
@@ -688,12 +680,14 @@ static int MaxPlayer = 5;
         }
     }
     [self.player play];
-    if (self.item.showVideoControl) {
-        self.bottomBar.playBtn.selected = YES;
+    if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
+        if (self.item.showVideoControl) {
+            self.bottomBar.playBtn.selected = YES;
+        }
+        self.coverImgView.hidden = YES;
+        self.playBtn.hidden = YES;
+        NSLog(@"-------------------------- 隐藏图片 --------------------------");
     }
-    self.coverImgView.hidden = YES;
-    self.playBtn.hidden = YES;
-    NSLog(@"-------------------------- 隐藏图片 --------------------------");
 }
 
 /// 点击播放/暂停按钮

@@ -86,11 +86,11 @@ static const CGFloat lineSpacing = 0.f; //间隔
     [self loadItems];
     self.browserType = self.browserType;
     self.pageControlType = self.pageControlType;
-//    NSLog(@"-------------------------- viewDidLoad --------------------------");
+    NSLog(@"-------------------------- viewDidLoad --------------------------");
 }
 
 - (void)viewDidLayoutSubviews {
-//    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
+    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
     layout.itemSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
     self.collectionView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
@@ -107,10 +107,12 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.collectionView.contentOffset = CGPointMake(self.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
     self.collectionView.contentSize = CGSizeMake(self.collectionView.frame.size.width * self.numberOfItems + 1, self.collectionView.frame.size.height);
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
+    [self.collectionView layoutIfNeeded];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
+    NSLog(@"-------------------------- viewDidAppear --------------------------");
     if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) {
         AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
         [cell.player browserCancelDismiss];
