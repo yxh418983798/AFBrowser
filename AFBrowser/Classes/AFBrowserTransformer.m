@@ -13,6 +13,9 @@
 
 @interface AFBrowserTransformer ()
 
+/** displayLink */
+@property (strong, nonatomic) CADisplayLink   *displayLink;
+
 /** 源控制器 */
 @property (nonatomic, weak) UIViewController  *sourceVc;
 
@@ -39,6 +42,9 @@
 
 /** 浏览器imageView的高度 */
 @property (assign, nonatomic) CGFloat         imgView_H;
+
+/** 浏览器imageView的高度 */
+@property (assign, nonatomic) CGFloat         progress;
 
 /** 记录tag */
 @property (nonatomic, assign) NSInteger       originalTag;
@@ -491,6 +497,7 @@
     CGPoint point = [pan translationInView:[UIApplication sharedApplication].keyWindow];
     CGFloat progress = fabs(point.y / [UIApplication sharedApplication].keyWindow.bounds.size.height);
     progress = fmin(1, progress);
+    self.progress = progress;
     static CGRect sourceFrame;
     static CGRect beginFrame;
 
@@ -516,6 +523,7 @@
                 NSLog(@"-------------------------- beginFrame：%@ --------------------------", NSStringFromCGRect(beginFrame));
             }
             sourceFrame = self.item.useCustomPlayer ? self.trasitionViewOriginalFrame : [self transitionFrameWithView:[self.delegate transitionViewForSourceController]];
+            self.trasitionViewOriginalFrame = sourceFrame;
         }
             break;
             
@@ -540,20 +548,21 @@
             
             self.isInteractive = NO;
             if(progress > 0.2){
-                [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
-                    self.backGroundView.alpha = 0;
-                    if (![self.delegate transitionViewForSourceController] && !self.item.useCustomPlayer) {
-                        // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
-                        self.transitionView.alpha = 0;
-                    } else {
-                        // 使用位移的动画效果
-                        self.transitionView.frame = sourceFrame;
-                    }
-                } completion:^(BOOL finished) {
-                    NSLog(@"-------------------------- 完成手势：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
-                    [self.percentTransition finishInteractiveTransition];
-                    self.percentTransition = nil;
-                }];
+                [self.displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
+//                [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
+//                    self.backGroundView.alpha = 0;
+//                    if (![self.delegate transitionViewForSourceController] && !self.item.useCustomPlayer) {
+//                        // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
+//                        self.transitionView.alpha = 0;
+//                    } else {
+//                        // 使用位移的动画效果
+//                        self.transitionView.frame = sourceFrame;
+//                    }
+//                } completion:^(BOOL finished) {
+//                    NSLog(@"-------------------------- 完成手势：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
+//                    [self.percentTransition finishInteractiveTransition];
+//                    self.percentTransition = nil;
+//                }];
             }else{
                 self.isCancel = YES;
                 self.backGroundView.alpha = 1;
@@ -636,6 +645,60 @@ static CGFloat ScaleDistance = 0.4;
     return resultFrame;
 }
 
+/// 定时器
+- (CADisplayLink *)displayLink {
+    if (!_displayLink) {
+        _displayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(timerAction)];
+        _displayLink.frameInterval = 1;
+    }
+    return _displayLink;
+}
 
+
+- (void)timerAction {
+
+    static CGFloat distance;
+    static CGFloat x;
+    static CGFloat y;
+    static CGFloat w;
+    static CGFloat h;
+    CGFloat number = 0.25 * 60;
+    if (distance == 0) distance = (1 - self.progress)/number;
+    self.progress += distance;
+    if (self.progress > 1) {
+        self.progress = 1;
+    }
+    if (x == 0) x = (self.trasitionViewOriginalFrame.origin.x - self.transitionView.frame.origin.x)/number;
+    if (y == 0) y = (self.trasitionViewOriginalFrame.origin.y - self.transitionView.frame.origin.y)/number;
+    if (w == 0) w = (self.trasitionViewOriginalFrame.size.width - self.transitionView.frame.size.width)/number;
+    if (h == 0) h = (self.trasitionViewOriginalFrame.size.height - self.transitionView.frame.size.height)/number;
+    CGRect currentFrame = self.transitionView.frame;
+
+    [self.percentTransition updateInteractiveTransition:self.progress];
+    NSLog(@"-------------------------- %@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(self.trasitionViewOriginalFrame));
+    self.backGroundView.alpha = 1-self.progress;
+    if (![self.delegate transitionViewForSourceController] && !self.item.useCustomPlayer) {
+        // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
+        self.transitionView.alpha = 1-self.progress;
+    } else {
+        // 使用位移的动画效果
+//        currentFrame.origin.x += (self.trasitionViewOriginalFrame.origin.x - currentFrame.origin.x) * self.progress;
+        self.transitionView.frame = CGRectMake(currentFrame.origin.x + x, currentFrame.origin.y + y, currentFrame.size.width + w, currentFrame.size.height + h);
+    }
+    if (self.progress >= 1) {
+        x = 0;
+        y = 0;
+        w = 0;
+        h = 0;
+        distance = 0;
+        [_displayLink invalidate];
+        _displayLink = nil;
+        self.transitionView.frame = self.trasitionViewOriginalFrame;
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self.percentTransition finishInteractiveTransition];
+            self.percentTransition = nil;
+        });
+    }
+}
 
 @end

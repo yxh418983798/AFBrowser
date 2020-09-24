@@ -146,21 +146,21 @@ static int MaxPlayer = 5;
 - (void)browserWillDismiss {
     self.showToolBar = NO;
     self.transitionStatus = AFPlayerTransitionStatusTransitioning;
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"willDismiss转场隐藏Toolbar, %@", self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"willDismiss转场隐藏Toolbar, %@", self.displayDescription]];
 }
 
 /// 控制器已经Dismiss，做一些转场动画的处理
 - (void)browserDidDismiss {
     self.showToolBar = NO;
     self.transitionStatus = AFPlayerTransitionStatusSmall;
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"didDismiss转场隐藏Toolbar, %@", self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"didDismiss转场隐藏Toolbar, %@", self.displayDescription]];
 }
 
 /// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss {
     self.showToolBar = self.showToolBar;
     self.transitionStatus = AFPlayerTransitionStatusFullScreen;
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"取消转场恢复Toolbar, %@", self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"取消转场恢复Toolbar, %@", self.displayDescription]];
 }
 
 
@@ -168,14 +168,14 @@ static int MaxPlayer = 5;
 - (void)setShowToolBar:(BOOL)showToolBar {
     BOOL isFull = (self.frame.size.width == UIScreen.mainScreen.bounds.size.width) || (self.frame.size.height == UIScreen.mainScreen.bounds.size.height);
     if ((!isFull || self.transitionStatus != AFPlayerTransitionStatusFullScreen) && showToolBar) {
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"异常Toolbar, %@", self.displayDescription]];
+//        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"异常Toolbar, %@", self.displayDescription]];
         return;
     } else {
         _showToolBar = showToolBar;
     }
     _bottomBar.alpha = _showToolBar ? 1 : 0;
     _dismissBtn.alpha = _showToolBar ? 1 : 0;
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"设置了ToolBar:%d, %@", showToolBar, self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"设置了ToolBar:%d, %@", showToolBar, self.displayDescription]];
 }
 
 - (void)setItem:(AFBrowserItem *)item {
@@ -519,7 +519,7 @@ static int MaxPlayer = 5;
 
 #pragma mark - 准备播放
 - (void)prepare {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepare准备数据, %@", self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepare准备数据, %@", self.displayDescription]];
     if (!self.item.content) {
         [self stopLoading];
         [self attachCoverImage:self.item.coverImage];
@@ -595,7 +595,7 @@ static int MaxPlayer = 5;
 
 #pragma mark - 准备完成
 - (void)prepareDone {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepareDone数据准备完成, %@", self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepareDone数据准备完成, %@", self.displayDescription]];
     self.status = AFPlayerStatusPrepareDone;
     [self stopLoading];
     if (self.url.length) {
@@ -704,7 +704,7 @@ static int MaxPlayer = 5;
 
 #pragma mark - 暂停
 - (void)pause {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"暂停播放, %@", self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"暂停播放, %@", self.displayDescription]];
     self.playWhenPrepareDone = NO;
     switch (self.status) {
             
@@ -734,7 +734,7 @@ static int MaxPlayer = 5;
 
 #pragma mark - 停止
 - (void)stop {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"停止播放, %@", self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"停止播放, %@", self.displayDescription]];
     self.playWhenPrepareDone = NO;
     [AFDownloader cancelTask:self.url];
     
@@ -777,7 +777,7 @@ static int MaxPlayer = 5;
 
 #pragma mark - 播放结束
 - (void)finishedPlay {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放结束 , %@", self.displayDescription]];
+//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放结束 , %@", self.displayDescription]];
 //    NSLog(@"-------------------------- finishedPlay --------------------------");
     if (self.item.showVideoControl) {
         self.bottomBar.playBtn.selected = NO;
