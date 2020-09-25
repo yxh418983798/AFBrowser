@@ -428,20 +428,15 @@ static int MaxPlayer = 5;
     }
 }
 
-+ (AFPlayer *)playerWithItem:(AFBrowserItem *)item {
++ (AFPlayer *)cachePlayerWithItem:(AFBrowserItem *)item {
     AFPlayer *result;
     NSArray *array = AFPlayer.playerArray.allObjects;
     for (AFPlayer *player in array) {
         if ([player.item.content isEqualToString:item.content]) {
-            result = player;
-            break;
+            return player;
         }
     }
-    if (!result) {
-        result = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
-        result.item = item;
-    }
-    return result;
+    return nil;
 }
 
 
