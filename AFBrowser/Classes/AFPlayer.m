@@ -113,7 +113,8 @@ static int MaxPlayer = 5;
     [CATransaction begin];
     [CATransaction setAnimationDuration:0];
     [CATransaction setDisableActions:YES];
-    self.playerLayer.frame = self.bounds;
+//    self.playerLayer.frame = self.bounds;
+    self.playerLayer.frame = self.playerFrame;
     [CATransaction commit];
     CGFloat size = 50.f;
     self.contentView.frame = self.bounds;
@@ -312,9 +313,9 @@ static int MaxPlayer = 5;
 - (AVPlayerLayer *)playerLayer {
     if (!_playerLayer) {
         _playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
-        _playerLayer.videoGravity = AVLayerVideoGravityResize;
+//        _playerLayer.videoGravity = AVLayerVideoGravityResize;
 //        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspect;
-//        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
         _playerLayer.masksToBounds= YES;
     }
     return _playerLayer;
@@ -366,6 +367,15 @@ static int MaxPlayer = 5;
     return self.frame.size;
 }
 
+- (CGRect)playerFrame {
+    if (self.item.width > 0 && self.item.height > 0) {
+        CGFloat height = fmin(self.frame.size.width * self.item.height/self.item.width, self.frame.size.height);
+        return CGRectMake(0, (self.frame.size.height - height)/2, self.frame.size.width, height);
+    } else {
+        return self.bounds;
+    }
+}
+
 /// 保存播放器的数组
 + (NSPointerArray *)playerArray {
     static NSPointerArray *_playerArray;
@@ -400,8 +410,10 @@ static int MaxPlayer = 5;
             }
         }
         NSInteger index = [AFPlayer.playerArray.allObjects indexOfObject:self];
-        [AFPlayer.playerArray removePointerAtIndex:index];
-        [AFPlayer.playerArray insertPointer:(__bridge void *)(self) atIndex:0];
+        if (index != 0) {
+            [AFPlayer.playerArray removePointerAtIndex:index];
+            [AFPlayer.playerArray insertPointer:(__bridge void *)(self) atIndex:0];
+        }
     }
 }
 
@@ -414,6 +426,22 @@ static int MaxPlayer = 5;
             player.isActive = YES;
         }
     }
+}
+
++ (AFPlayer *)playerWithItem:(AFBrowserItem *)item {
+    AFPlayer *result;
+    NSArray *array = AFPlayer.playerArray.allObjects;
+    for (AFPlayer *player in array) {
+        if ([player.item.content isEqualToString:item.content]) {
+            result = player;
+            break;
+        }
+    }
+    if (!result) {
+        result = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
+        result.item = item;
+    }
+    return result;
 }
 
 
@@ -524,6 +552,7 @@ static int MaxPlayer = 5;
         [self stopLoading];
         [self attachCoverImage:self.item.coverImage];
         self.coverImgView.hidden = NO;
+        NSLog(@"-------------------------- 来了11 --------------------------");
         self.playBtn.hidden = YES;
         [self replacePlayerItem:nil];
         return;
@@ -549,6 +578,7 @@ static int MaxPlayer = 5;
             [self startLoading];
             self.playBtn.hidden = YES;
             self.coverImgView.hidden = NO;
+            NSLog(@"-------------------------- 来了22--------------------------");
             break;
             
         case AFPlayerStatusNone: {
@@ -557,6 +587,7 @@ static int MaxPlayer = 5;
             self.playBtn.hidden = YES;
             self.coverImgView.image = nil;
             self.coverImgView.hidden = NO;
+            NSLog(@"-------------------------- 来了33 --------------------------");
             if (self.player.currentItem) {
 //                [self.player replaceCurrentItemWithPlayerItem:nil];
                 [self replacePlayerItem:nil];
@@ -680,7 +711,7 @@ static int MaxPlayer = 5;
         }
     }
     [self.player play];
-    if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
+    if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay || (self.player.currentItem.status == AVPlayerItemStatusUnknown && self.item.useCustomPlayer)) {
         if (self.item.showVideoControl) {
             self.bottomBar.playBtn.selected = YES;
         }
@@ -771,6 +802,7 @@ static int MaxPlayer = 5;
     self.playBtn.hidden = NO;
     [self.player pause];
     self.coverImgView.hidden = NO;
+    NSLog(@"-------------------------- 来了44 --------------------------");
     [self seekToTime:0.f];
 }
 

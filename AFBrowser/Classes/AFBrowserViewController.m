@@ -544,6 +544,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 单击图片 AFBrowserCollectionViewCellDelegate
 - (void)singleTapAction {
+    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
     if (_toolBar.superview) {
         //隐藏
         _showToolBar = !_showToolBar;
@@ -555,14 +556,15 @@ static const CGFloat lineSpacing = 0.f; //间隔
 //                [self setNeedsStatusBarAppearanceUpdate];
             self.toolBar.alpha = self.showToolBar ? 1 : 0;
             if (self.pageControlType == AFPageControlTypeCircle) self.pageControl.alpha = self.showToolBar ? 1 : 0;
-            AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
             if (item.type == AFBrowserItemTypeVideo) {
                 AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
                 cell.player.showToolBar = self.showToolBar;
             }
         }];
     } else {
-        if (![self itemAtIndex:self.selectedIndex].showVideoControl) {
+        if (item.type == AFBrowserItemTypeVideo) {
+            if (!item.showVideoControl) [self dismissBtnAction];
+        } else {
             [self dismissBtnAction];
         }
     }

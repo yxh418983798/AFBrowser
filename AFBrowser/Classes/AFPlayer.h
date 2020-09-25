@@ -129,6 +129,8 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 /// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer;
 
++ (AFPlayer *)playerWithItem:(AFBrowserItem *)item;
+
 @end
 
 
