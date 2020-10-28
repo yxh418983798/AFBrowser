@@ -24,7 +24,7 @@
 
 @end
 
-
+ 
 
 @interface AFBrowserCollectionViewCell : UICollectionViewCell
 

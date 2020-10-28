@@ -8,13 +8,13 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.1.3'
+  s.version          = '1.1.4'
   s.summary          = '图片/视频浏览器'
   s.homepage         = 'https://github.com/yxh418983798/AFBrowser'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'yxh418983798' => '418983798@qq.com' }
   s.source           = { :git => 'https://github.com/yxh418983798/AFBrowser.git', :tag => s.version.to_s }
-  s.ios.deployment_target = '8.0'
+  s.ios.deployment_target = '9.0'
   s.source_files = 'AFBrowser/Classes/**/*'
   s.dependency 'SDWebImage'
 #  s.dependency 'KVOController'
