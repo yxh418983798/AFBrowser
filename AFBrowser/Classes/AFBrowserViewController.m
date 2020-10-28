@@ -63,7 +63,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self = [super init];
     if (self) {
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedTransaction) name:@"AFBrowserFinishedTransaction" object:nil];
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationWillEnterForegroundNotification) name:UIApplicationWillEnterForegroundNotification object:nil];
         self.transformer = [AFBrowserTransformer new];
         self.transformer.delegate = self;
         self.selectedIndex = 0;
@@ -685,7 +684,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
                 NSLog(@"-------------------------- Error：视频没有加载完成，不展示浏览器:%@ --------------------------", item.content);
                 return;
             }
-            [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
         }
         [currentVc presentViewController:self animated:YES completion:nil];
     } else {
@@ -706,6 +704,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark - 获取 currentVc
 + (UIViewController *)currentVc {
     UIWindow *window = UIApplication.sharedApplication.keyWindow;
+    while (!window.rootViewController && [window.superview isKindOfClass:UIWindow.class]) {
+        window = (UIWindow *)window.superview;
+    }
     if (window.windowLevel != UIWindowLevelNormal) {
         NSArray *windows = UIApplication.sharedApplication.windows;
         for(UIWindow *win in windows) {
@@ -771,14 +772,6 @@ static Class _loaderProxy;
     [self.collectionView reloadData];
 }
 
-
-#pragma mark - 进入前台的通知
-- (void)applicationWillEnterForegroundNotification {
-    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
-    if (item.type == AFBrowserItemTypeVideo) {
-        [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayAndRecord withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:nil];
-    }
-}
 
 
 @end
