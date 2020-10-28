@@ -661,7 +661,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 弹出浏览器，开始浏览
 - (void)browse {
-    
+    self.isOtherAudioPlaying = AVAudioSession.sharedInstance.isOtherAudioPlaying;
     AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
     // 如果url为空，不弹出浏览器
     if (!item.content) {

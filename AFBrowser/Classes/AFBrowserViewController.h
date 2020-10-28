@@ -15,6 +15,9 @@
 
 @interface AFBrowserViewController : UIViewController
 
+/** 是否有其他第三方APP在播放 */
+@property (nonatomic, assign) BOOL                     isOtherAudioPlaying;
+
 /** 代理 */
 @property (weak, nonatomic) id<AFBrowserDelegate>      delegate;
 
