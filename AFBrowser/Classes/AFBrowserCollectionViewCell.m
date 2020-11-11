@@ -9,6 +9,7 @@
 #import "AFBrowserCollectionViewCell.h"
 #import "AFBrowserItem.h"
 #import "AFBrowserLoaderProxy.h"
+#import <YYImage/YYImage.h>
 
 @interface AFBrowserScrollView: UIScrollView
 @end
@@ -75,7 +76,7 @@ static CGFloat ScaleDistance = 0.4;
 //        _imageContainerView.contentMode = UIViewContentModeScaleAspectFit;
         [_scrollView addSubview:_imageContainerView];
         
-        _imageView = [[UIImageView alloc] init];
+        _imageView = [[YYAnimatedImageView alloc] init];
         //        _imageView.backgroundColor = [UIColor colorWithWhite:1.000 alpha:0.5];
 //        _imageView.contentMode = UIViewContentModeScaleAspectFit;
         _imageView.clipsToBounds = YES;
@@ -126,9 +127,9 @@ static CGFloat ScaleDistance = 0.4;
             }
             [_scrollView setZoomScale:1.0];
             if ([item.content isKindOfClass:NSString.class]) {
-                NSLog(@"-------------------------- 开始加载 高清图 --------------------------");
+//                NSLog(@"-------------------------- 开始加载 高清图 --------------------------");
                 [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.content] completion:^(UIImage *image, NSError *error) {
-                    NSLog(@"-------------------------- 完成加载 高清图 --------------------------");
+//                    NSLog(@"-------------------------- 完成加载 高清图 --------------------------");
                     self.imageView.image = image;
                     self.loadImageStatus = AFLoadImageStatusOriginal;
                     [self resizeSubviewSize];

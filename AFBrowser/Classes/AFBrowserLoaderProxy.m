@@ -11,6 +11,7 @@
 #import "AFDownloader.h"
 #import "AFBrowserViewController.h"
 #import <objc/runtime.h>
+#import <YYImage/YYImage.h>
 
 @interface AFBrowserLoaderProxy ()
 
@@ -24,7 +25,7 @@
 
 @implementation AFBrowserLoaderProxy
 
-#pragma mark - 判断图片是否在缓存中 
+#pragma mark - 判断图片是否在缓存中
 + (UIImage *)imageFromCacheForKey:(NSString *)key {
     if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(imageFromCacheForKey:)]) {
         return [AFBrowserViewController.loaderProxy imageFromCacheForKey:key];
@@ -40,6 +41,14 @@
         [AFBrowserViewController.loaderProxy loadImage:imageUrl completion:completion];
     } else {
         [SDWebImageManager.sharedManager loadImageWithURL:imageUrl options:kNilOptions progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
+            NSString *url = imageURL.absoluteString;
+            if ([url containsString:@".gif"]) {
+                YYImage *gifImage = [YYImage imageWithData:[SDImageCache.sharedImageCache diskImageDataForKey:imageURL.absoluteString]];
+                if (gifImage) {
+                    completion(gifImage, error);
+                    return;
+                }
+            }
             completion(image, error);
         }];
     }
