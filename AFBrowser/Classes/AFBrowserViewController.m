@@ -704,8 +704,16 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark - 获取 currentVc
 + (UIViewController *)currentVc {
     UIWindow *window = UIApplication.sharedApplication.keyWindow;
-    while (!window.rootViewController && [window.superview isKindOfClass:UIWindow.class]) {
-        window = (UIWindow *)window.superview;
+    if ([window.superview isKindOfClass:UIWindow.class]) {
+        while (!window.rootViewController && [window.superview isKindOfClass:UIWindow.class]) {
+            window = (UIWindow *)window.superview;
+        }
+    } else {
+        for (UIWindow *subWindow in window.subviews) {
+            if ([subWindow isKindOfClass:UIWindow.class] && subWindow.rootViewController && window.tag != 6666) {
+                window = subWindow;
+            }
+        }
     }
     if (window.windowLevel != UIWindowLevelNormal) {
         NSArray *windows = UIApplication.sharedApplication.windows;

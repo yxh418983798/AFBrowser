@@ -274,7 +274,7 @@ static int MaxPlayer = 5;
         _playBtn = [UIButton new];
         NSBundle *bundle = [NSBundle bundleWithURL:[[NSBundle bundleForClass:self.class] URLForResource:@"AFBrowser" withExtension:@"bundle"]];
         [_playBtn setBackgroundImage:[UIImage imageNamed:@"browser_player_play" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
-        [_playBtn addTarget:self action:@selector(play) forControlEvents:(UIControlEventTouchUpInside)];
+        [_playBtn addTarget:self action:@selector(playBtnAction:) forControlEvents:(UIControlEventTouchUpInside)];
     }
     return _playBtn;
 }
@@ -718,10 +718,19 @@ static int MaxPlayer = 5;
 
 /// 点击播放/暂停按钮
 - (void)playBtnAction:(UIButton *)playBtn {
-    if (!_AllPlayerSwitch) return;
-    if (playBtn.selected) {
-        [self pause];
-        self.item.currentTime = self.progress * self.duration;
+    if (!_AllPlayerSwitch) {
+        if ([self.delegate respondsToSelector:@selector(tapActionInDisablePlayer:)]) {
+            [self.delegate tapActionInDisablePlayer:self];
+        }
+        return;
+    }
+    if (playBtn == self.bottomBar.playBtn) {
+        if (playBtn.selected) {
+            [self pause];
+            self.item.currentTime = self.progress * self.duration;
+        } else {
+            [self play];
+        }
     } else {
         [self play];
     }

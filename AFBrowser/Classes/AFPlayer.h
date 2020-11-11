@@ -47,6 +47,9 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 /// dismissPlayer的回调
 - (void)dismissActionInPlayer:(AFPlayer *)player;
 
+/// 当player不可播放时，点击的回调，一般用于外部的提示
+- (void)tapActionInDisablePlayer:(AFPlayer *)player;
+
 @end
 
 
