@@ -63,6 +63,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self = [super init];
     if (self) {
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedTransaction) name:@"AFBrowserFinishedTransaction" object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationWillEnterForegroundNotification) name:UIApplicationWillEnterForegroundNotification object:nil];
         self.transformer = [AFBrowserTransformer new];
         self.transformer.delegate = self;
         self.selectedIndex = 0;
@@ -89,6 +90,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 - (void)viewDidLayoutSubviews {
+    if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground) {
+        return;
+    }
     NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
     layout.itemSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
@@ -136,6 +140,11 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if ([self.delegate respondsToSelector:@selector(didDismissBrowser:)]) {
         [self.delegate didDismissBrowser:self];
     }
+}
+
+#pragma mark - 进入前台
+- (void)applicationWillEnterForegroundNotification {
+    [self viewDidLayoutSubviews];
 }
 
 
@@ -616,6 +625,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
     _pageControl.numberOfPages --;
     [self.collectionView deleteItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:self.selectedIndex inSection:0]]];
     [self scrollViewDidScroll:self.collectionView];
+    dispatch_after(0.3, dispatch_get_main_queue(), ^{
+        [self.collectionView reloadData];
+    });
 }
          
 
@@ -710,7 +722,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         }
     } else {
         for (UIWindow *subWindow in window.subviews) {
-            if ([subWindow isKindOfClass:UIWindow.class] && subWindow.rootViewController && window.tag != 6666) {
+            if ([subWindow isKindOfClass:UIWindow.class] && subWindow.rootViewController && !subWindow.hidden && subWindow.alpha > 0) {
                 window = subWindow;
             }
         }
