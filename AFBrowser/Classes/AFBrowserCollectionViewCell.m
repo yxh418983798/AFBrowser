@@ -152,10 +152,10 @@ static CGFloat ScaleDistance = 0.4;
                 [self resizeSubviewSize];
             }
             if (item.coverImage) {
-                NSLog(@"-------------------------- 开始加载 缩略图 --------------------------");
+//                NSLog(@"-------------------------- 开始加载 缩略图 --------------------------");
                 if ([item.coverImage isKindOfClass:NSString.class]) {
                     [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image, NSError *error) {
-                        NSLog(@"-------------------------- 完成加载 缩略图 --------------------------");
+//                        NSLog(@"-------------------------- 完成加载 缩略图 --------------------------");
                         if (self.loadImageStatus == AFLoadImageStatusNone && image) {
                             self.loadImageStatus = AFLoadImageStatusCover;
                             self.imageView.image = image;

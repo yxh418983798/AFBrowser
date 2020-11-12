@@ -1,10 +1,14 @@
 PODS:
-  - AFBrowser (1.1.0):
+  - AFBrowser (1.2.1):
     - SDWebImage
+    - YYImage
   - Masonry (1.1.0)
   - SDWebImage (5.9.0):
     - SDWebImage/Core (= 5.9.0)
   - SDWebImage/Core (5.9.0)
+  - YYImage (1.0.4):
+    - YYImage/Core (= 1.0.4)
+  - YYImage/Core (1.0.4)
 
 DEPENDENCIES:
   - AFBrowser (from `../`)
@@ -14,15 +18,17 @@ SPEC REPOS:
   https://github.com/CocoaPods/Specs.git:
     - Masonry
     - SDWebImage
+    - YYImage
 
 EXTERNAL SOURCES:
   AFBrowser:
     :path: "../"
 
 SPEC CHECKSUMS:
-  AFBrowser: 4b88d023ba35912ee025cee6eb29b6e4e211f182
+  AFBrowser: f8c08c096fb43fe93ddcefd32a4a52b80ce2f540
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   SDWebImage: 62ae4a18473520c67b79e9724c31a63599cc9423
+  YYImage: 1e1b62a9997399593e4b9c4ecfbbabbf1d3f3b54
 
 PODFILE CHECKSUM: a4743d934d82d6a8be646ce8deb99af15518905b
 
