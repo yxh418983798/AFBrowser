@@ -42,8 +42,9 @@
     } else {
         [SDWebImageManager.sharedManager loadImageWithURL:imageUrl options:kNilOptions progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
             NSString *url = imageURL.absoluteString;
-            if ([url containsString:@".gif"]) {
-                YYImage *gifImage = [YYImage imageWithData:[SDImageCache.sharedImageCache diskImageDataForKey:imageURL.absoluteString]];
+            NSData *imageData = [SDImageCache.sharedImageCache diskImageDataForKey:url];
+            if ([self isGIFData:imageData]) {
+                YYImage *gifImage = [YYImage imageWithData:imageData];
                 if (gifImage) {
                     completion(gifImage, error);
                     return;
@@ -52,6 +53,18 @@
             completion(image, error);
         }];
     }
+}
+
+
++ (BOOL)isGIFData:(NSData *)data {
+    if (data.length < 16) return NO;
+    UInt32 magic = *(UInt32 *)data.bytes;
+    if ((magic & 0xFFFFFF) != '\0FIG') return NO;
+    CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFTypeRef)data, NULL);
+    if (!source) return NO;
+    size_t count = CGImageSourceGetCount(source);
+    CFRelease(source);
+    return count > 1;
 }
 
 

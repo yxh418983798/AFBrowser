@@ -118,7 +118,7 @@ static CGFloat ScaleDistance = 0.4;
     self.item = item;
     self.indexPath = indexPath;
     self.loadImageStatus = AFLoadImageStatusNone;
-    
+//http://dl2.weshineapp.com/gif/20201104/8bfa369267398b699c4b4b474b638f1b.jpg?v=5fa2d00190770&f=mowang
     switch (item.type) {
         case AFBrowserItemTypeImage: {
             if (_player) {
@@ -129,10 +129,14 @@ static CGFloat ScaleDistance = 0.4;
             if ([item.content isKindOfClass:NSString.class]) {
 //                NSLog(@"-------------------------- 开始加载 高清图 --------------------------");
                 [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.content] completion:^(UIImage *image, NSError *error) {
-//                    NSLog(@"-------------------------- 完成加载 高清图 --------------------------");
-                    self.imageView.image = image;
-                    self.loadImageStatus = AFLoadImageStatusOriginal;
-                    [self resizeSubviewSize];
+//                    NSLog(@"-------------------------- 完成加载:%ld, 高清图：%@ --------------------------", indexPath.item, item.content);
+                    if (item.content != self.item.content) {
+                        NSLog(@"-------------------------- 错误加载！！ --------------------------");
+                    } else {
+                        self.imageView.image = image;
+                        self.loadImageStatus = AFLoadImageStatusOriginal;
+                        [self resizeSubviewSize];
+                    }
                 }];
             } else if ([item.content isKindOfClass:NSURL.class]) {
                 [AFBrowserLoaderProxy loadImage:item.content completion:^(UIImage *image, NSError *error) {
@@ -157,9 +161,14 @@ static CGFloat ScaleDistance = 0.4;
                     [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image, NSError *error) {
 //                        NSLog(@"-------------------------- 完成加载 缩略图 --------------------------");
                         if (self.loadImageStatus == AFLoadImageStatusNone && image) {
-                            self.loadImageStatus = AFLoadImageStatusCover;
-                            self.imageView.image = image;
-                            [self resizeSubviewSize];
+                            if (item.content != self.item.content) {
+                                NSLog(@"-------------------------- 错误加载！！ --------------------------");
+                            } else {
+                                self.loadImageStatus = AFLoadImageStatusCover;
+                                self.imageView.image = image;
+    //                            NSLog(@"-------------------------- 设置 缩略图 --------------------------");
+                                [self resizeSubviewSize];
+                            }
                         }
                     }];
                 } else if ([item.coverImage isKindOfClass:NSURL.class]) {
