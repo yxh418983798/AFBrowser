@@ -538,12 +538,22 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 刚进入时，播放当前的播放器
 - (void)startCurrentPlayer {
+    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+    if (!item) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self startCurrentPlayer];
+        });
+        return;
+    }
+    
+    if (item.type != AFBrowserItemTypeVideo) return;
     AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
     if (!cell) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self startCurrentPlayer];
         });
     } else {
+        [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategorySoloAmbient error:nil];
         cell.player.showToolBar = self.showToolBar;
         [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
     }
