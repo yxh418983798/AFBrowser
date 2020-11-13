@@ -40,6 +40,9 @@
 /** 记录trasitionView的原始frame */
 @property (assign, nonatomic) CGRect          originalFrameForTrasitionSuperView;
 
+/** 图片转场，记录开始转场的frame，用于转场后意外情况的恢复 */
+@property (assign, nonatomic) CGRect          imageBeginTransitionFrame;
+
 /** 浏览器imageView的高度 */
 @property (assign, nonatomic) CGFloat         imgView_H;
 
@@ -322,7 +325,6 @@
     self.presentedTrasitionViewFrame = self.transitionView.frame;
     [containerView addSubview:self.transitionView];
     fromView.hidden = YES;
-    
     // 执行转场
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
         
@@ -338,6 +340,7 @@
         }
 
     } completion:^(BOOL finished) {
+        self.presentedTransitionView.frame = self.imageBeginTransitionFrame;
         [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
         sourceView.hidden = NO;
         [shadeView removeFromSuperview];
@@ -525,7 +528,9 @@ static CGRect beginFrame;
             self.percentTransition = [[UIPercentDrivenInteractiveTransition alloc] init];
             [self.presentedVc dismissViewControllerAnimated:YES completion:nil];
             self.transitionView = self.presentedTransitionView;
+            NSLog(@"-------------------------- 开始：transitionView：%@ \n%@--------------------------", self.transitionView, self.transitionView.superview);
             if (self.item.type == AFBrowserItemTypeImage) {
+                self.imageBeginTransitionFrame = self.transitionView.frame;
                 UIImageView *transitionView  = (UIImageView *)self.presentedTransitionView;
                 NSAssert(transitionView, @"transitionView为空！");
                 self.imgView_H = UIScreen.mainScreen.bounds.size.width * fmax(transitionView.image.size.height, 1) / fmax(transitionView.image.size.width, 1);
@@ -588,6 +593,7 @@ static CGRect beginFrame;
                     self.backGroundView.alpha = 1;
                     self.presentedTrasitionViewFrame = beginFrame;
                     NSLog(@"-------------------------- 来了取消：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
+//                    NSLog(@"-------------------------- 结束：transitionView：%@ \n%@--------------------------", self.transitionView, self.transitionView.superview);
                     CGRect resultFrame = beginFrame; /// 避免beginFrame在下次的手势中被修改，这里要拷贝一个新的frame
                     [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
                         self.transitionView.frame = resultFrame;
