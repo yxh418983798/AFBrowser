@@ -77,6 +77,8 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 /** AFBrowserItem */
 @property (nonatomic, strong) AFBrowserItem       *item;
 
+@property(copy) AVLayerVideoGravity videoGravity;
+
 /** 是否在转场 */
 @property (nonatomic, assign) AFPlayerTransitionStatus          transitionStatus;
 

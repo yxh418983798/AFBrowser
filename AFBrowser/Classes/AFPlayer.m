@@ -251,6 +251,12 @@ static int MaxPlayer = 5;
     }
 }
 
+- (void)setVideoGravity:(AVLayerVideoGravity)videoGravity {
+    _videoGravity = videoGravity;
+    _playerLayer.videoGravity = videoGravity;
+}
+
+
 #pragma mark - UI
 - (UIView *)contentView {
     if (!_contentView) {
@@ -368,7 +374,8 @@ static int MaxPlayer = 5;
 }
 
 - (CGRect)playerFrame {
-    if (self.item.width > 0 && self.item.height > 0) {
+    
+    if (self.playerLayer.videoGravity == AVLayerVideoGravityResizeAspectFill && self.item.width > 0 && self.item.height > 0) {
         CGFloat height = fmin(self.frame.size.width * self.item.height/self.item.width, self.frame.size.height);
         return CGRectMake(0, (self.frame.size.height - height)/2, self.frame.size.width, height);
     } else {

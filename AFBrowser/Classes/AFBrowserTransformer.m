@@ -431,7 +431,14 @@
 //    [self.transitionView removeFromSuperview];
     [containerView addSubview:self.transitionView];
     fromView.hidden = YES;
-    
+    /// 当视频比例和外部的容器比例不一致的时候，计算出正确的最终的frame
+    CGRect resultFrame = sourceFrame;
+    AFPlayer *player = (AFPlayer *)self.transitionView;
+    AVLayerVideoGravity gravity = player.videoGravity;
+    if (!self.isInteractive && self.item.width > 0 && sourceFrame.size.width > 0 && self.item.height/self.item.width != sourceFrame.size.height/sourceFrame.size.width) {
+        player.videoGravity = AVLayerVideoGravityResize;
+        player.frame = self.playerFrame;
+    }
     // 执行转场动画
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:0 animations:^{
         if (!self.isCancel) {
@@ -458,6 +465,7 @@
         [snapView removeFromSuperview];
 //        NSLog(@"-------------------------- 转场完成了：%@ --------------------------", self.transitionView);
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"即将完成DismissVideo, %@", self.transitionView]];
+        player.videoGravity = gravity;
         if ([transitionContext transitionWasCancelled]) {
 //            NSLog(@"-------------------------- 取消：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(self.presentedTrasitionViewFrame));
             fromView.hidden = NO;
@@ -477,6 +485,7 @@
                 self.transitionView.frame = self.originalFrameForTrasitionSuperView;
             }
         }
+
         if (self.item.useCustomPlayer) {
             if (([[[UIDevice currentDevice]systemVersion]floatValue] < 11.0)) {
                 AVPlayer *player = [self.item.player valueForKey:@"_player"];
@@ -607,6 +616,14 @@ static CGRect beginFrame;
                         self.percentTransition = nil;
                     }];
                 } else {
+                    AFPlayer *player = (AFPlayer *)self.transitionView;
+                    if (self.item.width > 0 && sourceFrame.size.width > 0 && self.item.height/self.item.width != sourceFrame.size.height/sourceFrame.size.width) {
+                        player.videoGravity = AVLayerVideoGravityResize;
+                        CGRect frame = self.playerFrame;
+                        frame.origin.y = player.frame.origin.y + fabs((player.frame.size.height - frame.size.height)/2);
+                        frame.origin.x = player.frame.origin.x;
+                        player.frame = frame;
+                    }
                     [self.displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
                 }
             } else {
@@ -764,6 +781,28 @@ static CGFloat ScaleDistance = 0.4;
         }
         self.percentTransition = nil;
     }
+}
+    
+
+
+
+- (CGRect)playerFrame {
+    CGRect resultFrame = UIScreen.mainScreen.bounds;
+    CGFloat scale = self.item.height/self.item.width;
+    CGFloat screenScale = resultFrame.size.height/resultFrame.size.width;
+    if (screenScale < 1) screenScale = 1.f/screenScale; // 横屏的情况
+    if (scale > screenScale) {
+        // 视频的比例超出的屏幕的比例，此时应该自适应宽度，高度为屏幕高度
+        CGFloat width = resultFrame.size.height / scale;
+        resultFrame.origin.x = (resultFrame.size.width - width) /2;
+        resultFrame.size.width = width;
+    } else {
+        // 视频的比例未超出屏幕的比例，此时应该自适应高度，宽度为屏幕宽度
+        CGFloat height = scale * resultFrame.size.width;
+        resultFrame.origin.y = (resultFrame.size.height - height) /2;
+        resultFrame.size.height = height;
+    }
+    return resultFrame;
 }
 
 @end

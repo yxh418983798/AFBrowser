@@ -6,7 +6,7 @@ platform :ios, '8.0'
 target 'AFBrowser_Example' do
   pod 'AFBrowser', :path => '../'
   pod 'Masonry'
-
+  pod 'MWApi'
   target 'AFBrowser_Tests' do
     inherit! :search_paths
 
