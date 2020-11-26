@@ -552,7 +552,22 @@ static CGRect sourceFrame;
 static CGRect beginFrame;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
-    return !self.isTransitioning;
+    if (![gestureRecognizer isKindOfClass:UIPanGestureRecognizer.class]) return YES;
+    
+    if (self.isTransitioning) {
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场未结束，新手势事件过滤：%@", self.displayStatus]];
+        return NO;
+    }
+    CGFloat systemVersion = UIDevice.currentDevice.systemVersion.floatValue;
+    if (systemVersion < 12) {
+        double velocity = [(UIPanGestureRecognizer *)gestureRecognizer velocityInView:gestureRecognizer.view].y;
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"轻扫:%g：%@", velocity, self.displayStatus]];
+        if (fabs(velocity) > 1000) {
+            [self.presentedVc dismissViewControllerAnimated:YES completion:nil];
+            return NO;
+        }
+    }
+    return YES;
 }
 
 - (void)panAction:(UIScreenEdgePanGestureRecognizer *)pan {
@@ -580,7 +595,6 @@ static CGRect beginFrame;
             if (CGRectEqualToRect(self.frameBeforeDismiss, CGRectZero)) {
                 self.frameBeforeDismiss = self.transitionView.frame;
             }
-            NSLog(@"-------------------------- 开始手势啊啊啊：%g -------------------------", [pan velocityInView:pan.view]);
             if (self.item.type == AFBrowserItemTypeImage) {
                 self.imageBeginTransitionFrame = self.transitionView.frame;
                 UIImageView *transitionView  = (UIImageView *)self.presentedTransitionView;
@@ -671,11 +685,12 @@ static CGRect beginFrame;
             [self displayLinkCancel];
         }
     } else {
-        if (UIDevice.currentDevice.systemVersion.floatValue >= 12.0) {
-            [self displayLinkCancel];
-        } else {
-            [self animationCancel];
-        }
+        [self displayLinkCancel];
+//        if (UIDevice.currentDevice.systemVersion.floatValue >= 12.0) {
+//            [self displayLinkCancel];
+//        } else {
+//            [self animationCancel];
+//        }
     }
 }
 

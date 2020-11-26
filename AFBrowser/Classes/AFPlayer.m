@@ -714,7 +714,7 @@ static int MaxPlayer = 5;
         }
         self.coverImgView.hidden = YES;
         self.playBtn.hidden = YES;
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[startPlay]隐藏图片, %@", self.displayDescription]];
+//        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[startPlay]隐藏图片, %@", self.displayDescription]];
     }
 }
 
