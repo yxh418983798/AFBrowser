@@ -43,6 +43,9 @@
 /** 图片转场，记录开始转场的frame，用于转场后意外情况的恢复 */
 @property (assign, nonatomic) CGRect          imageBeginTransitionFrame;
 
+/** 记录开始转场前的frame，用于转场后意外情况的恢复 */
+@property (assign, nonatomic) CGRect          frameBeforeDismiss;
+
 /** 浏览器imageView的高度 */
 @property (assign, nonatomic) CGFloat         imgView_H;
 
@@ -479,7 +482,8 @@
         if ([transitionContext transitionWasCancelled]) {
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"dismissVideo，completion取消转场！：%@", self.displayStatus]];
             fromView.hidden = NO;
-            self.transitionView.frame = self.presentedTrasitionViewFrame;
+            self.transitionView.frame = self.frameBeforeDismiss;
+//            self.transitionView.frame = self.presentedTrasitionViewFrame;
             self.transitionView.alpha = 1;
             // 将视频播放容器 还原到转场后的容器
             [superView insertSubview:self.transitionView atIndex:index];
@@ -573,6 +577,9 @@ static CGRect beginFrame;
             self.percentTransition = [[UIPercentDrivenInteractiveTransition alloc] init];
             [self.presentedVc dismissViewControllerAnimated:YES completion:nil];
             self.transitionView = self.presentedTransitionView;
+            if (CGRectEqualToRect(self.frameBeforeDismiss, CGRectZero)) {
+                self.frameBeforeDismiss = self.transitionView.frame;
+            }
             NSLog(@"-------------------------- 开始手势啊啊啊：%g -------------------------", [pan velocityInView:pan.view]);
             if (self.item.type == AFBrowserItemTypeImage) {
                 self.imageBeginTransitionFrame = self.transitionView.frame;
@@ -665,9 +672,9 @@ static CGRect beginFrame;
         }
     } else {
         if (UIDevice.currentDevice.systemVersion.floatValue >= 12.0) {
-            [self animationCancel];
-        } else {
             [self displayLinkCancel];
+        } else {
+            [self animationCancel];
         }
     }
 }
@@ -840,7 +847,7 @@ static CGFloat ScaleDistance = 0.4;
 
 
 - (NSString *)displayStatus {
-    return [NSString stringWithFormat:@"状态描述：self.transitionView：%@ \n superView:%：%@\n sourceFrame：%@ \n presentedTrasitionView:%@ \n presentedTrasitionViewFrame:%@ \n beginFrame:%@, isCancel:%d", self.transitionView, self.transitionView.superview, NSStringFromCGRect(sourceFrame), self.presentedTransitionView, NSStringFromCGRect(self.presentedTrasitionViewFrame), NSStringFromCGRect(beginFrame), self.isCancel];
+    return [NSString stringWithFormat:@"状态描述：self.transitionView：%@ \n superView:%：%@\n sourceFrame：%@ \n presentedTrasitionViewFrame:%@ \n beginFrame:%@, frameBeforeDismiss:%@ \n isCancel:%d", self.transitionView, self.transitionView.superview, NSStringFromCGRect(sourceFrame), NSStringFromCGRect(self.presentedTrasitionViewFrame), NSStringFromCGRect(beginFrame), NSStringFromCGRect(self.frameBeforeDismiss), self.isCancel];
 }
 
 @end
