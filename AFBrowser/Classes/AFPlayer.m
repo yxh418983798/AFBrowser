@@ -82,7 +82,6 @@ static int MaxPlayer = 5;
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
-        NSLog(@"-------------------------- 创建播放器 --------------------------");
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"创建播放器, %@", self.displayDescription]];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayerNotification) name:AFPlayerNotificationPauseAllPlayer object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayerNotification) name:AFPlayerNotificationResumeAllPlayer object:nil];
@@ -129,8 +128,7 @@ static int MaxPlayer = 5;
 }
 
 - (void)dealloc {
-    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放器释放了, %@", self.displayDescription]];
-    NSLog(@"-------------------------- 释放了播放器:%p --------------------------", self);
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[dealloc]播放器释放了, %@", self.displayDescription]];
     [self replacePlayerItem:nil];
     [_playerLayer removeFromSuperlayer];
     _player = nil;
@@ -139,7 +137,7 @@ static int MaxPlayer = 5;
 }
 
 - (NSString *)displayDescription {
-    return [NSString stringWithFormat:@"播放器描述：%p\n showToolBar:%d, status:%d, hidden:%d\nProgress：%g, \ncover:%@, \nduration:%g, width:%g, height:%g\ncurrentItem:%@", self, self.showToolBar, self.status, self.hidden, self.progress, self.item.coverImage, self.duration, self.item.width, self.item.height, self.player.currentItem];
+    return [NSString stringWithFormat:@"播放器描述：%p\n url:%@\n item.content:%@, status:%d, hidden:%d\nProgress：%g, \ncover:%@, \nduration:%g, width:%g, height:%g\ncurrentItem:%@\n showToolBar:%d", self,  self.url, self.item.content, self.status, self.hidden, self.progress, self.item.coverImage, self.duration, self.item.width, self.item.height, self.player.currentItem, self.showToolBar];
 }
 
 
@@ -205,7 +203,6 @@ static int MaxPlayer = 5;
     if ([self.item.coverImage isKindOfClass:NSString.class]) {
         [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:(NSString *)self.item.coverImage] completion:^(UIImage *image, NSError *error) {
             self.coverImgView.image = image;
-            NSLog(@"-------------------------- 显示图片 --------------------------");
         }];
     } else if ([self.item.coverImage isKindOfClass:NSURL.class]) {
         [AFBrowserLoaderProxy loadImage:(NSURL *)self.item.coverImage completion:^(UIImage *image, NSError *error) {
@@ -515,7 +512,6 @@ static int MaxPlayer = 5;
 //                    [self play];
 //                }
 //            }
-            NSLog(@"-------------------------- 播放错误：%@  %@  %@--------------------------", self.url, self.player.error, self.player.currentItem.error);
             break;
             
         default:
@@ -554,14 +550,14 @@ static int MaxPlayer = 5;
         [self stopLoading];
         [self attachCoverImage:self.item.coverImage];
         self.coverImgView.hidden = NO;
-        NSLog(@"-------------------------- 来了11 --------------------------");
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]错误，item的Content为空, %@", self.displayDescription]];
         self.playBtn.hidden = YES;
         [self replacePlayerItem:nil];
         return;
     } else {
         if (self.player.currentItem) {
             if (![self.url isEqualToString:[NSString stringWithFormat:@"file://%@", [AFDownloader filePathWithUrl:self.item.content]]]) {
-                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"数据错误, %@", self.displayDescription]];
+                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]数据错误, %@", self.displayDescription]];
                 self.url = nil;
 //                [self.player replaceCurrentItemWithPlayerItem:nil];
                 [self replacePlayerItem:nil];
@@ -577,10 +573,10 @@ static int MaxPlayer = 5;
             break;
             
         case AFPlayerStatusPrepare:
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]准备状态, %@", self.displayDescription]];
             [self startLoading];
             self.playBtn.hidden = YES;
             self.coverImgView.hidden = NO;
-            NSLog(@"-------------------------- 来了22--------------------------");
             break;
             
         case AFPlayerStatusNone: {
@@ -589,7 +585,6 @@ static int MaxPlayer = 5;
             self.playBtn.hidden = YES;
             self.coverImgView.image = nil;
             self.coverImgView.hidden = NO;
-            NSLog(@"-------------------------- 来了33 --------------------------");
             if (self.player.currentItem) {
 //                [self.player replaceCurrentItemWithPlayerItem:nil];
                 [self replacePlayerItem:nil];
@@ -601,18 +596,19 @@ static int MaxPlayer = 5;
                 [self prepareDone];
                 return;
             }
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态, %@", self.displayDescription]];
             [AFBrowserLoaderProxy loadVideo:urlString progress:nil completion:^(NSString *url, NSError *error) {
                 if (error) {
-                    NSLog(@"-------------------------- 下载错误：%@ --------------------------", error);
+                    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载错误：%@，描述：%@", error, self.displayDescription]];
                 } else {
                     if (![url isEqualToString:[NSString stringWithFormat:@"file://%@", [AFDownloader filePathWithUrl:self.item.content]]]) {
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"URL已切换:%@, %@", url, self.displayDescription]];
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，URL已切换：%@，描述：%@", url, self.displayDescription]];
                     } else if (url.length) {
                         self.url = url;
                         [self prepareDone];
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，视频下载完成：%@，描述：%@", url, self.displayDescription]];
                     } else {
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"下载视频结果错误：url为空 , %@", self.displayDescription]];
-                        NSLog(@"-------------------------- 下载视频结果错误：url为空 --------------------------");
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载视频结果错误：url为空 , %@", self.displayDescription]];
                     }
                 }
             }];
@@ -642,11 +638,11 @@ static int MaxPlayer = 5;
         if (self.playWhenPrepareDone) {
             // 准备完成，直接播放
             [self play];
-            NSLog(@"-------------------------- 准备完成，调用play --------------------------");
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepareDone]，准备完成，调用play：%@", self.displayDescription]];
         }
     } else {
         [self replacePlayerItem:nil];
-        NSLog(@"-------------------------- 准备完成，url为空 --------------------------");
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepareDone]，准备完成，url为空：%@", self.displayDescription]];
     }
 }
 
@@ -708,8 +704,7 @@ static int MaxPlayer = 5;
             [self replacePlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
 
         } else {
-            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放错误URL为空, %@", self.displayDescription]];
-            NSLog(@"-------------------------- 播放错误：url为空 --------------------------");
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[startPlay]播放错误URL为空, %@", self.displayDescription]];
         }
     }
     [self.player play];
@@ -719,7 +714,7 @@ static int MaxPlayer = 5;
         }
         self.coverImgView.hidden = YES;
         self.playBtn.hidden = YES;
-        NSLog(@"-------------------------- 隐藏图片 --------------------------");
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[startPlay]隐藏图片, %@", self.displayDescription]];
     }
 }
 
@@ -776,7 +771,7 @@ static int MaxPlayer = 5;
 
 #pragma mark - 停止
 - (void)stop {
-//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"停止播放, %@", self.displayDescription]];
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[stop]停止播放, %@", self.displayDescription]];
     self.playWhenPrepareDone = NO;
     [AFDownloader cancelTask:self.url];
     
@@ -805,7 +800,6 @@ static int MaxPlayer = 5;
 
 /// 停止播放
 - (void)stopPlay {
-//    NSLog(@"-------------------------- stopPlay --------------------------");
     if (self.item.showVideoControl) {
         self.bottomBar.playBtn.selected = NO;
     }
@@ -813,15 +807,13 @@ static int MaxPlayer = 5;
     self.playBtn.hidden = NO;
     [self.player pause];
     self.coverImgView.hidden = NO;
-    NSLog(@"-------------------------- 来了44 --------------------------");
     [self seekToTime:0.f];
 }
 
 
 #pragma mark - 播放结束
 - (void)finishedPlay {
-//    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"播放结束 , %@", self.displayDescription]];
-//    NSLog(@"-------------------------- finishedPlay --------------------------");
+    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[finishedPlay]播放结束 , %@", self.displayDescription]];
     if (self.item.showVideoControl) {
         self.bottomBar.playBtn.selected = NO;
     }
