@@ -37,13 +37,13 @@
 /** 记录trasitionView的原始frame */
 @property (assign, nonatomic) CGRect          trasitionViewOriginalFrame;
 
-/** 记录trasitionView的原始frame */
-@property (assign, nonatomic) CGRect          originalFrameForTrasitionSuperView;
-
 /** 图片转场，记录开始转场的frame，用于转场后意外情况的恢复 */
 @property (assign, nonatomic) CGRect          imageBeginTransitionFrame;
 
-/** 记录开始转场前的frame，用于转场后意外情况的恢复 */
+/** 记录转场View的present前的frame */
+@property (assign, nonatomic) CGRect          frameBeforePresent;
+
+/** 记录转场view的dismiss前的frame */
 @property (assign, nonatomic) CGRect          frameBeforeDismiss;
 
 /** 浏览器imageView的高度 */
@@ -224,7 +224,6 @@
     self.sourceVc = fromVC;
     self.presentedVc = toVC;
     toView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
-//    toView.hidden = YES;
     [containerView addSubview:toView];
 
     // 添加黑色背景
@@ -232,23 +231,23 @@
     
     CGSize imageSize;
     CGRect resultFrame;
-    CGRect originalFrame = transitionView.frame;
+    self.frameBeforePresent = transitionView.frame;
     // 拷贝一份用于转场的图片内容
     if (self.item.useCustomPlayer) {
         self.transitionView = transitionView;
         self.originalTag = transitionView.tag;
-        self.originalFrameForTrasitionSuperView = transitionView.frame;
         self.transitionSuperView = transitionView.superview;
-//        [transitionView removeFromSuperview];
         transitionView.frame = transitionFrame;
-        [containerView addSubview:transitionView];
-//        NSLog(@"-------------------------- 设置了frame --------------------------");
-        imageSize = [(AFPlayer *)transitionView transitionSize];
         self.trasitionViewOriginalFrame = transitionFrame;
-        CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
-        height = UIScreen.mainScreen.bounds.size.height;
+        [containerView addSubview:transitionView];
+        imageSize = [(AFPlayer *)transitionView transitionSize];
+        // 全屏自适应填充模式
+        CGFloat height = UIScreen.mainScreen.bounds.size.height;
+        resultFrame = UIScreen.mainScreen.bounds;
+        // 计算比例填充
+//        CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
 //        height = fmin(height, UIScreen.mainScreen.bounds.size.height);
-        resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
+//        resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
     } else {
         if ([transitionView isKindOfClass:UIImageView.class] && [(UIImageView *)transitionView image]) {
             UIImage *image = [(UIImageView *)transitionView image];
@@ -273,7 +272,12 @@
         self.backGroundView.alpha = 1;
         
     } completion:^(BOOL finished) {
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"即将完成Present：%@ --------------------------", self.displayStatus]];
+        if (self.item.useCustomPlayer) {
+            if (!CGRectEqualToRect(self.transitionView.frame, UIScreen.mainScreen.bounds)) {
+                self.transitionView.frame = UIScreen.mainScreen.bounds;
+                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"Present错误：resultFrame:%@, %@ --------------------------", NSStringFromCGRect(resultFrame), self.displayStatus]];
+            }
+        }
         [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
         transitionView.hidden = NO;
         if ([transitionContext transitionWasCancelled]) {
@@ -282,9 +286,9 @@
             [self.transitionView removeFromSuperview];
             self.backGroundView = nil;
             self.transitionView = nil;
-            
-            transitionView.frame = originalFrame;
+            transitionView.frame = self.frameBeforePresent;
             [self.transitionSuperView addSubview:transitionView];
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"取消Present：%@ --------------------------", self.displayStatus]];
             
         } else {
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"完成Present：%@ --------------------------", self.displayStatus]];
@@ -496,8 +500,8 @@
                 self.item.player.showToolBar = NO;
                 self.transitionView.tag = self.originalTag;
                 [self.transitionSuperView addSubview:self.transitionView];
-                self.transitionView.frame = self.originalFrameForTrasitionSuperView;
             }
+            self.transitionView.frame = self.frameBeforePresent;
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"dismissVideo，completion完成转场！：%@", self.displayStatus]];
         }
 
@@ -862,7 +866,7 @@ static CGFloat ScaleDistance = 0.4;
 
 
 - (NSString *)displayStatus {
-    return [NSString stringWithFormat:@"状态描述：self.transitionView：%@ \n superView:%：%@\n sourceFrame：%@ \n presentedTrasitionViewFrame:%@ \n beginFrame:%@, frameBeforeDismiss:%@ \n isCancel:%d", self.transitionView, self.transitionView.superview, NSStringFromCGRect(sourceFrame), NSStringFromCGRect(self.presentedTrasitionViewFrame), NSStringFromCGRect(beginFrame), NSStringFromCGRect(self.frameBeforeDismiss), self.isCancel];
+    return [NSString stringWithFormat:@"状态描述：self.transitionView：%@ \n superView:%：%@\n sourceFrame：%@ \n presentedTrasitionViewFrame:%@ \n beginFrame:%@, frameBeforePresent:%@, frameBeforeDismiss:%@ \n isCancel:%d", self.transitionView, self.transitionView.superview, NSStringFromCGRect(sourceFrame), NSStringFromCGRect(self.presentedTrasitionViewFrame), NSStringFromCGRect(beginFrame), NSStringFromCGRect(self.frameBeforePresent), NSStringFromCGRect(self.frameBeforeDismiss), self.isCancel];
 }
 
 @end

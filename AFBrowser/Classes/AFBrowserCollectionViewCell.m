@@ -130,8 +130,12 @@ static CGFloat ScaleDistance = 0.4;
 //                NSLog(@"-------------------------- 开始加载 高清图 --------------------------");
                 [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.content] completion:^(UIImage *image, NSError *error) {
 //                    NSLog(@"-------------------------- 完成加载:%ld, 高清图：%@ --------------------------", indexPath.item, item.content);
+                    if (error) {
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片失败！，status:%d, error:%@ \n item.content:%@ \n self.item.content:%@", self.loadImageStatus, error, item.content, self.item.content]];
+                        return;
+                    }
                     if (item.content != self.item.content) {
-                        NSLog(@"-------------------------- 错误加载！！ --------------------------");
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片错误！，item.content:%@ \n self.item.content:%@", item.content, self.item.content]];
                     } else {
                         self.imageView.image = image;
                         self.loadImageStatus = AFLoadImageStatusOriginal;
@@ -162,13 +166,15 @@ static CGFloat ScaleDistance = 0.4;
 //                        NSLog(@"-------------------------- 完成加载 缩略图 --------------------------");
                         if (self.loadImageStatus == AFLoadImageStatusNone && image) {
                             if (item.content != self.item.content) {
-                                NSLog(@"-------------------------- 错误加载！！ --------------------------");
+                                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片错误！，item.content:%@ \n self.item.content:%@", item.content, self.item.content]];
                             } else {
                                 self.loadImageStatus = AFLoadImageStatusCover;
                                 self.imageView.image = image;
     //                            NSLog(@"-------------------------- 设置 缩略图 --------------------------");
                                 [self resizeSubviewSize];
                             }
+                        } else {
+                            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片失败！，status:%d, error:%@ \n item.content:%@ \n self.item.content:%@", self.loadImageStatus, error, item.content, self.item.content]];
                         }
                     }];
                 } else if ([item.coverImage isKindOfClass:NSURL.class]) {

@@ -657,10 +657,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
     if (!cell) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场cell是空的, %@", self.description]];
-        NSLog(@"-------------------------- cell是空的 --------------------------");
     } else if (!cell.player) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场的player是空的, %@", self.description]];
-        NSLog(@"-------------------------- cell.player是空的 --------------------------");
     }
     return cell.player;
 }
@@ -692,9 +690,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
     // 没有加载图片到缓存的情况下，不弹出浏览器
     if (![self imageFromCacheForKey:item.coverImage]) {
-        NSLog(@"-------------------------- Error：图片的缩略图没有加载到缓存：%@ --------------------------", item.coverImage);
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"Error：图片的缩略图没有加载到缓存:%@", item.coverImage]];
         if (![self imageFromCacheForKey:item.content]) {
-            NSLog(@"-------------------------- Error：图片的高清图也没有加载到缓存，不展示浏览器:%@ --------------------------", item.content);
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"Error：图片的高清图也没有加载到缓存:%@", item.content]];
             return;
         }
     }
@@ -703,13 +701,13 @@ static const CGFloat lineSpacing = 0.f; //间隔
         if (item.type == AFBrowserItemTypeVideo) {
             NSString *url = [item.content isKindOfClass:NSString.class] ? item.content : [(NSURL *)item.content absoluteString];
             if (![url containsString:@"file://"] && ![AFDownloader videoPathWithUrl:item.content]) {
-                NSLog(@"-------------------------- Error：视频没有加载完成，不展示浏览器:%@ --------------------------", item.content);
+                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"Error：视频没有加载完成，不展示浏览器:%@", item.content]];
                 return;
             }
         }
         [currentVc presentViewController:self animated:YES completion:nil];
     } else {
-        NSAssert(currentVc, @"找不到CurrentVc，无法跳转");
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"Error：找不到CurrentVc，无法跳转:%@", UIApplication.sharedApplication.keyWindow]];
     }
 }
 

@@ -40,7 +40,8 @@
     if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(loadImage:completion:)]) {
         [AFBrowserViewController.loaderProxy loadImage:imageUrl completion:completion];
     } else {
-        [SDWebImageManager.sharedManager loadImageWithURL:imageUrl options:kNilOptions progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
+
+        [SDWebImageManager.sharedManager loadImageWithURL:imageUrl options:SDWebImageRetryFailed progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
             NSString *url = imageURL.absoluteString;
             NSData *imageData = [SDImageCache.sharedImageCache diskImageDataForKey:url];
             if ([self isGIFData:imageData]) {
