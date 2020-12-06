@@ -31,19 +31,23 @@
 /** 代理 */
 @property (weak, nonatomic) id<AFBrowserCollectionViewCellDelegate> delegate;
 
+/** scrollView */
 @property (nonatomic, strong) UIScrollView  *scrollView;
 
+/** 图片 */
 @property (nonatomic, strong) UIImageView   *imageView;
 
 /** 播放器 */
 @property (strong, nonatomic) AFPlayer      *player;
 
-// 绑定数据
+/// 绑定数据
 - (void)attachItem:(id)item atIndexPath:(NSIndexPath *)indexPath;
 
+/// 重置下自定义视图
+- (void)removeCustomView;
 
+/// 停止播放
 - (void)stopPlayer;
-
 
 @end
 

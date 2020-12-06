@@ -48,6 +48,7 @@
 /** 自定义参数 */
 @property (nonatomic, strong) id                       userInfo;
 
+
 /**
  * @brief 设置浏览器的加载器代理
  * @note  如果不设置的话，默认使用 SDWebImage 来加载图片
@@ -55,16 +56,6 @@
  */
 @property (nonatomic, class) Class <AFBrowserLoaderDelegate>   loaderProxy;
 
-/**
- * @brief 获取指定index的item数据源
- * @note  如果缓存为空，会从代理方法中取
- */
-- (AFBrowserItem *)itemAtIndex:(NSInteger)index;
-
-/**
- * @brief 弹出浏览器，开始浏览
- */
-- (void)browse;
 
 /**
  * @brief 构造播放器
@@ -72,24 +63,26 @@
 + (AFPlayer *)productPlayer;
 
 
-#pragma mark - 自定义UI
-/// 导航栏，用于开发者自定义导航栏样式 和 添加子视图
-- (UIView *)toolBar;
+/**
+ * @brief 获取指定index的item数据源
+ * @note  如果缓存为空，会从代理方法中取
+ */
+- (AFBrowserItem *)itemAtIndex:(NSInteger)index;
 
-/// 退出按钮
-- (UIButton *)dismissBtn;
 
-/// 删除按钮
-- (UIButton *)deleteBtn;
+/**
+ * @brief 获取对应类型的方法，给外部调用
+ *
+ * @param action 方法类型
+ */
+- (SEL)selectorForAction:(AFBrowserAction)action;
 
-/// 选择按钮
-- (UIButton *)selectBtn;
 
-/// 分页计数器
-- (UIPageControl *)pageControl;
+/**
+ * @brief 弹出浏览器，开始浏览
+ */
+- (void)browse;
 
-/// 分页计数（文本）
-- (UILabel *)pageLabel;
 
 
 #pragma mark - 链式调用
@@ -122,8 +115,6 @@
 
 /// 自定义参数，在代理回调中可以作为一个标识
 - (AFBrowserViewController * (^)(id))makeUserInfo;
-
-
 
 
 @end

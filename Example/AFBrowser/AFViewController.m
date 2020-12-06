@@ -9,6 +9,7 @@
 #import "AFViewController.h"
 #import "AFBrowserViewController.h"
 #import <Masonry.h>
+#import <SDWebImage/SDWebImage.h>
 @interface AFViewController () <UITableViewDelegate, UITableViewDataSource, AFBrowserDelegate>
 /** i */
 @property (nonatomic, strong) UITableView            *tableView;
@@ -27,7 +28,12 @@
 
 /** asd */
 @property (nonatomic, strong) NSObject            *obj1;
+
+/** data */
+@property (nonatomic, strong) NSMutableArray            *data;
 @end
+
+
 
 @implementation AFViewController
 static NSPointerArray *arr;
@@ -38,55 +44,25 @@ static NSArray *array;
     }
 //    self.obj1 = nil;
 //    [arr removePointerAtIndex:0];
-    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
+//    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
     [self.navigationController pushViewController:AFViewController.new animated:YES];
 }
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     
+    self.data = NSMutableArray.new;
+    for (int i = 0; i < 10; i++) {
+        [self.data addObject:[AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0]];
+    }
     self.obj1 = NSObject.new;
     arr = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
     [arr addPointer:(__bridge void *)(self.obj1)];
     
-    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
+//    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
     
     
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"push" style:(UIBarButtonItemStylePlain) target:self action:@selector(action)];
-    
-//    self.playerItem = [AVPlayerItem playerItemWithURL:[NSURL URLWithString:@"http://alicfc1.mowang.online/vid/9E9BE3FCEBB93BBDC1956E666506E493.mp4"]];
-//    self.player = [AVPlayer playerWithPlayerItem:self.playerItem];
-//    AVPlayerLayer *playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
-//    self.playerLayer = playerLayer;
-////    playerLayer.videoGravity = AVLayerVideoGravityResizeAspect;
-////        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
-////    playerLayer.masksToBounds= YES;
-//    playerLayer.frame = CGRectMake(10, 100, 200, 200);
-//    [self.view.layer addSublayer:self.playerLayer];
-//    [self.player play];
-//    return;
-    
-    
-//    AFPlayer *player = [AFBrowserViewController productPlayer];
-//    player.frame = CGRectMake(15, 100, 300, 300);
-////    player.tag = 100;
-//    [self.view addSubview:player];
-//    player.item = [AFBrowserItem itemWithVideo:@"http://alicfc1.mowang.online/vid/9E9BE3FCEBB93BBDC1956E666506E493.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
-////z    player.item.useCustomPlayer = YES;
-//    [player prepare];
-//    [player play];
-//    self.afplayer = player;
-//    return;
-    
-    
-//    NSString *string = @"12";
-//    NSString *string1 = string.copy;
-//    NSString *string2 = string.mutableCopy;
-//    NSString *string3 = string2.mutableCopy;
-//    NSString *string4 = string3.copy;
-//    NSLog(@"-------------------------- 来了：%p  %p  %p -%p %p-------------------------", string, string1, string2, string3, string4);
-//    return;
-    
     
     _tableView = [[UITableView alloc] initWithFrame:(CGRectMake(0, 40, self.view.frame.size.width, self.view.frame.size.height)) style:(UITableViewStylePlain)];
     _tableView.delegate = self;
@@ -112,13 +88,8 @@ static NSArray *array;
 
 
 #pragma mark - UITableViewDelegate
-- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
-    return 5;
-}
-
-
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return 1;
+    return self.data.count;
 }
 
 
@@ -126,6 +97,7 @@ static NSArray *array;
     UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:@"UITableViewCell"];
     if (!cell) {
         cell = [[UITableViewCell alloc] initWithStyle:(UITableViewCellStyleValue1) reuseIdentifier:@"UITableViewCell"];
+        cell.imageView.frame = CGRectMake(15, 15, 100, 100);
         [cell.imageView mas_remakeConstraints:^(MASConstraintMaker *make) {
             make.left.offset(15);
             make.width.height.offset(100);
@@ -144,7 +116,8 @@ static NSArray *array;
 //    player.item.useCustomPlayer = YES;
 //    [player prepare];
 //    [player play];
-    cell.imageView.image = [UIImage imageNamed:@"image"];
+//    cell.imageView.image = [UIImage imageNamed:@"image"];
+    [cell.imageView sd_setImageWithURL:[NSURL URLWithString:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg"]];
     cell.textLabel.text = [NSString stringWithFormat:@"第%lu个Cell", indexPath.row];
     return cell;
 }
@@ -159,15 +132,16 @@ static NSArray *array;
 //    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
 //    AFPlayer *player = [cell viewWithTag:100];
 //    [player play];
-    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(NO).makeSelectedIndex(indexPath.item) browse];
+    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(NO).makeSelectedIndex(indexPath.row) browse];
 }
 
 
 - (NSInteger)numberOfItemsInBrowser:(AFBrowserViewController *)browser {
-    return 10;
+    return self.data.count;
 }
 
 - (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index {
+    return self.data[index];
             return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
     if (index > 2) {
         return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
@@ -178,6 +152,11 @@ static NSArray *array;
 /// 返回转场的View
 - (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index {
     UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0]];
+    if (!cell) {
+        NSLog(@"-------------------------- 空！！！！ --------------------------");
+        [self.tableView layoutIfNeeded];
+        cell = [self.tableView cellForRowAtIndexPath:[NSIndexPath indexPathForRow:index inSection:0]];
+    }
     return cell.imageView;
     return [cell viewWithTag:100];
 }
@@ -186,5 +165,21 @@ static NSArray *array;
     NSLog(@"-------------------------- 来了老弟：%ld --------------------------", (long)index);
 }
 
+
+- (void)browser:(AFBrowserViewController *)browser willDisplayCell:(UICollectionViewCell *)cell forItemAtIndex:(NSInteger)index {
+    
+    UIButton *btn = [[UIButton alloc] initWithFrame:(CGRectMake(10, 200, 100, 50))];
+    btn.backgroundColor = UIColor.blueColor;
+    [btn setTitle:@"删除" forState:(UIControlStateNormal)];
+    [btn setTitleColor:UIColor.whiteColor forState:(UIControlStateNormal)];
+    [btn addTarget:browser action:[browser selectorForAction:AFBrowserActionDismiss] forControlEvents:(UIControlEventTouchUpInside)];
+    [cell addSubview:btn];
+}
+
+- (void)browser:(AFBrowserViewController *)browser deleteActionAtIndex:(NSInteger)index completionDelete:(void (^)(void))completionDelete {
+    [self.data removeObjectAtIndex:index];
+    [self.tableView reloadData];
+    completionDelete();
+}
 
 @end

@@ -33,8 +33,14 @@ typedef NS_ENUM(NSUInteger, AFBrowserPlayOption){
 
 /// 翻页的方向
 typedef NS_ENUM(NSUInteger, AFBrowserDirection){
-    AFBrowserDirectionLeft,   // 向左翻页
-    AFBrowserDirectionRight,  // 向右翻页
+    AFBrowserDirectionLeft,   /// 向左翻页
+    AFBrowserDirectionRight,  /// 向右翻页
+};
+
+/// 提供给外部调用的事件类型
+typedef NS_ENUM(NSUInteger, AFBrowserAction){
+    AFBrowserActionDismiss,  /// dismiss事件
+    AFBrowserActionDelete,   /// 删除事件
 };
 
 
@@ -49,10 +55,10 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
 
 /**
  * @brief 构造item数据源
+ * 
  * @note  内部会自动缓存item，
  */
 - (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index;
-
 
 
 @optional;
@@ -68,17 +74,17 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
 
 /**
  * @brief 删除事件
- * @note  该方法在用户点击删除按钮时调用，开发者可以在这里进行事件的预处理
- * 比如更新数据、弹窗提示用户是否确认删除等，当用户确认删除时，需要调用completionDelete()的block来通知browser删除数据并更新UI
  *
  * @param index 触发删除的index
- * @param completionDelete 删除的执行函数，
- */
+ * @param completionDelete 删除的执行函数
+ * @note  该方法在用户点击删除按钮时调用，开发者可以在这里进行事件的预处理
+ * 比如更新数据、弹窗提示用户是否确认删除等，当用户确认删除时，需要调用completionDelete()的block来通知browser删除数据并更新UI */
 - (void)browser:(AFBrowserViewController *)browser deleteActionAtIndex:(NSInteger)index completionDelete:(void (^)(void))completionDelete;
 
 
 /**
  * @brief 返回转场的View
+ *
  * @note  如果是图片的类型，应该返回该图片所在的UIImageView
  * @note  如果是视频的类型，应该返回视频播放器的容器View
  */
@@ -87,10 +93,10 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
 
 /**
  * @brief 分页加载数据的实现，每次浏览到第一个或最后一个Item时，自动调用该方法获取数据
- * @note  如果Item的数据量很大，建议实现该协议来分页加载数据源，以提升性能
  *
  * @param direction  翻页方向
  * @param completionReload 数据加载完成后，需要调用completionReload(YES)刷新，之后AFBrowser会重新从 itemForBrowserAtIndex: 方法获取数据源
+ * @note  如果Item的数据量很大，建议实现该协议来分页加载数据源，以提升性能
  * @note  success 表示数据是否成功加载完毕，如果传了NO，是不会刷新数据的
  */
 - (void)loadDataWithDirection:(AFBrowserDirection)direction completionReload:(void (^)(BOOL success))completionReload;
@@ -104,7 +110,17 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
 - (void)didDismissBrowser:(AFBrowserViewController *)browser;
 
 
-
+/**
+ * @brief 自定义浏览器Cell的UI
+ *
+ * @warning 这个方法应只用来添加cell的subView，不要对原有视图进行变更或移除
+ * @param cell 展示的容器，将想要自定义的UI添加到cell
+ * @note  该方法会在每次cell出现时都调用一次，内部会自动删除添加过的视图
+ * @note  如果自定义的视图，有涉及到Browser的内部事件操作，可以使用selectorForAction来添加事件，例如：
+ *        [btn addTarget:browser action:[browser selectorForAction:AFBrowserActionDelete] forControlEvents:(UIControlEventTouchUpInside)];
+          [cell addSubview:btn];
+ */
+- (void)browser:(AFBrowserViewController *)browser willDisplayCell:(UICollectionViewCell *)cell forItemAtIndex:(NSInteger)index;
 
 @end
 

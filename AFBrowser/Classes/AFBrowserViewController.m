@@ -311,6 +311,21 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 
+#pragma mark - 获取对应类型的方法，给外部调用
+- (SEL)selectorForAction:(AFBrowserAction)action {
+    switch (action) {
+        case AFBrowserActionDismiss:
+            return @selector(dismissBtnAction);
+
+        case AFBrowserActionDelete:
+            return @selector(deleteBtnAction);
+            
+        default:
+            return nil;;
+    }
+}
+
+
 #pragma mark - 设置浏览类型
 - (void)setBrowserType:(AFBrowserType)browserType {
     _browserType = browserType;
@@ -485,6 +500,10 @@ static const CGFloat lineSpacing = 0.f; //间隔
     AFBrowserCollectionViewCell *cell = [collectionView dequeueReusableCellWithReuseIdentifier:@"AFBrowserCollectionViewCell" forIndexPath:indexPath];
     cell.delegate = self;
     [cell attachItem:item atIndexPath:indexPath];
+    if ([self.delegate respondsToSelector:@selector(browser:willDisplayCell:forItemAtIndex:)]) {
+        [cell removeCustomView];
+        [self.delegate browser:self willDisplayCell:cell forItemAtIndex:indexPath.item];
+    }
     return cell;
 }
 

@@ -403,6 +403,14 @@ static CGFloat ScaleDistance = 0.4;
 }
 
 
+/// 重置下自定义视图
+- (void)removeCustomView {
+    for (UIView *subView in self.subviews) {
+        if (subView == _scrollView || subView == _player) continue;
+        [subView removeFromSuperview];
+    }
+}
+
 @end
 
 
