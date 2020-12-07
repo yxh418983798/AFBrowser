@@ -654,9 +654,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
     _pageControl.numberOfPages --;
     [self.collectionView deleteItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:self.selectedIndex inSection:0]]];
     [self scrollViewDidScroll:self.collectionView];
-//    dispatch_after(0.3, dispatch_get_main_queue(), ^{
-//        [self.collectionView reloadData];
-//    });
 }
          
 
