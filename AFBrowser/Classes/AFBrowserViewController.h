@@ -79,6 +79,14 @@
 
 
 /**
+ * @brief 刷新数据
+ *
+ * @note  先更新外部的数据源，再刷新
+ */
+- (void)reloadData;
+
+
+/**
  * @brief 弹出浏览器，开始浏览
  */
 - (void)browse;

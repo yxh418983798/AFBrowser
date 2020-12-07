@@ -41,6 +41,7 @@ typedef NS_ENUM(NSUInteger, AFBrowserDirection){
 typedef NS_ENUM(NSUInteger, AFBrowserAction){
     AFBrowserActionDismiss,  /// dismiss事件
     AFBrowserActionDelete,   /// 删除事件
+    AFBrowserActionReload,   /// 刷新事件
 };
 
 

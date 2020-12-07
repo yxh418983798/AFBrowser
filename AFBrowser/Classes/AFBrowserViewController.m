@@ -320,6 +320,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
         case AFBrowserActionDelete:
             return @selector(deleteBtnAction);
             
+        case AFBrowserActionReload:
+            return @selector(reloadData);
+
         default:
             return nil;;
     }
