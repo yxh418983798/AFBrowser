@@ -62,12 +62,14 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (instancetype)init {
     self = [super init];
     if (self) {
+        _configuration = AFBrowserConfiguration.new;
+//        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(deviceOrientationDidChangeNotification) name:UIDeviceOrientationDidChangeNotification object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedTransaction) name:@"AFBrowserFinishedTransaction" object:nil];
 //        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationWillEnterForegroundNotification) name:UIApplicationWillEnterForegroundNotification object:nil];
         self.transformer = [AFBrowserTransformer new];
         self.transformer.delegate = self;
-        self.selectedIndex = 0;
-        self.hideSourceViewWhenTransition = YES;
+        self.transformer.configuration = self.configuration;
         self.transitioningDelegate = self.transformer;
         self.showToolBar = YES;
     }
@@ -76,9 +78,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.transformer.item = [self itemAtIndex:self.selectedIndex];
+    self.transformer.item = [self itemAtIndex:self.configuration.selectedIndex];
     self.automaticallyAdjustsScrollViewInsets = NO;
-    self.view.backgroundColor = [UIColor blackColor];
+    self.view.backgroundColor = UIColor.blackColor;
     if (@available(iOS 11.0, *)) {
         self.collectionView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
     }
@@ -101,23 +103,23 @@ static const CGFloat lineSpacing = 0.f; //间隔
     [self.collectionView reloadData];
     [super viewDidLayoutSubviews];
     
-    self.originalIndex = self.selectedIndex;
-    self.transformer.item = [self itemAtIndex:self.selectedIndex];
-    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    self.originalIndex = self.configuration.selectedIndex;
+    self.transformer.item = [self itemAtIndex:self.configuration.selectedIndex];
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
     cell.player.showToolBar = self.showToolBar;
 
     //设置偏移量
-    self.collectionView.contentOffset = CGPointMake(self.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
+    self.collectionView.contentOffset = CGPointMake(self.configuration.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
     self.collectionView.contentSize = CGSizeMake(self.collectionView.frame.size.width * self.numberOfItems + 1, self.collectionView.frame.size.height);
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.configuration.selectedIndex)];
     [self.collectionView layoutIfNeeded];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
     [super viewDidAppear:animated];
     NSLog(@"-------------------------- viewDidAppear --------------------------");
-    if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) {
-        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
+        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
         [cell.player browserCancelDismiss];
     }
 }
@@ -126,10 +128,10 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if (_toolBar.superview && _showToolBar) {
         [self singleTapAction]; // 隐藏toolBar
     }
-    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
-    if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) [cell.player browserWillDismiss];
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
+    if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) [cell.player browserWillDismiss];
     [super dismissViewControllerAnimated:flag completion:^{
-        if ([self itemAtIndex:self.selectedIndex].type == AFBrowserItemTypeVideo) {
+        if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
             [cell.player browserDidDismiss];
         }
         if (completion) completion();
@@ -158,7 +160,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (AFBrowserViewController * (^)(NSUInteger))makeSelectedIndex {
     return ^id(NSUInteger selectedIndex) {
-        self.selectedIndex = selectedIndex;
+        self.configuration.selectedIndex = selectedIndex;
         return self;
     };
 }
@@ -179,42 +181,42 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (AFBrowserViewController * (^)(AFBrowserPlayOption))makePlayOption {
     return ^id(AFBrowserPlayOption playOption) {
-        self.playOption = playOption;
+        self.configuration.playOption = playOption;
         return self;
     };
 }
 
 - (AFBrowserViewController * (^)(BOOL))makeUseCustomPlayer {
     return ^id(BOOL useCustomPlayer) {
-        self.useCustomPlayer = useCustomPlayer;
+        self.configuration.useCustomPlayer = useCustomPlayer;
         return self;
     };
 }
 
 - (AFBrowserViewController * (^)(BOOL))makeShowVideoControl {
     return ^id(BOOL showVideoControl) {
-        self.showVideoControl = showVideoControl;
+        self.configuration.showVideoControl = showVideoControl;
         return self;
     };
 }
 
 - (AFBrowserViewController * (^)(BOOL))makeInfiniteLoop {
     return ^id(BOOL infiniteLoop) {
-        self.infiniteLoop = infiniteLoop;
+        self.configuration.infiniteLoop = infiniteLoop;
         return self;
     };
 }
 
 - (AFBrowserViewController * (^)(BOOL))makeHideSourceViewWhenTransition {
     return ^id(BOOL hideSourceViewWhenTransition) {
-        self.hideSourceViewWhenTransition = hideSourceViewWhenTransition;
+        self.configuration.hideSourceViewWhenTransition = hideSourceViewWhenTransition;
         return self;
     };
 }
 
 - (AFBrowserViewController * (^)(id))makeUserInfo {
     return ^id(id userInfo) {
-        self.userInfo = userInfo;
+        self.configuration.userInfo = userInfo;
         return self;
     };
 }
@@ -238,10 +240,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.collectionView.delegate = self;
     self.collectionView.dataSource = self;
     [self.view addSubview:self.collectionView];
-}
-
-+ (AFPlayer *)productPlayer {
-    return [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
 }
 
 - (UIView *)toolBar {
@@ -292,7 +290,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         _pageControl = [[UIPageControl alloc] initWithFrame:(CGRectMake(0, [[UIScreen mainScreen] bounds].size.height - ([UIApplication sharedApplication].statusBarFrame.size.height == 20 ? 30 : 45), [[UIScreen mainScreen] bounds].size.width, 20))];
         _pageControl.userInteractionEnabled = NO;
         _pageControl.numberOfPages = self.numberOfItems;
-        _pageControl.currentPage = (NSInteger)self.selectedIndex;
+        _pageControl.currentPage = (NSInteger)self.configuration.selectedIndex;
         [self.view addSubview:_pageControl];
     }
     return _pageControl;
@@ -304,7 +302,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         _pageLabel.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:16];
         _pageLabel.textColor = UIColor.whiteColor;
         _pageLabel.textAlignment = NSTextAlignmentCenter;
-        _pageLabel.text = [NSString stringWithFormat:@"%zd/%zd", self.selectedIndex + 1, self.numberOfItems];
+        _pageLabel.text = [NSString stringWithFormat:@"%zd/%zd", self.configuration.selectedIndex + 1, self.numberOfItems];
         [self.toolBar addSubview:_pageLabel];
     }
     return _pageLabel;
@@ -398,13 +396,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 
-#pragma mark - 是否隐藏转场原视图
-- (void)setHideSourceViewWhenTransition:(BOOL)hideSourceViewWhenTransition {
-    _hideSourceViewWhenTransition = hideSourceViewWhenTransition;
-    self.transformer.hideSourceViewWhenTransition = hideSourceViewWhenTransition;
-}
-
-
 #pragma mark - item数据的操作
 /// 存储容器
 - (NSMutableDictionary<NSString *,AFBrowserItem *> *)items {
@@ -420,15 +411,15 @@ static const CGFloat lineSpacing = 0.f; //间隔
     AFBrowserItem *item = [self.items valueForKey:key];
     if (!item) {
         item = [self.delegate browser:self itemForBrowserAtIndex:index];
-        item.showVideoControl = self.showVideoControl;
-        item.infiniteLoop = self.infiniteLoop;
-        item.useCustomPlayer = self.useCustomPlayer;
-        if (self.playOption == AFBrowserPlayOptionDefault) {
-            self.playOption = AFBrowserPlayOptionNeverAutoPlay;
-            if (index == self.selectedIndex) {
+        item.showVideoControl = self.configuration.showVideoControl;
+        item.infiniteLoop = self.configuration.infiniteLoop;
+        item.useCustomPlayer = self.configuration.useCustomPlayer;
+        if (self.configuration.playOption == AFBrowserPlayOptionDefault) {
+            self.configuration.playOption = AFBrowserPlayOptionNeverAutoPlay;
+            if (index == self.configuration.selectedIndex) {
                 item.autoPlay = YES;
             }
-        } else if (self.playOption == AFBrowserPlayOptionAutoPlay) {
+        } else if (self.configuration.playOption == AFBrowserPlayOptionAutoPlay) {
             item.autoPlay = YES;
         }
         [self.items setValue:item forKey:key];
@@ -455,16 +446,16 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 触发加载分页数据
 - (void)loadItems {
-    if (self.selectedIndex != 0 && self.selectedIndex != self.numberOfItems - 1) return;
+    if (self.configuration.selectedIndex != 0 && self.configuration.selectedIndex != self.numberOfItems - 1) return;
     if (![self.delegate respondsToSelector:@selector(loadDataWithDirection:completionReload:)]) return;
-    AFBrowserDirection direction = self.selectedIndex == 0 ? AFBrowserDirectionLeft : AFBrowserDirectionRight;
+    AFBrowserDirection direction = self.configuration.selectedIndex == 0 ? AFBrowserDirectionLeft : AFBrowserDirectionRight;
     [self.delegate loadDataWithDirection:direction completionReload:^(BOOL success) {
         if (success) {
             [self.items removeAllObjects];
             if (direction == AFBrowserDirectionLeft) {
                 NSInteger currentNumbers = [self.delegate numberOfItemsInBrowser:self];
-                self.selectedIndex = MAX((int)(currentNumbers - self.numberOfItems), 0);
-                [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0] atScrollPosition:(UICollectionViewScrollPositionNone) animated:NO];
+                self.configuration.selectedIndex = MAX((int)(currentNumbers - self.numberOfItems), 0);
+                [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0] atScrollPosition:(UICollectionViewScrollPositionNone) animated:NO];
             } else {
                 [self.collectionView reloadData];
             }
@@ -488,7 +479,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.numberOfItems = [self.delegate numberOfItemsInBrowser:self];
     _pageControl.numberOfPages = self.numberOfItems;
     if (self.isFinishedTransaction) {
-        self.collectionView.contentOffset = CGPointMake(self.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
+        self.collectionView.contentOffset = CGPointMake(self.configuration.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
         self.collectionView.contentSize = CGSizeMake(self.collectionView.frame.size.width * self.numberOfItems + 1, self.collectionView.frame.size.height);
     }
     return self.isFinishedTransaction ? 1 : 0;
@@ -533,7 +524,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
             default:
                 break;
         }
-        self.selectedIndex = currentPageNum;
+        self.configuration.selectedIndex = currentPageNum;
     }
 }
 
@@ -548,19 +539,19 @@ static const CGFloat lineSpacing = 0.f; //间隔
 /// 结束滚动
 - (void)endScroll {
     [self loadItems];
-    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+    AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     self.transformer.item = item;
     if (item.type == AFBrowserItemTypeVideo) {
-        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
         cell.player.showToolBar = self.showToolBar;
     }
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
+    [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.configuration.selectedIndex)];
 }
 
 
 #pragma mark - 刚进入时，播放当前的播放器
 - (void)startCurrentPlayer {
-    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+    AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     if (!item) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self startCurrentPlayer];
@@ -569,7 +560,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
     
     if (item.type != AFBrowserItemTypeVideo) return;
-    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
     if (!cell) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self startCurrentPlayer];
@@ -577,14 +568,14 @@ static const CGFloat lineSpacing = 0.f; //间隔
     } else {
         [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategorySoloAmbient error:nil];
         cell.player.showToolBar = self.showToolBar;
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.selectedIndex)];
+        [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.configuration.selectedIndex)];
     }
 }
 
 
 #pragma mark - 单击图片 AFBrowserCollectionViewCellDelegate
 - (void)singleTapAction {
-    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+    AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     if (_toolBar.superview) {
         //隐藏
         _showToolBar = !_showToolBar;
@@ -597,7 +588,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
             self.toolBar.alpha = self.showToolBar ? 1 : 0;
             if (self.pageControlType == AFPageControlTypeCircle) self.pageControl.alpha = self.showToolBar ? 1 : 0;
             if (item.type == AFBrowserItemTypeVideo) {
-                AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+                AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
                 cell.player.showToolBar = self.showToolBar;
             }
         }];
@@ -634,7 +625,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark - 删除事件
 - (void)deleteBtnAction {
     if ([self.delegate respondsToSelector:@selector(browser:deleteActionAtIndex:completionDelete:)]) {
-        [self.delegate browser:self deleteActionAtIndex:self.selectedIndex completionDelete:^{
+        [self.delegate browser:self deleteActionAtIndex:self.configuration.selectedIndex completionDelete:^{
             [self completionDeleteAction];
         }];
     } else {
@@ -646,16 +637,16 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark - 确认删除
 - (void)completionDeleteAction {
     
-    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
     [cell.player stop];
     if (self.numberOfItems == 1) {
         self.transformer.userDefaultAnimation = YES;
         [self dismissBtnAction];
         return;
     }
-    [self deleteItemAtIndex:self.selectedIndex];
+    [self deleteItemAtIndex:self.configuration.selectedIndex];
     _pageControl.numberOfPages --;
-    [self.collectionView deleteItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:self.selectedIndex inSection:0]]];
+    [self.collectionView deleteItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:self.configuration.selectedIndex inSection:0]]];
     [self scrollViewDidScroll:self.collectionView];
 }
          
@@ -669,8 +660,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark -- AFBrowserTransformerDelegate
 - (UIView *)transitionViewForPresentedController {
     [self.collectionView layoutIfNeeded];
-    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
-    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
+    AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     if (item.type == AFBrowserItemTypeImage) {
         return cell.imageView;
     }
@@ -684,14 +675,14 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (UIView *)transitionViewForSourceController {
     if (![self.delegate respondsToSelector:@selector(browser:viewForTransitionAtIndex:)]) return nil;
-    return [self.delegate browser:self viewForTransitionAtIndex:self.selectedIndex];
+    return [self.delegate browser:self viewForTransitionAtIndex:self.configuration.selectedIndex];
 }
 
 /// 返回父视图，用于添加播放器
 - (UIView *)superViewForTransitionView:(UIView *)transitionView {
-    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
     if (!cell) {
-        cell = [self collectionView:self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.selectedIndex inSection:0]];
+        cell = [self collectionView:self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
     }
     cell.player = (AFPlayer *)transitionView;
     return cell;
@@ -700,8 +691,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 弹出浏览器，开始浏览
 - (void)browse {
-    self.isOtherAudioPlaying = AVAudioSession.sharedInstance.isOtherAudioPlaying;
-    AFBrowserItem *item = [self itemAtIndex:self.selectedIndex];
+    self.configuration.isOtherAudioPlaying = AVAudioSession.sharedInstance.isOtherAudioPlaying;
+    AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     // 如果url为空，不弹出浏览器
     if (!item.content) {
         NSLog(@"-------------------------- Error：item的Url为空 --------------------------");
@@ -715,7 +706,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
             return;
         }
     }
-    UIViewController *currentVc = AFBrowserViewController.currentVc;
+    UIViewController *currentVc = AFBrowserConfiguration.currentVc;
     if (currentVc) {
         if (item.type == AFBrowserItemTypeVideo) {
             NSString *url = [item.content isKindOfClass:NSString.class] ? item.content : [(NSURL *)item.content absoluteString];
@@ -740,54 +731,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 
-#pragma mark - 获取 currentVc
-+ (UIViewController *)currentVc {
-    UIWindow *window = UIApplication.sharedApplication.keyWindow;
-    if ([window.superview isKindOfClass:UIWindow.class]) {
-        while (!window.rootViewController && [window.superview isKindOfClass:UIWindow.class]) {
-            window = (UIWindow *)window.superview;
-        }
-    } else {
-        for (UIWindow *subWindow in window.subviews) {
-            if ([subWindow isKindOfClass:UIWindow.class] && subWindow.rootViewController && !subWindow.hidden && subWindow.alpha > 0) {
-                window = subWindow;
-            }
-        }
-    }
-    if (window.windowLevel != UIWindowLevelNormal) {
-        NSArray *windows = UIApplication.sharedApplication.windows;
-        for(UIWindow *win in windows) {
-            if (win.windowLevel == UIWindowLevelNormal) {
-                window = win;
-                break;
-            }
-        }
-    }
-    UIViewController *result = window.rootViewController;
-    if (result.presentedViewController) {
-        do {result = result.presentedViewController;} while (result.presentedViewController);
-    } else {
-        id nextResponder = window.subviews.firstObject.nextResponder;
-        if ([nextResponder isKindOfClass:UIViewController.class]) result = nextResponder;
-    }
-    while ([result isKindOfClass:UITabBarController.class] || [result isKindOfClass:UINavigationController.class]) {
-        if ([result isKindOfClass:UITabBarController.class]) {
-            UITabBarController *tabBarController = (UITabBarController *)result;
-            result = tabBarController.viewControllers[tabBarController.selectedIndex];
-            if (result.presentedViewController) {
-                do {result = result.presentedViewController;} while (result.presentedViewController);
-            }
-        } else if ([result isKindOfClass:UINavigationController.class]) {
-            result = [(UINavigationController *)result childViewControllers].lastObject;
-            if (result.presentedViewController) {
-                do {result = result.presentedViewController;} while (result.presentedViewController);
-            }
-        }
-    }
-    return result;
-}
-
-
 #pragma mark - 浏览器的加载器代理
 static Class _loaderProxy;
 + (void)setLoaderProxy:(Class<AFBrowserLoaderDelegate>)loaderProxy {
@@ -799,19 +742,24 @@ static Class _loaderProxy;
 }
 
 
-#pragma mark -- 旋转控制，暂时不支持横屏
+#pragma mark -- 屏幕旋转控制
 - (BOOL)shouldAutorotate{
-    return NO;
+    NSLog(@"-------------------------- shouldAutorotate --------------------------");
+    return YES;
 }
 
+//[[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations{
+    NSLog(@"-------------------------- supportedInterfaceOrientations --------------------------");
     return UIInterfaceOrientationMaskPortrait;
 }
 
 //- (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation{
 //    return UIInterfaceOrientationPortrait;
 //}
-
+- (void)deviceOrientationDidChangeNotification {
+    NSLog(@"-------------------------- 收到屏幕旋转的通知 --------------------------");
+}
 
 #pragma mark - 完成转场，刷新UI
 - (void)finishedTransaction {
@@ -820,6 +768,9 @@ static Class _loaderProxy;
 }
 
 
+- (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
+    NSLog(@"-------------------------- viewWillTransitionToSize:%@ --------------------------", NSStringFromCGSize(size));
+}
 
 @end
 

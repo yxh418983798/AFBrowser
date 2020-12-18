@@ -47,4 +47,9 @@
     // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
 }
 
+
+//- (UIInterfaceOrientationMask)application:(UIApplication *)application supportedInterfaceOrientationsForWindow:(UIWindow *)window {
+//    NSLog(@"-------------------------- 来了APP --------------------------");
+//    return UIInterfaceOrientationMaskAll;
+//}
 @end

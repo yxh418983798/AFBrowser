@@ -329,7 +329,7 @@
     UIView *sourceView = [self.delegate transitionViewForSourceController];
     CGRect sourceFrame = [self transitionFrameWithView:sourceView];
     UIView *shadeView;
-    if (self.hideSourceViewWhenTransition) {
+    if (self.configuration.hideSourceViewWhenTransition) {
         if (@available(iOS 13.0, *)) {
             shadeView = [[UIView alloc] initWithFrame:sourceFrame];
             shadeView.backgroundColor = UIColor.whiteColor;
@@ -426,7 +426,7 @@
     } else {
         sourceView = [self.delegate transitionViewForSourceController];
         sourceFrame = [self transitionFrameWithView:sourceView];
-        sourceView.hidden = self.hideSourceViewWhenTransition;
+        sourceView.hidden = self.configuration.hideSourceViewWhenTransition;
     }
 
     // 添加黑色背景

@@ -80,6 +80,11 @@ static int MaxPlayer = 5;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayer) name:UIApplicationDidEnterBackgroundNotification object:nil];
 }
 
+/// 构造播放器
++ (AFPlayer *)productPlayer {
+    return [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
+}
+
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"创建播放器, %@", self.displayDescription]];

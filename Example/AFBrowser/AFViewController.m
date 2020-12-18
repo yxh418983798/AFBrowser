@@ -10,6 +10,7 @@
 #import "AFBrowserViewController.h"
 #import <Masonry.h>
 #import <SDWebImage/SDWebImage.h>
+
 @interface AFViewController () <UITableViewDelegate, UITableViewDataSource, AFBrowserDelegate>
 /** i */
 @property (nonatomic, strong) UITableView            *tableView;
@@ -31,6 +32,7 @@
 
 /** data */
 @property (nonatomic, strong) NSMutableArray            *data;
+
 @end
 
 
@@ -47,20 +49,28 @@ static NSArray *array;
 //    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
     [self.navigationController pushViewController:AFViewController.new animated:YES];
 }
+
+
 - (void)viewDidLoad
 {
     [super viewDidLoad];
-    
     self.data = NSMutableArray.new;
-    for (int i = 0; i < 10; i++) {
-        [self.data addObject:[AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0]];
+
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"timeline" ofType:@"txt"];
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    NSArray *array = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:NULL];
+
+    for (NSDictionary *dic in array) {
+        [self.data addObjectsFromArray:[dic valueForKey:@"images"]];
     }
-    self.obj1 = NSObject.new;
-    arr = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
-    [arr addPointer:(__bridge void *)(self.obj1)];
+//    for (int i = 0; i < 10; i++) {
+//        [self.data addObject:[AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0]];
+//    }
+//    self.obj1 = NSObject.new;
+//    arr = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
+//    [arr addPointer:(__bridge void *)(self.obj1)];
     
 //    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
-    
     
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"push" style:(UIBarButtonItemStylePlain) target:self action:@selector(action)];
     
@@ -68,7 +78,7 @@ static NSArray *array;
     _tableView.delegate = self;
     _tableView.dataSource = self;
     [self.view addSubview:_tableView];
-    
+    [self.tableView reloadData];
 }
 
 
@@ -117,7 +127,11 @@ static NSArray *array;
 //    [player prepare];
 //    [player play];
 //    cell.imageView.image = [UIImage imageNamed:@"image"];
-    [cell.imageView sd_setImageWithURL:[NSURL URLWithString:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg"]];
+    
+//    [cell.imageView sd_setImageWithURL:[NSURL URLWithString:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg"]];
+    
+    [cell.imageView sd_setImageWithURL:[NSURL URLWithString:[self.data[indexPath.row] valueForKeyPath:@"url"]]];
+
     cell.textLabel.text = [NSString stringWithFormat:@"第%lu个Cell", indexPath.row];
     return cell;
 }
@@ -141,6 +155,9 @@ static NSArray *array;
 }
 
 - (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index {
+    
+    return [AFBrowserItem itemWithImage:[self.data[index] valueForKeyPath:@"url"] coverImage:[self.data[index] valueForKeyPath:@"url"] width:0 height:0];
+
     return self.data[index];
             return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
     if (index > 2) {

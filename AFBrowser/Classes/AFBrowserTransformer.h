@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import "AFBrowserConfiguration.h"
 
 @class AFBrowserItem;
 @class AFBrowserTransformer;
@@ -31,8 +32,8 @@
 /** 当前转场的item */
 @property (nonatomic, strong) AFBrowserItem *item;
 
-/** 转场时，是否隐藏源视图 */
-@property (assign, nonatomic) BOOL          hideSourceViewWhenTransition;
+/** AFBrowserConfiguration */
+@property (nonatomic, strong) AFBrowserConfiguration            *configuration;
 
 /** 是否使用系统的默认转场 */
 @property (nonatomic, assign) BOOL          userDefaultAnimation;

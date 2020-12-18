@@ -84,6 +84,12 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 
 @property (class) int          maxPlayer;
 
+
+/**
+ * @brief 构造播放器
+ */
++ (AFPlayer *)productPlayer;
+
 /**
  * @brief 准备播放
  */

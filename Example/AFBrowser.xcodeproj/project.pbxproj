@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3153ACC9258B611C00C5AF04 /* timeline.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3153ACC8258B611C00C5AF04 /* timeline.txt */; };
 		31F6FB3524FF6E5D00703C1A /* AFTableViewCell.m in Sources */ = {isa = PBXBuildFile; fileRef = 31F6FB3424FF6E5D00703C1A /* AFTableViewCell.m */; };
 		5DD1354D6E542A6730A2215F /* libPods-AFBrowser_Example.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 23F2690F7D780F78DC114440 /* libPods-AFBrowser_Example.a */; };
 		6003F58E195388D20070C39A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58D195388D20070C39A /* Foundation.framework */; };
@@ -41,6 +42,7 @@
 		09803E8654480C0BE2A2720B /* libPods-AFBrowser_Tests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AFBrowser_Tests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		1FC1AA23EE21215BA24E8D75 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
 		23F2690F7D780F78DC114440 /* libPods-AFBrowser_Example.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-AFBrowser_Example.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		3153ACC8258B611C00C5AF04 /* timeline.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = timeline.txt; sourceTree = "<group>"; };
 		31F6FB3324FF6E5D00703C1A /* AFTableViewCell.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AFTableViewCell.h; sourceTree = "<group>"; };
 		31F6FB3424FF6E5D00703C1A /* AFTableViewCell.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AFTableViewCell.m; sourceTree = "<group>"; };
 		6003F58A195388D20070C39A /* AFBrowser_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AFBrowser_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -146,6 +148,7 @@
 		6003F593195388D20070C39A /* Example for AFBrowser */ = {
 			isa = PBXGroup;
 			children = (
+				3153ACC8258B611C00C5AF04 /* timeline.txt */,
 				6003F59C195388D20070C39A /* AFAppDelegate.h */,
 				6003F59D195388D20070C39A /* AFAppDelegate.m */,
 				873B8AEA1B1F5CCA007FD442 /* Main.storyboard */,
@@ -288,6 +291,7 @@
 				873B8AEB1B1F5CCA007FD442 /* Main.storyboard in Resources */,
 				71719F9F1E33DC2100824A3D /* LaunchScreen.storyboard in Resources */,
 				6003F5A9195388D20070C39A /* Images.xcassets in Resources */,
+				3153ACC9258B611C00C5AF04 /* timeline.txt in Resources */,
 				6003F598195388D20070C39A /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
