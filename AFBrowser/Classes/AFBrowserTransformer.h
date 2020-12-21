@@ -9,19 +9,24 @@
 #import <Foundation/Foundation.h>
 #import "AFBrowserConfiguration.h"
 
-@class AFBrowserItem;
-@class AFBrowserTransformer;
+@class AFBrowserItem, AFBrowserTransformer;
 
 @protocol AFBrowserTransformerDelegate <NSObject>
 
 /// 源控制器的转场View
 - (UIView *)transitionViewForSourceController;
 
+/// 源控制器的转场View
+- (UIImage *)transitionImageForSourceController;
+
 /// 推出控制器的转场View
 - (UIView *)transitionViewForPresentedController;
 
-/// 推出控制器的转场View
+/// 推出控制器的转场View的父视图
 - (UIView *)superViewForTransitionView:(UIView *)transitionView;
+
+/// 获取当前展示的item
+- (AFBrowserItem *)currentItem;
 
 @end
 
@@ -29,14 +34,8 @@
 
 @interface AFBrowserTransformer : NSObject <UIViewControllerAnimatedTransitioning, UIViewControllerTransitioningDelegate, UIViewControllerInteractiveTransitioning>
 
-/** 当前转场的item */
-@property (nonatomic, strong) AFBrowserItem *item;
-
 /** AFBrowserConfiguration */
-@property (nonatomic, strong) AFBrowserConfiguration            *configuration;
-
-/** 是否使用系统的默认转场 */
-@property (nonatomic, assign) BOOL          userDefaultAnimation;
+@property (nonatomic, strong) AFBrowserConfiguration  *configuration;
 
 /** 代理 */
 @property (weak, nonatomic) id <AFBrowserTransformerDelegate>  delegate;

@@ -85,7 +85,6 @@
 }
 
 
-
 + (instancetype)aVPlayerItemDidPlayToEndTimeNotificationWithTarget:(id)target selector:(SEL)selector {
     AFBrowserLoaderProxy *proxy = AFBrowserLoaderProxy.new;
     proxy.target = target;

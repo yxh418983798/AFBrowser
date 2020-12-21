@@ -9,7 +9,7 @@
 #import <UIKit/UIKit.h>
 #import "AFPlayer.h"
 
-@class AFBrowserCollectionViewCell;
+@class AFBrowserCollectionViewCell, AFBrowserItem, AFBrowserConfiguration;
 
 @protocol AFBrowserCollectionViewCellDelegate <NSObject>
 
@@ -41,7 +41,7 @@
 @property (strong, nonatomic) AFPlayer      *player;
 
 /// 绑定数据
-- (void)attachItem:(id)item atIndexPath:(NSIndexPath *)indexPath;
+- (void)attachItem:(AFBrowserItem *)item configuration:(AFBrowserConfiguration *)configuration atIndexPath:(NSIndexPath *)indexPath;
 
 /// 重置下自定义视图
 - (void)removeCustomView;

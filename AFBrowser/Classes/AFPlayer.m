@@ -9,8 +9,7 @@
 #import <AVFoundation/AVFoundation.h>
 #import "AFBrowserLoaderProxy.h"
 #import "AFBrowserItem.h"
-#import "AFBrowserViewController.h"
-#import "AFBrowserLoaderProxy.h"
+#import "AFBrowserConfiguration.h"
 //#import <KVOController/KVOController.h>
 
 @interface AFPlayer ()
@@ -80,9 +79,14 @@ static int MaxPlayer = 5;
     [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayer) name:UIApplicationDidEnterBackgroundNotification object:nil];
 }
 
-/// 构造播放器
-+ (AFPlayer *)productPlayer {
-    return [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
++ (AFPlayer *)playerWithItem:(AFBrowserItem *)item {
+    AFPlayer *player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
+//    AFPlayer *player = [AFBrowserTool cachePlayerWithItem:item];
+//    if (!player) {
+//        player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
+//    }
+    player.item = item;
+    return player;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
@@ -90,7 +94,6 @@ static int MaxPlayer = 5;
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"创建播放器, %@", self.displayDescription]];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayerNotification) name:AFPlayerNotificationPauseAllPlayer object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayerNotification) name:AFPlayerNotificationResumeAllPlayer object:nil];
-//        self.proxy = [AFBrowserLoaderProxy aVPlayerItemDidPlayToEndTimeNotificationWithTarget:self selector:@selector(finishedPlayAction:)];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedPlayAction:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
         self.isActive = YES;
     }
@@ -110,7 +113,6 @@ static int MaxPlayer = 5;
         [self.contentView addSubview:self.dismissBtn];
         [self addSubview:self.bottomBar];
     }
-//    NSLog(@"-------------------------- didMoveToSuperview:%@ --------------------------", self.superview);
 }
 
 - (void)layoutSubviews {
@@ -202,6 +204,7 @@ static int MaxPlayer = 5;
 - (void)setMuted:(BOOL)muted {
     _muted = muted;
     self.player.muted = muted;
+    
 }
 
 - (void)attachCoverImage:(id)image {
@@ -713,7 +716,7 @@ static int MaxPlayer = 5;
         }
     }
     [self.player play];
-    if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay || (self.player.currentItem.status == AVPlayerItemStatusUnknown && self.item.useCustomPlayer)) {
+    if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay || (self.player.currentItem.status == AVPlayerItemStatusUnknown && self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo)) {
         if (self.item.showVideoControl) {
             self.bottomBar.playBtn.selected = YES;
         }
@@ -875,9 +878,6 @@ static int MaxPlayer = 5;
     [self.player pause];
     [self seekToTime:(value * self.duration)];
     [self.bottomBar updateProgressWithCurrentTime:value * self.duration durationTime:self.duration];
-//    if (self.delegate && [self.delegate respondsToSelector:@selector(aliyunVodProgressView:dragProgressSliderValue:event:)]) {
-//        [self.delegate aliyunVodProgressView:self dragProgressSliderValue:sliderValue event:UIControlEventTouchDownRepeat]; //实际是点击事件
-//    }
 }
 
 
@@ -912,8 +912,7 @@ static int MaxPlayer = 5;
     if ([self.delegate respondsToSelector:@selector(finishWithPlayer:)]) {
         [self.delegate finishWithPlayer:self];
     }
-    if (self.item.infiniteLoop) {
-//                    weakSelf.progress = 0.f;
+    if (self.configuration.infiniteLoop) {
         [self seekToTime:0.f];
         [self play];
     } else {

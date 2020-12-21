@@ -8,9 +8,7 @@
 #import <Foundation/Foundation.h>
 #import "AFBrowserEnum.h"
 
-@class AFBrowserViewController;
-@class AFBrowserItem;
-
+@class AFBrowserItem, AFBrowserViewController;
 
 @protocol AFBrowserDelegate <NSObject>
 
@@ -23,13 +21,30 @@
 
 /**
  * @brief 构造item数据源
- * 
+ *
  * @note  内部会自动缓存item，
  */
 - (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index;
 
 
 @optional;
+
+/**
+ * @brief 返回转场的View
+ *
+ * @note  如果是图片的类型，应该返回该图片所在的UIImageView
+ * @note  如果是视频的类型，应该返回视频播放器的容器View
+ */
+- (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index;
+
+
+/**
+ * @brief 返回转场的图片
+ *
+ * @note  当 viewForTransitionAtIndex 返回的是一个自定义的View，无法准确的获取到image，此时需要实现该方法返回一张图片
+ * @note  如果没有实现该方法，内部会自动使用 viewForTransitionAtIndex 返回的View的截图
+ */
+- (UIImage *)browser:(AFBrowserViewController *)browser imageForTransitionAtIndex:(NSInteger)index;
 
 
 /**
@@ -51,15 +66,6 @@
 
 
 /**
- * @brief 返回转场的View
- *
- * @note  如果是图片的类型，应该返回该图片所在的UIImageView
- * @note  如果是视频的类型，应该返回视频播放器的容器View
- */
-- (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index;
-
-
-/**
  * @brief 分页加载数据的实现，每次浏览到第一个或最后一个Item时，自动调用该方法获取数据
  *
  * @param direction  翻页方向
@@ -67,15 +73,19 @@
  * @note  如果Item的数据量很大，建议实现该协议来分页加载数据源，以提升性能
  * @note  success 表示数据是否成功加载完毕，如果传了NO，是不会刷新数据的
  */
-- (void)loadDataWithDirection:(AFBrowserDirection)direction completionReload:(void (^)(BOOL success))completionReload;
+- (void)browser:(AFBrowserViewController *)browser loadDataWithDirection:(AFBrowserDirection)direction completionReload:(void (^)(BOOL success))completionReload;
 
 
 /**
- * @brief dismiss控制器的回调
- *
- * @note  如果频的类型，应该返回视频播放器的容器View
+ * @brief 自定义加载图片
  */
-- (void)didDismissBrowser:(AFBrowserViewController *)browser;
+- (void)browser:(AFBrowserViewController *)browser loadImage:(NSString *)image;
+
+
+/**
+ * @brief 查询图片缓存，如果没有实现，会从AFBrowserLoaderDelegate方法中查询
+ */
+- (UIImage *)browser:(AFBrowserViewController *)browser hasImageCacheWithKey:(NSString *)key atIndex:(NSInteger)index;
 
 
 /**
@@ -89,6 +99,17 @@
           [cell addSubview:btn];
  */
 - (void)browser:(AFBrowserViewController *)browser willDisplayCell:(UICollectionViewCell *)cell forItemAtIndex:(NSInteger)index;
+
+
+/**
+ * @brief dismiss控制器的回调
+ *
+ * @note  如果频的类型，应该返回视频播放器的容器View
+ */
+- (void)didDismissBrowser:(AFBrowserViewController *)browser;
+
+
+
 
 @end
 

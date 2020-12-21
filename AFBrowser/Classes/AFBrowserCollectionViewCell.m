@@ -11,6 +11,7 @@
 #import "AFBrowserLoaderProxy.h"
 #import <YYImage/YYImage.h>
 #import "AFBrowserEnum.h"
+#import "AFBrowserTool.h"
 
 @interface AFBrowserScrollView: UIScrollView
 @end
@@ -33,16 +34,19 @@
 @interface AFBrowserCollectionViewCell () <UIScrollViewDelegate, UIGestureRecognizerDelegate, AFPlayerDelegate>
 
 /** 图片容器 */
-@property (nonatomic, strong) UIView             *imageContainerView;
+@property (nonatomic, strong) UIView                 *imageContainerView;
 
 /** item */
-@property (strong, nonatomic) AFBrowserItem      *item;
+@property (strong, nonatomic) AFBrowserItem          *item;
+
+/** 配置 */
+@property (nonatomic, strong) AFBrowserConfiguration *configuration;
 
 /** 记录indexPath */
-@property (strong, nonatomic) NSIndexPath        *indexPath;
+@property (strong, nonatomic) NSIndexPath            *indexPath;
 
 /** 记录状态 */
-@property (assign, nonatomic) AFLoadImageStatus  loadImageStatus;
+@property (assign, nonatomic) AFLoadImageStatus      loadImageStatus;
 
 @end
 
@@ -105,22 +109,16 @@ static CGFloat MaxScaleDistance = 3.f;
 #pragma mark - UI
 - (AFPlayer *)player {
     if (!_player) {
-        if (self.item.player) {
-            _player = self.item.player;
-        } else {
-            _player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
-            _player.hidden = self.item.type == AFBrowserItemTypeImage;
-        }
-        [self addSubview:_player];
+        _player = [AFBrowserTool playerWithItem:self.item];
     }
     return _player;
 }
 
-- (void)layoutSubviews {
-    [super layoutSubviews];
-    NSLog(@"-------------------------- layoutSubviews --------------------------");
-    [self resizeSubviewSize];
-}
+//- (void)layoutSubviews {
+//    [super layoutSubviews];
+//    NSLog(@"-------------------------- layoutSubviews --------------------------");
+//    [self resizeSubviewSize];
+//}
 
 
 #pragma mark - 更新布局
@@ -129,6 +127,7 @@ static CGFloat MaxScaleDistance = 3.f;
     //视频
     if (self.item.type == AFBrowserItemTypeVideo) {
         _scrollView.hidden = YES;
+        [self addSubview:self.player];
 //        self.player.hidden = NO;
     }
     
@@ -299,8 +298,9 @@ static CGFloat MaxScaleDistance = 3.f;
 
 
 #pragma mark - 绑定数据
-- (void)attachItem:(AFBrowserItem *)item atIndexPath:(NSIndexPath *)indexPath {
+- (void)attachItem:(AFBrowserItem *)item configuration:(AFBrowserConfiguration *)configuration atIndexPath:(NSIndexPath *)indexPath {
 //    NSLog(@"-------------------------- attachItem --------------------------");
+    self.configuration = configuration;
     self.item = item;
     self.indexPath = indexPath;
     self.loadImageStatus = AFLoadImageStatusNone;
@@ -360,7 +360,9 @@ static CGFloat MaxScaleDistance = 3.f;
                                 [self resizeSubviewSize];
                             }
                         } else {
-                            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片失败！，status:%d, error:%@ \n item.content:%@ \n self.item.content:%@", self.loadImageStatus, error, item.content, self.item.content]];
+                            if (error) {
+                                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片失败！，status:%d, error:%@ \n item.content:%@ \n self.item.content:%@", self.loadImageStatus, error, item.content, self.item.content]];
+                            }
                         }
                     }];
                 } else if ([item.coverImage isKindOfClass:NSURL.class]) {
@@ -383,7 +385,7 @@ static CGFloat MaxScaleDistance = 3.f;
             break;
             
         case AFBrowserItemTypeVideo: {
-            self.player.item = item;
+            self.player = [AFBrowserTool playerWithItem:item];
             self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
             self.player.browserDelegate = self;
             [self.player prepare];

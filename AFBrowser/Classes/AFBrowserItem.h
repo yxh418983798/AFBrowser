@@ -7,22 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
-
-@class AFPlayer;
-
-/// 数据类型
-typedef NS_ENUM(NSUInteger, AFBrowserItemType) {
-    AFBrowserItemTypeImage,  /// 图片
-    AFBrowserItemTypeVideo,  /// 视频
-};
-
-/// 加载图片的状态
-typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
-    AFLoadImageStatusNone,      /// 无图片
-    AFLoadImageStatusCover,     /// 已加载 缩略、封面图片
-    AFLoadImageStatusOriginal,  /// 已加载原始高清图片
-};
-
+#import "AFBrowserEnum.h"
 
 @interface AFBrowserItem : NSObject
 
@@ -44,23 +29,18 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
 /** 高度 */
 @property (nonatomic, assign) CGFloat           height;
 
+/** userInfo */
+@property (weak, nonatomic) id                  userInfo;
+
 /** 是否自动播放视频，默认NO */
 @property (assign, nonatomic) BOOL              autoPlay;
-
-/** 视频转场时，是否使用外部播放器进行转场动画，如果为YES，则视频播放是连续的（前提条件是外部有提供播放器），默认NO */
-@property (assign, nonatomic) BOOL              useCustomPlayer;
 
 /** 播放视频时，是否显示控制条，默认不显示 */
 @property (assign, nonatomic) BOOL              showVideoControl;
 
-/** 播放视频时，是否无限循环播放 */
-@property (assign, nonatomic) BOOL              infiniteLoop;
-
-/** player */
-@property (nonatomic, weak) AFPlayer            *player;
-
 /** 播放时间 */
 @property (nonatomic, assign) NSTimeInterval    currentTime;
+
 
 /**
  * @brief 返回已下载的视频或图片的本地地址

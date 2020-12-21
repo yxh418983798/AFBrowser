@@ -10,6 +10,7 @@
 #import "AFBrowserItem.h"
 #import "AFPlayer.h"
 #import "AFBrowserLoaderProxy.h"
+#import "AFBrowserTool.h"
 
 @interface AFBrowserTransformer () <UIGestureRecognizerDelegate>
 
@@ -73,8 +74,10 @@
 /** 百分比控制 */
 @property (nonatomic, strong) UIPercentDrivenInteractiveTransition *percentTransition;
 
-@end
+/** player */
+@property (nonatomic, weak) AFPlayer            *player;
 
+@end
 
 
 @implementation AFBrowserTransformer
@@ -125,21 +128,25 @@
 }
 
 - (UIView *)presentedTransitionView {
-    UIView *transitionView = [self.delegate transitionViewForPresentedController];
-    if (!transitionView && self.item.type == AFBrowserItemTypeImage) {
-        UIImageView *imageView = [UIImageView new];
-        imageView.image = [UIImage new];
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"-------------------------- presentedTransitionView是空的！请检查代码 --------------------------"]];
-
-        return imageView;
+    AFBrowserItem *item = self.delegate.currentItem;
+    if (item.type == AFBrowserItemTypeImage) {
+        UIView *transitionView = [self.delegate transitionViewForPresentedController];
+        if (!transitionView) {
+            UIImageView *imageView = [[UIImageView alloc] initWithImage:UIImage.new];
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"-------------------------- presentedTransitionView是空的！请检查代码 --------------------------"]];
+            return imageView;
+        }
+        return transitionView;
+    } else {
+        return [AFBrowserTool playerWithItem:item];
     }
-    return transitionView;
 }
 
 
 #pragma mark - 转场时间
 - (NSTimeInterval)transitionDuration:(id<UIViewControllerContextTransitioning>)transitionContext {
-    return 0.4;
+//    return 0.4;
+    return UINavigationControllerHideShowBarDuration;
 }
 
 
@@ -176,7 +183,7 @@
             [containerView addSubview:snapView];
         }
         
-        if (self.item.type == AFBrowserItemTypeImage) {
+        if (self.delegate.currentItem.type == AFBrowserItemTypeImage) {
             // 图片转场
             [self dismissImageWithAnimateTransition:transitionContext fromView:fromView toView:toView snapView:snapView];
         } else {
@@ -193,9 +200,11 @@
     UIView *transitionView = [self.delegate transitionViewForSourceController];
     CGRect transitionFrame = [self transitionFrameWithView:transitionView];
     UIView *presentedTransitionView;
-    if (self.item.useCustomPlayer && self.item.type == AFBrowserItemTypeVideo) {
-        self.item.player = transitionView;
-        self.item.player.muted = NO;
+    if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo && self.delegate.currentItem.type == AFBrowserItemTypeVideo) {
+        self.player = transitionView;
+        if (self.configuration.muteOption != AFPlayerMuteOptionAlways) {
+            self.player.muted = NO;
+        }
     }
 
     // 添加交互手势
@@ -208,7 +217,7 @@
     }
     
     // 如果 View为空 || frame有问题 || 定义了userDefaultAnimation，使用系统的默认转场
-    if (!transitionView || CGRectEqualToRect(transitionFrame, CGRectZero) || self.userDefaultAnimation) {
+    if (!transitionView || CGRectEqualToRect(transitionFrame, CGRectZero) || self.configuration.transitionStyle == AFBrowserTransitionStyleSystem) {
 
         toView.frame = CGRectMake(0, UIScreen.mainScreen.bounds.size.height, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         [containerView addSubview:toView];
@@ -221,6 +230,7 @@
     }
     
     // 使用自定义转场
+    AFBrowserItem *item = self.delegate.currentItem;
     self.sourceVc = fromVC;
     self.presentedVc = toVC;
     toView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
@@ -233,7 +243,7 @@
     CGRect resultFrame;
     self.frameBeforePresent = transitionView.frame;
     // 拷贝一份用于转场的图片内容
-    if (self.item.useCustomPlayer) {
+    if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
         self.transitionView = transitionView;
         self.originalTag = transitionView.tag;
         self.transitionSuperView = transitionView.superview;
@@ -249,18 +259,30 @@
 //        height = fmin(height, UIScreen.mainScreen.bounds.size.height);
 //        resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
     } else {
+        if (item.width > 0 && item.height > 0) {
+            imageSize = CGSizeMake(item.width, item.height);
+        }
         if ([transitionView isKindOfClass:UIImageView.class] && [(UIImageView *)transitionView image]) {
             UIImage *image = [(UIImageView *)transitionView image];
+            if (CGSizeEqualToSize(imageSize, CGSizeZero)) imageSize = image.size;
             self.transitionView = [[UIView alloc] initWithFrame:transitionFrame];
             self.transitionView.layer.contents = (__bridge id)image.CGImage;
             resultFrame = [AFBrowserTransformer displayFrameWithSize:image.size];
         } else {
-            self.transitionView = [transitionView snapshotViewAfterScreenUpdates:NO];
-            self.transitionView.frame = transitionFrame;
-            CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
-            resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
+            UIImage *image = [self.delegate transitionImageForSourceController];
+            if (image) {
+                if (CGSizeEqualToSize(imageSize, CGSizeZero)) imageSize = image.size;
+                self.transitionView = [[UIView alloc] initWithFrame:transitionFrame];
+                self.transitionView.layer.contents = (__bridge id)image.CGImage;
+                resultFrame = [AFBrowserTransformer displayFrameWithSize:image.size];
+            } else {
+                self.transitionView = [transitionView snapshotViewAfterScreenUpdates:NO];
+                self.transitionView.frame = transitionFrame;
+                if (CGSizeEqualToSize(imageSize, CGSizeZero)) imageSize = transitionView.frame.size;
+                CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(imageSize.height, 1) / fmax(imageSize.width, 1);
+                resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
+            }
         }
-        if (CGSizeEqualToSize(imageSize, CGSizeZero)) imageSize = transitionView.frame.size;
         [containerView addSubview:self.transitionView];
         transitionView.hidden = YES;
     }
@@ -272,7 +294,7 @@
         self.backGroundView.alpha = 1;
         
     } completion:^(BOOL finished) {
-        if (self.item.useCustomPlayer) {
+        if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
             if (!CGRectEqualToRect(self.transitionView.frame, UIScreen.mainScreen.bounds)) {
                 self.transitionView.frame = UIScreen.mainScreen.bounds;
                 [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"Present错误：resultFrame:%@, %@ --------------------------", NSStringFromCGRect(resultFrame), self.displayStatus]];
@@ -298,7 +320,7 @@
             [self.transitionView removeFromSuperview];
             self.backGroundView = nil;
             self.transitionView = nil;
-            if (self.item.useCustomPlayer) {
+            if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
                 [[self.delegate superViewForTransitionView:transitionView] addSubview:transitionView];
             }
         }
@@ -314,7 +336,7 @@
     UIImageView *transitionView = (UIImageView *)self.presentedTransitionView;
     UIScrollView *scrollView = (UIScrollView *)transitionView.superview.superview;
     // 如果获取的transitionView为空 或 定义了userDefaultAnimation，使用系统的默认转场
-    if (!scrollView || !transitionView || self.userDefaultAnimation) {
+    if (!scrollView || !transitionView || self.configuration.transitionStyle == AFBrowserTransitionStyleSystem) {
         fromView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         [containerView addSubview:fromView];
         [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
@@ -359,7 +381,7 @@
     [containerView addSubview:self.transitionView];
     fromView.hidden = YES;
     // 执行转场
-    [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
+    [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseIn animations:^{
         
         self.backGroundView.alpha = 0;
         if (!self.isInteractive) {
@@ -404,9 +426,10 @@
     
     UIView *containerView = transitionContext.containerView;
     UIView *transitionView = self.presentedTransitionView;
+    AFBrowserItem *item = self.delegate.currentItem;
 
     // 如果获取的transitionView为空 或 定义了userDefaultAnimation，使用系统的默认转场
-    if (!transitionView || self.userDefaultAnimation) {
+    if (!transitionView || self.configuration.transitionStyle == AFBrowserTransitionStyleSystem) {
         fromView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         [containerView addSubview:fromView];
         [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseOut animations:^{
@@ -420,7 +443,7 @@
     // 获取转场的源视图
     UIView *sourceView;
     CGRect sourceFrame;
-    if (self.item.useCustomPlayer) {
+    if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
         sourceView = transitionView;
         sourceFrame = self.trasitionViewOriginalFrame;
     } else {
@@ -448,11 +471,11 @@
     fromView.hidden = YES;
     /// 当视频比例和外部的容器比例不一致的时候，计算出正确的最终的frame
     CGRect resultFrame = sourceFrame;
-    AFPlayer *player = (AFPlayer *)self.transitionView;
-    AVLayerVideoGravity gravity = player.videoGravity;
-    if (!self.isInteractive && self.item.width > 0 && sourceFrame.size.width > 0 && self.item.height/self.item.width != sourceFrame.size.height/sourceFrame.size.width) {
-        player.videoGravity = AVLayerVideoGravityResize;
-        player.frame = self.playerFrame;
+    self.player = (AFPlayer *)self.transitionView;
+    AVLayerVideoGravity gravity = self.player.videoGravity;
+    if (!self.isInteractive && item.width > 0 && sourceFrame.size.width > 0 && item.height/item.width != sourceFrame.size.height/sourceFrame.size.width) {
+        self.player.videoGravity = AVLayerVideoGravityResize;
+        self.player.frame = self.playerFrame;
     }
     // 执行转场动画
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:0 animations:^{
@@ -482,7 +505,7 @@
         [self.transitionView removeFromSuperview];
         [self.backGroundView removeFromSuperview];
         [snapView removeFromSuperview];
-        player.videoGravity = gravity;
+        self.player.videoGravity = gravity;
         if ([transitionContext transitionWasCancelled]) {
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"dismissVideo，completion取消转场！：%@", self.displayStatus]];
             fromView.hidden = NO;
@@ -495,9 +518,11 @@
                 [self.transitionView performSelector:@selector(browserCancelDismiss)];
             }
         } else {
-            if (self.item.useCustomPlayer) {
-                self.item.player.muted = YES;
-                self.item.player.showToolBar = NO;
+            if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
+                if (self.configuration.muteOption != AFPlayerMuteOptionNever) {
+                    self.player.muted = YES;
+                }
+                self.player.showToolBar = NO;
                 self.transitionView.tag = self.originalTag;
                 [self.transitionSuperView addSubview:self.transitionView];
             }
@@ -505,9 +530,9 @@
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"dismissVideo，completion完成转场！：%@", self.displayStatus]];
         }
 
-        if (self.item.useCustomPlayer) {
+        if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
             if (([[[UIDevice currentDevice]systemVersion]floatValue] < 11.0)) {
-                AVPlayer *player = [self.item.player valueForKey:@"_player"];
+                AVPlayer *player = [player valueForKey:@"_player"];
                 [player play];
             }
         }
@@ -582,8 +607,8 @@ static CGRect beginFrame;
 
     switch (pan.state) {
         case UIGestureRecognizerStateBegan: {
-            if (([[[UIDevice currentDevice]systemVersion]floatValue] < 11.0) && self.item.useCustomPlayer) {
-                AVPlayer *player = [self.item.player valueForKey:@"_player"];
+            if (([[[UIDevice currentDevice]systemVersion]floatValue] < 11.0) && self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
+                AVPlayer *player = [self.player valueForKey:@"_player"];
                 [player pause];
             }
             if (_displayLink) {
@@ -599,7 +624,8 @@ static CGRect beginFrame;
             if (CGRectEqualToRect(self.frameBeforeDismiss, CGRectZero)) {
                 self.frameBeforeDismiss = self.transitionView.frame;
             }
-            if (self.item.type == AFBrowserItemTypeImage) {
+            AFBrowserItem *item = self.delegate.currentItem;
+            if (item.type == AFBrowserItemTypeImage) {
                 self.imageBeginTransitionFrame = self.transitionView.frame;
                 UIImageView *transitionView  = (UIImageView *)self.presentedTransitionView;
                 NSAssert(transitionView, @"transitionView为空！");
@@ -612,7 +638,7 @@ static CGRect beginFrame;
                 beginFrame = self.transitionView.frame;
 //                NSLog(@"-------------------------- beginFrame：%@ --------------------------", NSStringFromCGRect(beginFrame));
             }
-            sourceFrame = self.item.useCustomPlayer ? self.trasitionViewOriginalFrame : [self transitionFrameWithView:[self.delegate transitionViewForSourceController]];
+            sourceFrame = self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo ? self.trasitionViewOriginalFrame : [self transitionFrameWithView:[self.delegate transitionViewForSourceController]];
             self.trasitionViewOriginalFrame = sourceFrame;
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"startPan开始手势：%@", self.displayStatus]];
         }
@@ -640,10 +666,11 @@ static CGRect beginFrame;
             if (!self.isInteractive) return;
             self.isInteractive = NO;
             if(progress > 0.15){
-                if (self.item.type == AFBrowserItemTypeImage && ([[[UIDevice currentDevice]systemVersion]floatValue] >= 11.0)) {
+                AFBrowserItem *item = self.delegate.currentItem;
+                if (item.type == AFBrowserItemTypeImage && ([[[UIDevice currentDevice]systemVersion]floatValue] >= 11.0)) {
                     [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
                         self.backGroundView.alpha = 0;
-                        if (![self.delegate transitionViewForSourceController] && !self.item.useCustomPlayer) {
+                        if (![self.delegate transitionViewForSourceController] && !self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
                             // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
                             self.transitionView.alpha = 0;
                         } else {
@@ -657,7 +684,7 @@ static CGRect beginFrame;
                     }];
                 } else {
                     AFPlayer *player = (AFPlayer *)self.transitionView;
-                    if (self.item.width > 0 && sourceFrame.size.width > 0 && self.item.height/self.item.width != sourceFrame.size.height/sourceFrame.size.width) {
+                    if (item.width > 0 && sourceFrame.size.width > 0 && item.height/item.width != sourceFrame.size.height/sourceFrame.size.width) {
                         player.videoGravity = AVLayerVideoGravityResize;
                         CGRect frame = self.playerFrame;
                         frame.origin.y = player.frame.origin.y + fabs((player.frame.size.height - frame.size.height)/2);
@@ -682,7 +709,8 @@ static CGRect beginFrame;
 #pragma mark - 取消转场
 - (void)cancelInteractiveTransition {
     self.isCancel = YES;
-    if (self.item.type == AFBrowserItemTypeImage) {
+    AFBrowserItem *item = self.delegate.currentItem;
+    if (item.type == AFBrowserItemTypeImage) {
         if (UIDevice.currentDevice.systemVersion.floatValue >= 11.0) {
             [self animationCancel];
         } else {
@@ -788,7 +816,7 @@ static CGFloat ScaleDistance = 0.4;
 
 - (void)timerAction {
     
-    static CGFloat number = 15.f; // 0.25 * 60
+    CGFloat number = UINavigationControllerHideShowBarDuration * 60; // 0.25 * 60
     static CGFloat distance;
     static CGFloat x;
     static CGFloat y;
@@ -818,7 +846,7 @@ static CGFloat ScaleDistance = 0.4;
     if (h == 0) h = (resultFrame.size.height - currentFrame.size.height)/number;
     [self.percentTransition updateInteractiveTransition:self.progress];
     self.backGroundView.alpha = progress;
-    if (![self.delegate transitionViewForSourceController] && !self.item.useCustomPlayer) {
+    if (![self.delegate transitionViewForSourceController] && !self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
         // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
         self.transitionView.alpha = progress;
     } else {
@@ -846,7 +874,8 @@ static CGFloat ScaleDistance = 0.4;
 
 - (CGRect)playerFrame {
     CGRect resultFrame = UIScreen.mainScreen.bounds;
-    CGFloat scale = self.item.height/self.item.width;
+    AFBrowserItem *item = self.delegate.currentItem;
+    CGFloat scale = item.height/item.width;
     CGFloat screenScale = resultFrame.size.height/resultFrame.size.width;
     if (screenScale < 1) screenScale = 1.f/screenScale; // 横屏的情况
     if (scale > screenScale) {

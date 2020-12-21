@@ -6,10 +6,8 @@
 //
 //  视频播放器，基于AVPlayer封装
 
-#import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import "AFPlayerBottomBar.h"
-#import "AFBrowserItem.h"
 
 /// 播放器状态
 typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
@@ -25,14 +23,14 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
 
 /// 播放器转场状态
 typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
-    AFPlayerTransitionStatusSmall,      /// 小屏
-    AFPlayerTransitionStatusTransitioning,  /// 转场中
-    AFPlayerTransitionStatusFullScreen,         /// 全屏
+    AFPlayerTransitionStatusSmall,         /// 小屏
+    AFPlayerTransitionStatusTransitioning, /// 转场中
+    AFPlayerTransitionStatusFullScreen,    /// 全屏
 };
 
 
+@class AFPlayer, AFBrowserItem, AFBrowserConfiguration;
 
-@class AFPlayer;
 @protocol AFPlayerDelegate <NSObject>
 
 /// 播放器准备完成，进入可播放状态，建议在这里进行play
@@ -77,6 +75,9 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 /** AFBrowserItem */
 @property (nonatomic, strong) AFBrowserItem       *item;
 
+/** AFBrowserConfiguration */
+@property (nonatomic, weak) AFBrowserConfiguration *configuration;
+
 @property(copy) AVLayerVideoGravity videoGravity;
 
 /** 是否在转场 */
@@ -88,7 +89,7 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 /**
  * @brief 构造播放器
  */
-+ (AFPlayer *)productPlayer;
++ (AFPlayer *)playerWithItem:(AFBrowserItem *)item;
 
 /**
  * @brief 准备播放

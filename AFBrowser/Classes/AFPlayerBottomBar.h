@@ -7,7 +7,22 @@
 //  播放器底部工具栏
 
 #import <UIKit/UIKit.h>
-#import "AFPlayerSlider.h"
+
+@class AFPlayerSlider;
+
+@protocol AFPlayerSliderDelegate <NSObject>
+
+- (void)slider:(AFPlayerSlider *)slider beginTouchWithValue:(float)value;
+
+@end
+
+
+@interface AFPlayerSlider : UISlider
+
+/** 代理 */
+@property (weak, nonatomic) id <AFPlayerSliderDelegate>            delegate;
+
+@end
 
 
 @interface AFPlayerBottomBar : UIView

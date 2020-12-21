@@ -22,11 +22,24 @@ typedef NS_ENUM(NSUInteger, AFPageControlType){
     AFPageControlTypeText,    // 文字
 };
 
+/// 数据类型
+typedef NS_ENUM(NSUInteger, AFBrowserItemType) {
+    AFBrowserItemTypeImage,  /// 图片
+    AFBrowserItemTypeVideo,  /// 视频
+};
+
 /// 播放器的播放方式
 typedef NS_ENUM(NSUInteger, AFBrowserPlayOption){
     AFBrowserPlayOptionDefault,       /// 默认，刚进入浏览器时，如果是视频会自动播放，后续的翻页不会自动播放
     AFBrowserPlayOptionAutoPlay,      /// 自动播放，放大浏览和翻页切换视频的时候都会自动播放
     AFBrowserPlayOptionNeverAutoPlay, /// 不自动播放，只能通过 点击播放按钮 来播放视频
+};
+
+/// 播放器静音模式
+typedef NS_ENUM(NSUInteger, AFPlayerMuteOption){
+    AFPlayerMuteOptionNever,  // 不静音
+    AFPlayerMuteOptionAlwaysButBrowser, // 浏览器中不静音，浏览器外静音播放
+    AFPlayerMuteOptionAlways,   // 总是静音
 };
 
 /// 浏览器 屏幕旋转
@@ -49,6 +62,7 @@ typedef NS_ENUM(NSUInteger, AFBrowserAction){
     AFBrowserActionReload,   /// 刷新事件
 };
 
+/// 图片类型
 typedef NS_ENUM(NSUInteger, AFImageSizeType) {
     AFImageSizeTypeShort,    // 短图片
     AFImageSizeTypeNormal,   // 正常图片，不是长图
@@ -56,11 +70,27 @@ typedef NS_ENUM(NSUInteger, AFImageSizeType) {
     AFImageSizeTypeLongLong, // 很长的长图
 };
 
+/// 图片自适应方式
 typedef NS_ENUM(NSUInteger, AFImageAdjustType) {
-    AFImageAdjustTypeHeight,    // 自适应高度
+    AFImageAdjustTypeHeight,  // 自适应高度
     AFImageAdjustTypeWidth,   // 自适应宽度
-    AFImageAdjustTypeSize,     // 自适应宽高
+    AFImageAdjustTypeSize,    // 自适应宽高
 };
+
+/// 浏览模式
+typedef NS_ENUM(NSUInteger, AFBrowserTransitionStyle){
+    AFBrowserTransitionStyleZoom,  // 默认的转场方式，前提是有实现代理方法：viewForTransitionAtIndex
+    AFBrowserTransitionStyleSystem,  // 使用系统的转场方式
+    AFBrowserTransitionStyleContinuousVideo,  // 转场过程不中断播放视频，前提：实现代理方法：viewForTransitionAtIndex，且返回AFPlayer
+};
+
+/// 加载图片的状态
+typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
+    AFLoadImageStatusNone,      /// 无图片
+    AFLoadImageStatusCover,     /// 已加载 缩略、封面图片
+    AFLoadImageStatusOriginal,  /// 已加载原始高清图片
+};
+
 
 
 #endif /* AFBrowserEnum_h */
