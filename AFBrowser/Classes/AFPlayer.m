@@ -1032,7 +1032,6 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
     if (!proxy) return;
     dispatch_sync(_playerQueue, ^{
         if ([_cacheArray containsObject:proxy]) {
-//            if (tool.item) objc_setAssociatedObject(tool.item, "AFBrowserTool", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
             // 清除数据
             dispatch_barrier_async(_playerQueue, ^{
                 [_cacheArray removeObject:proxy];

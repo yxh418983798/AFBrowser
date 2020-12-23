@@ -10,7 +10,6 @@
 #import "AFBrowserItem.h"
 #import "AFPlayer.h"
 #import "AFBrowserLoaderProxy.h"
-#import "AFBrowserTool.h"
 
 @interface AFBrowserTransformer () <UIGestureRecognizerDelegate>
 

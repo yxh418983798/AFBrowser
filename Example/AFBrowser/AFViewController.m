@@ -142,29 +142,29 @@ static NSArray *array;
 }
 
 
-- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-//    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
-//    AFPlayer *player = [cell viewWithTag:100];
-//    [player play];
-    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(NO).makeSelectedIndex(indexPath.row) browse];
-}
-
-
-- (NSInteger)numberOfItemsInBrowser:(AFBrowserViewController *)browser {
-    return self.data.count;
-}
-
-- (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index {
-    
-    return [AFBrowserItem itemWithImage:[self.data[index] valueForKeyPath:@"url"] coverImage:[self.data[index] valueForKeyPath:@"url"] width:0 height:0];
-
-    return self.data[index];
-            return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
-    if (index > 2) {
-        return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
-    }
-    return [AFBrowserItem itemWithVideo:@"http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
-}
+//- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+////    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+////    AFPlayer *player = [cell viewWithTag:100];
+////    [player play];
+//    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(NO).makeSelectedIndex(indexPath.row) browse];
+//}
+//
+//
+//- (NSInteger)numberOfItemsInBrowser:(AFBrowserViewController *)browser {
+//    return self.data.count;
+//}
+//
+//- (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index {
+//    
+//    return [AFBrowserItem itemWithImage:[self.data[index] valueForKeyPath:@"url"] coverImage:[self.data[index] valueForKeyPath:@"url"] width:0 height:0];
+//
+//    return self.data[index];
+//            return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
+//    if (index > 2) {
+//        return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
+//    }
+//    return [AFBrowserItem itemWithVideo:@"http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
+//}
 
 /// 返回转场的View
 - (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index {

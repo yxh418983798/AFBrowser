@@ -9,7 +9,6 @@
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"
 #import "AFPlayer.h"
-#import "AFBrowserTool.h"
 #import "AFBrowserItem.h"
 #import "AFBrowserConfiguration.h"
 

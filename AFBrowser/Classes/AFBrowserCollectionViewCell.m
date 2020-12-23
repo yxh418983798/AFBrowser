@@ -12,7 +12,6 @@
 #import "AFBrowserLoaderProxy.h"
 #import <YYImage/YYImage.h>
 #import "AFBrowserEnum.h"
-#import "AFBrowserTool.h"
 #import <SDWebImage/SDWebImage.h>
 
 @interface AFBrowserScrollView: UIScrollView
@@ -474,7 +473,6 @@ static CGFloat MaxScaleDistance = 3.f;
             break;
             
         case AFBrowserItemTypeVideo: {
-//            self.player = [AFBrowserTool playerWithItem:item];
             self.player.item = item;
             self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
             self.player.browserDelegate = self;
