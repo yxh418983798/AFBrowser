@@ -26,18 +26,19 @@
 }
 
 
-+ (instancetype)itemWithImage:(id)image coverImage:(id)coverImage width:(CGFloat)width height:(CGFloat)height {
++ (instancetype)itemWithImage:(id)image coverImage:(id)coverImage width:(CGFloat)width height:(CGFloat)height size:(CGFloat)size {
     AFBrowserItem *browser = [AFBrowserItem new];
     browser.content = image;
     browser.coverImage = coverImage;
     browser.width = width;
     browser.height = height;
+    browser.size = size;
     browser.type = AFBrowserItemTypeImage;
     return browser;
 }
 
 
-+ (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height {
++ (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height{
     AFBrowserItem *browser = [AFBrowserItem new];
     browser.content = video;
     browser.coverImage = coverImage;

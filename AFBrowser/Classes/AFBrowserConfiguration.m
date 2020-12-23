@@ -7,14 +7,28 @@
 
 #import "AFBrowserConfiguration.h"
 
+@interface AFBrowserConfiguration ()
+
+@end
+
 @implementation AFBrowserConfiguration
 
+static UIDeviceOrientation *_lastOrientation;
++ (void)load {
+    _lastOrientation = UIDeviceOrientationPortrait;
+}
+
++ (void)initialize {
+    //        [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
+    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(deviceOrientationDidChangeNotification) name:UIDeviceOrientationDidChangeNotification object:nil];
+}
 #pragma mark - 构造
 - (instancetype)init {
     if (self = [super init]) {
         self.selectedIndex = 0;
         self.hideSourceViewWhenTransition = YES;
         self.autoLoadOriginalImage = YES;
+        self.videoGravity = AVLayerVideoGravityResizeAspectFill;
     }
     return self;
 }
@@ -39,6 +53,13 @@
 
 
 #pragma mark - 链式调用
+- (AFBrowserConfiguration * (^)(id <AFBrowserDelegate>))makeDelegate {
+    return ^id(id <AFBrowserDelegate> delegate) {
+        self.delegate = delegate;
+        return self;
+    };
+}
+
 - (AFBrowserConfiguration * (^)(NSUInteger))makeSelectedIndex {
     return ^id(NSUInteger selectedIndex) {
         self.selectedIndex = selectedIndex;
@@ -102,6 +123,14 @@
     };
 }
 
+/// 资源未加载成功是否跳转到浏览器，默认NO
+- (AFBrowserConfiguration * (^)(BOOL))makeShouldBrowseWhenNoCache {
+    return ^id(BOOL shouldBrowseWhenNoCache) {
+        self.shouldBrowseWhenNoCache = shouldBrowseWhenNoCache;
+        return self;
+    };
+}
+
 - (AFBrowserConfiguration * (^)(id))makeUserInfo {
     return ^id(id userInfo) {
         self.userInfo = userInfo;
@@ -109,5 +138,64 @@
     };
 }
 
+/// 播放器填充方式
+- (AFBrowserConfiguration * (^)(AVLayerVideoGravity))makeVideoGravity {
+    return ^id(AVLayerVideoGravity videoGravity) {
+        self.videoGravity = videoGravity;
+        return self;
+    };
+}
+
+
+
+//#pragma mark - 旋转屏幕的通知
++ (void)deviceOrientationDidChangeNotification {
+    // 旋转之后当前的设备方向
+    UIDeviceOrientation orient = UIDevice.currentDevice.orientation;
+    NSLog(@"-------------------------- 收到屏幕旋转的通知：%d --------------------------", orient);
+    if (orient == UIDeviceOrientationUnknown) orient = UIDeviceOrientationPortrait;
+    if (UIDeviceOrientationIsFlat(orient)) return;
+    if (_lastOrientation == orient) return;
+    _lastOrientation = orient;
+
+//    if (self.supportedInterfaceOrientations == UIInterfaceOrientationMaskPortrait && self.lastOrientation == UIDeviceOrientationPortrait) {
+//        return;
+//    }
+
+//    switch (orient) {
+//        case UIDeviceOrientationPortrait:
+//            if (self.supportedInterfaceOrientations & UIInterfaceOrientationMaskPortrait) {
+//                self.frame = CGRectMake(0, 0, [[UIScreen mainScreen] bounds].size.width, [[UIScreen mainScreen] bounds].size.height);
+//            }
+//            break;
+//
+//        case UIDeviceOrientationLandscapeLeft:
+//            if (self.supportedInterfaceOrientations & UIInterfaceOrientationMaskLandscapeLeft) {
+//                self.frame = CGRectMake(0, 0, [[UIScreen mainScreen] bounds].size.width, [[UIScreen mainScreen] bounds].size.height);
+//            }
+//            break;
+//
+//        case UIDeviceOrientationPortraitUpsideDown:
+//            if (self.supportedInterfaceOrientations & UIInterfaceOrientationMaskPortraitUpsideDown) {
+//                self.frame = CGRectMake(0, 0, [[UIScreen mainScreen] bounds].size.width, [[UIScreen mainScreen] bounds].size.height);
+//            }
+//            break;
+//
+//        case UIDeviceOrientationLandscapeRight:
+//            if (self.supportedInterfaceOrientations & UIInterfaceOrientationMaskLandscapeRight) {
+//                self.frame = CGRectMake(0, 0, [[UIScreen mainScreen] bounds].size.width, [[UIScreen mainScreen] bounds].size.height);
+//            }
+//            break;
+//
+//        default:
+//            break;
+//    }
+
+}
+
++ (BOOL)isPortrait {
+    return UIDeviceOrientationIsPortrait(_lastOrientation);
+}
 
 @end
+

@@ -7,9 +7,14 @@
 //  浏览器的配置
 
 #import <Foundation/Foundation.h>
+#import <AVFoundation/AVFoundation.h>
 #import "AFBrowserEnum.h"
+#import "AFBrowserDelegate.h"
 
 @interface AFBrowserConfiguration : NSObject
+
+/** 代理 */
+@property (weak, nonatomic) id <AFBrowserDelegate>     delegate;
 
 /** 资源未加载成功是否跳转到浏览器，默认NO */
 @property (assign, nonatomic) BOOL                     shouldBrowseWhenNoCache;
@@ -53,15 +58,20 @@
 /** 自定义参数 */
 @property (nonatomic, strong) id                       userInfo;
 
-
+/** 播放器的填充方式，默认AVLayerVideoGravityResizeAspectFill完全填充 */
+@property (nonatomic, copy) AVLayerVideoGravity        videoGravity;
 
 /**
  * @brief 获取当前展示的控制器
  */
 + (UIViewController *)currentVc;
 
++ (BOOL)isPortrait;
 
 #pragma mark - 链式调用
+/// 代理
+- (AFBrowserConfiguration * (^)(id <AFBrowserDelegate>))makeDelegate;
+
 /// 当前选中的index
 - (AFBrowserConfiguration * (^)(NSUInteger))makeSelectedIndex;
 
@@ -89,8 +99,14 @@
 /// 转场时，是否隐藏源视图，默认YES
 - (AFBrowserConfiguration * (^)(BOOL))makeHideSourceViewWhenTransition;
 
+/// 资源未加载成功是否跳转到浏览器，默认NO
+- (AFBrowserConfiguration * (^)(BOOL))makeShouldBrowseWhenNoCache;
+
 /// 自定义参数，在代理回调中可以作为一个标识
 - (AFBrowserConfiguration * (^)(id))makeUserInfo;
+
+/// 播放器填充方式
+- (AFBrowserConfiguration * (^)(AVLayerVideoGravity))makeVideoGravity;
 
 
 

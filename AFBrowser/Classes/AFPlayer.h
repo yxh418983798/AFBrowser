@@ -89,7 +89,7 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 /**
  * @brief 构造播放器
  */
-+ (AFPlayer *)playerWithItem:(AFBrowserItem *)item;
++ (AFPlayer *)playerWithItem:(AFBrowserItem *)item configuration:(AFBrowserConfiguration *)configuration;
 
 /**
  * @brief 准备播放

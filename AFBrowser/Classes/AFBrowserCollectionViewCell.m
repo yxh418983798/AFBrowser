@@ -8,10 +8,12 @@
 
 #import "AFBrowserCollectionViewCell.h"
 #import "AFBrowserItem.h"
+#import "AFBrowserConfiguration.h"
 #import "AFBrowserLoaderProxy.h"
 #import <YYImage/YYImage.h>
 #import "AFBrowserEnum.h"
 #import "AFBrowserTool.h"
+#import <SDWebImage/SDWebImage.h>
 
 @interface AFBrowserScrollView: UIScrollView
 @end
@@ -47,6 +49,12 @@
 
 /** 记录状态 */
 @property (assign, nonatomic) AFLoadImageStatus      loadImageStatus;
+
+/** 下载原图 */
+@property (nonatomic, strong) UIButton               *loadOriginalImgBtn;
+
+/** 长按手势 */
+@property (nonatomic, strong) UILongPressGestureRecognizer   *longPressGestureRecognizer;
 
 @end
 
@@ -98,8 +106,8 @@ static CGFloat MaxScaleDistance = 3.f;
         tap2.numberOfTapsRequired = 2;
         [tap1 requireGestureRecognizerToFail:tap2];
         [self addGestureRecognizer:tap2];
-        UILongPressGestureRecognizer *longPress = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressAction:)];
-        [self addGestureRecognizer:longPress];
+        self.longPressGestureRecognizer = [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(longPressAction:)];
+        [self addGestureRecognizer:self.longPressGestureRecognizer];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(updateVideoStatus:) name:@"AFBrowserUpdateVideoStatus" object:nil];
     }
     return self;
@@ -109,9 +117,29 @@ static CGFloat MaxScaleDistance = 3.f;
 #pragma mark - UI
 - (AFPlayer *)player {
     if (!_player) {
-        _player = [AFBrowserTool playerWithItem:self.item];
+        _player = [AFPlayer playerWithItem:self.item configuration:self.configuration];
+        for (UIGestureRecognizer *gestureRecognizer in _player.gestureRecognizers) {
+            if ([gestureRecognizer isKindOfClass:UILongPressGestureRecognizer.class]) {
+                [gestureRecognizer requireGestureRecognizerToFail:self.longPressGestureRecognizer];
+                break;
+            }
+        }
     }
     return _player;
+}
+
+- (UIButton *)loadOriginalImgBtn {
+    if (!_loadOriginalImgBtn) {
+        _loadOriginalImgBtn = UIButton.new;
+        _loadOriginalImgBtn.frame = CGRectMake(UIScreen.mainScreen.bounds.size.width/2 - 60, UIScreen.mainScreen.bounds.size.height - 65, 120, 35);
+        _loadOriginalImgBtn.layer.cornerRadius = 5.f;
+        _loadOriginalImgBtn.layer.masksToBounds = YES;
+        _loadOriginalImgBtn.backgroundColor = [UIColor colorWithRed:0 green:0 blue:0 alpha:0.4];
+        [_loadOriginalImgBtn setTitleColor:UIColor.whiteColor forState:UIControlStateNormal];
+        [_loadOriginalImgBtn addTarget:self action:@selector(downloadOriginImage) forControlEvents:UIControlEventTouchUpInside];
+        _loadOriginalImgBtn.titleLabel.font = [UIFont systemFontOfSize:14.0];
+    }
+    return _loadOriginalImgBtn;
 }
 
 //- (void)layoutSubviews {
@@ -119,6 +147,136 @@ static CGFloat MaxScaleDistance = 3.f;
 //    NSLog(@"-------------------------- layoutSubviews --------------------------");
 //    [self resizeSubviewSize];
 //}
+
+/// 是否显示查看原图的按钮
+- (void)showLoadOriginalImgBtn:(BOOL)show {
+    if (show) {
+        NSString *sizeStr = @"";
+        if (self.item.size > 0) {
+            CGFloat size = self.item.size/1024.0;
+            if (size > 1000.0) {
+                sizeStr = [NSString stringWithFormat:@"(%.1fM)",size/1024.0];
+            } else {
+                sizeStr = [NSString stringWithFormat:@"(%.0fK)",size];
+            }
+        }
+        NSString *title = [NSString stringWithFormat:@"%@%@", [AFBrowserLoaderProxy localizedString:@"查看原图"], sizeStr];
+        CGFloat btn_W = [title boundingRectWithSize:(CGSizeMake(MAXFLOAT, 35)) options:NSStringDrawingUsesLineFragmentOrigin | NSStringDrawingUsesFontLeading attributes:@{NSFontAttributeName : [UIFont systemFontOfSize:14]} context:nil].size.width + 20;
+        self.loadOriginalImgBtn.frame = CGRectMake((UIScreen.mainScreen.bounds.size.width - btn_W)/2, UIScreen.mainScreen.bounds.size.height - 65, btn_W, 35);
+        [self.loadOriginalImgBtn setTitle:title forState:(UIControlStateNormal)];
+        [self addSubview:self.loadOriginalImgBtn];
+    } else {
+        if (_loadOriginalImgBtn.superview) {
+            [_loadOriginalImgBtn removeFromSuperview];
+            _loadOriginalImgBtn = nil;
+        }
+    }
+}
+
+/// 显示图片
+- (void)displayImageItem:(AFBrowserItem *)item {
+    if (_player.superview) {
+        [_player removeFromSuperview];
+        _player = nil;
+    }
+    [_scrollView setZoomScale:1.0];
+    
+    // 获取原图缓存
+    UIImage *originalImage = [self.delegate browserCell:self hasImageCache:item.content atIndex:self.indexPath.row];
+    if (originalImage) {
+        // 已经下载过原图，直接显示
+        self.imageView.image = originalImage;
+        self.loadImageStatus = AFLoadImageStatusOriginal;
+        [self showLoadOriginalImgBtn:NO];
+        [self resizeSubviewSize];
+        return;
+    }
+    
+    // 获取缩略图缓存
+    UIImage *coverImage = [self.delegate browserCell:self hasImageCache:item.coverImage atIndex:self.indexPath.row];
+    if (coverImage) {
+        // 缓存中有缩略图，直接展示
+        if (self.loadImageStatus == AFLoadImageStatusNone) {
+            self.loadImageStatus = AFLoadImageStatusCover;
+            self.imageView.image = coverImage;
+            [self resizeSubviewSize];
+        }
+    } else {
+        // 缩略图也没有，先展示占位图
+        self.imageView.image = AFBrowserLoaderProxy.placeholderImageForBrowser;
+        if (item.coverImage) {
+            if ([item.coverImage isKindOfClass:NSString.class]) {
+                [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image, NSError *error) {
+                    if (self.loadImageStatus == AFLoadImageStatusNone && image) {
+                        if (item.content != self.item.content) {
+                            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片错误！，item.content:%@ \n self.item.content:%@", item.content, self.item.content]];
+                        } else {
+                            self.loadImageStatus = AFLoadImageStatusCover;
+                            self.imageView.image = image;
+                            [self resizeSubviewSize];
+                        }
+                    } else {
+                        if (error) {
+                            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片失败！，status:%d, error:%@ \n item.content:%@ \n self.item.content:%@", self.loadImageStatus, error, item.content, self.item.content]];
+                        }
+                    }
+                }];
+            } else if ([item.coverImage isKindOfClass:NSURL.class]) {
+                [AFBrowserLoaderProxy loadImage:item.coverImage completion:^(UIImage *image, NSError *error) {
+                    if (self.loadImageStatus == AFLoadImageStatusNone && image) {
+                        self.loadImageStatus = AFLoadImageStatusCover;
+                        self.imageView.image = image;
+                        [self resizeSubviewSize];
+                    }
+                }];
+            } else if ([item.coverImage isKindOfClass:UIImage.class])  {
+                if (self.loadImageStatus == AFLoadImageStatusNone) {
+                    self.loadImageStatus = AFLoadImageStatusCover;
+                    self.imageView.image = item.coverImage;
+                    [self resizeSubviewSize];
+                }
+            }
+        }
+    }
+    if ([self.delegate browserCell:self shouldAutoLoadOriginalImageForItemAtIndex:self.indexPath.row]) {
+        // 显示原图按钮，此时不需要下载原图，等待用户手动触发
+        [self showLoadOriginalImgBtn:YES];
+    } else {
+        // 不显示原图，则直接自动下载原图，下载完后直接展示
+        [self showLoadOriginalImgBtn:NO];
+        if ([item.content isKindOfClass:NSString.class]) {
+            [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.content] completion:^(UIImage *image, NSError *error) {
+                if (error) {
+                    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片失败！，status:%d, error:%@ \n item.content:%@ \n self.item.content:%@", self.loadImageStatus, error, item.content, self.item.content]];
+                    return;
+                }
+                if (item.content != self.item.content) {
+                    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片错误！，item.content:%@ \n self.item.content:%@", item.content, self.item.content]];
+                } else {
+                    self.imageView.image = image;
+                    self.loadImageStatus = AFLoadImageStatusOriginal;
+                    [self resizeSubviewSize];
+                }
+            }];
+        } else if ([item.content isKindOfClass:NSURL.class]) {
+            [AFBrowserLoaderProxy loadImage:item.content completion:^(UIImage *image, NSError *error) {
+                self.imageView.image = image;
+                self.loadImageStatus = AFLoadImageStatusOriginal;
+                [self resizeSubviewSize];
+            }];
+        } else if ([item.content isKindOfClass:UIImage.class])  {
+            self.loadImageStatus = AFLoadImageStatusOriginal;
+            self.imageView.image = item.content;
+            [self resizeSubviewSize];
+            //设置缩放比例为适应屏幕高度
+            //    self.scrollView.maximumZoomScale = HScreen_Height/(HScreen_Width * image.size.height/image.size.width);
+        } else {
+            self.loadImageStatus = AFLoadImageStatusOriginal;
+            self.imageView.image = [UIImage new];
+            [self resizeSubviewSize];
+        }
+    }
+}
 
 
 #pragma mark - 更新布局
@@ -136,6 +294,10 @@ static CGFloat MaxScaleDistance = 3.f;
         if (_player) {
             [_player removeFromSuperview];
             _player = nil;
+        }
+        if (_loadOriginalImgBtn) {
+            CGFloat btn_W = self.loadOriginalImgBtn.frame.size.width;
+            self.loadOriginalImgBtn.frame = CGRectMake((UIScreen.mainScreen.bounds.size.width - btn_W)/2, UIScreen.mainScreen.bounds.size.height - 65, btn_W, 35);
         }
 //        [_player pause];
 //        _player.hidden = YES;
@@ -299,7 +461,7 @@ static CGFloat MaxScaleDistance = 3.f;
 
 #pragma mark - 绑定数据
 - (void)attachItem:(AFBrowserItem *)item configuration:(AFBrowserConfiguration *)configuration atIndexPath:(NSIndexPath *)indexPath {
-//    NSLog(@"-------------------------- attachItem --------------------------");
+
     self.configuration = configuration;
     self.item = item;
     self.indexPath = indexPath;
@@ -307,85 +469,13 @@ static CGFloat MaxScaleDistance = 3.f;
 //http://dl2.weshineapp.com/gif/20201104/8bfa369267398b699c4b4b474b638f1b.jpg?v=5fa2d00190770&f=mowang
     switch (item.type) {
         case AFBrowserItemTypeImage: {
-            if (_player) {
-                [_player removeFromSuperview];
-                _player = nil;
-            }
-            [_scrollView setZoomScale:1.0];
-            if ([item.content isKindOfClass:NSString.class]) {
-//                NSLog(@"-------------------------- 开始加载 高清图 --------------------------");
-                [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.content] completion:^(UIImage *image, NSError *error) {
-//                    NSLog(@"-------------------------- 完成加载:%ld, 高清图：%@ --------------------------", indexPath.item, item.content);
-                    if (error) {
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片失败！，status:%d, error:%@ \n item.content:%@ \n self.item.content:%@", self.loadImageStatus, error, item.content, self.item.content]];
-                        return;
-                    }
-                    if (item.content != self.item.content) {
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片错误！，item.content:%@ \n self.item.content:%@", item.content, self.item.content]];
-                    } else {
-                        self.imageView.image = image;
-                        self.loadImageStatus = AFLoadImageStatusOriginal;
-                        [self resizeSubviewSize];
-                    }
-                }];
-            } else if ([item.content isKindOfClass:NSURL.class]) {
-                [AFBrowserLoaderProxy loadImage:item.content completion:^(UIImage *image, NSError *error) {
-                    self.imageView.image = image;
-                    self.loadImageStatus = AFLoadImageStatusOriginal;
-                    [self resizeSubviewSize];
-                }];
-            } else if ([item.content isKindOfClass:UIImage.class])  {
-                self.loadImageStatus = AFLoadImageStatusOriginal;
-                self.imageView.image = item.content;
-                [self resizeSubviewSize];
-                //设置缩放比例为适应屏幕高度
-                //    self.scrollView.maximumZoomScale = HScreen_Height/(HScreen_Width * image.size.height/image.size.width);
-            } else {
-                self.loadImageStatus = AFLoadImageStatusOriginal;
-                self.imageView.image = [UIImage new];
-                [self resizeSubviewSize];
-            }
-            if (item.coverImage) {
-//                NSLog(@"-------------------------- 开始加载 缩略图 --------------------------");
-                if ([item.coverImage isKindOfClass:NSString.class]) {
-                    [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image, NSError *error) {
-//                        NSLog(@"-------------------------- 完成加载 缩略图 --------------------------");
-                        if (self.loadImageStatus == AFLoadImageStatusNone && image) {
-                            if (item.content != self.item.content) {
-                                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片错误！，item.content:%@ \n self.item.content:%@", item.content, self.item.content]];
-                            } else {
-                                self.loadImageStatus = AFLoadImageStatusCover;
-                                self.imageView.image = image;
-    //                            NSLog(@"-------------------------- 设置 缩略图 --------------------------");
-                                [self resizeSubviewSize];
-                            }
-                        } else {
-                            if (error) {
-                                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载图片失败！，status:%d, error:%@ \n item.content:%@ \n self.item.content:%@", self.loadImageStatus, error, item.content, self.item.content]];
-                            }
-                        }
-                    }];
-                } else if ([item.coverImage isKindOfClass:NSURL.class]) {
-                    [AFBrowserLoaderProxy loadImage:item.coverImage completion:^(UIImage *image, NSError *error) {
-                        if (self.loadImageStatus == AFLoadImageStatusNone && image) {
-                            self.loadImageStatus = AFLoadImageStatusCover;
-                            self.imageView.image = image;
-                            [self resizeSubviewSize];
-                        }
-                    }];
-                } else if ([item.coverImage isKindOfClass:UIImage.class])  {
-                    if (self.loadImageStatus == AFLoadImageStatusNone) {
-                        self.loadImageStatus = AFLoadImageStatusCover;
-                        self.imageView.image = item.coverImage;
-                        [self resizeSubviewSize];
-                    }
-                }
-            }
+            [self displayImageItem:item];
         }
             break;
             
         case AFBrowserItemTypeVideo: {
-            self.player = [AFBrowserTool playerWithItem:item];
+//            self.player = [AFBrowserTool playerWithItem:item];
+            self.player.item = item;
             self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
             self.player.browserDelegate = self;
             [self.player prepare];
@@ -421,6 +511,9 @@ static CGFloat MaxScaleDistance = 3.f;
     if ([@(self.indexPath.item) isEqualToNumber:notification.object]) {
         if (self.item.autoPlay) {
             [self.player play];
+            if (self.configuration.playOption == AFBrowserPlayOptionNeverAutoPlay) {
+                self.item.autoPlay = NO;
+            }
         }
     }
     
@@ -498,6 +591,34 @@ static CGFloat MaxScaleDistance = 3.f;
         default:
             break;
     }
+}
+
+
+#pragma mark - 下载原图
+- (void)downloadOriginImage {
+    _loadOriginalImgBtn.userInteractionEnabled = NO;
+    [SDWebImageManager.sharedManager loadImageWithURL:self.item.content options:SDWebImageRetryFailed progress:^(NSInteger receivedSize, NSInteger expectedSize, NSURL * _Nullable targetURL) {
+        double progress = ((double)receivedSize/(double)(expectedSize))*100;
+        if (progress > 0) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.loadOriginalImgBtn setTitle:[NSString stringWithFormat:@"%.0f%%", progress] forState:UIControlStateNormal];
+            });
+        }
+    } completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
+        
+//        self.aiView.hidden = YES;
+//        [self.aiView stopAnimating];
+        if(!error){
+            if (_loadOriginalImgBtn) {
+                [_loadOriginalImgBtn removeFromSuperview];
+                _loadOriginalImgBtn = nil;
+            }
+            self.imageView.image = image;
+        } else {
+            [self.loadOriginalImgBtn setTitle:@"下载失败，重新下载" forState:(UIControlStateNormal)];
+            self.loadOriginalImgBtn.userInteractionEnabled = YES;
+        }
+    }];
 }
 
 @end

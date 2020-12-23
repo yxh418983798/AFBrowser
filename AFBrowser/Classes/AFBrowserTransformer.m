@@ -138,7 +138,10 @@
         }
         return transitionView;
     } else {
-        return [AFBrowserTool playerWithItem:item];
+        if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
+            return [AFPlayer playerWithItem:item configuration:self.configuration];
+        }
+        return [self.delegate transitionViewForPresentedController];
     }
 }
 
@@ -331,7 +334,15 @@
 
 #pragma mark - dismiss图片的转场动画
 - (void)dismissImageWithAnimateTransition:(id<UIViewControllerContextTransitioning>)transitionContext fromView:(UIView *)fromView toView:(UIView *)toView snapView:(UIView *)snapView {
-
+    if ([UIDevice.currentDevice respondsToSelector:@selector(setOrientation:)]) {
+        SEL selector = NSSelectorFromString(@"setOrientation:");
+        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[UIDevice instanceMethodSignatureForSelector:selector]];
+        [invocation setSelector:selector];
+        [invocation setTarget:[UIDevice currentDevice]];
+        int val = UIInterfaceOrientationPortrait;
+        [invocation setArgument:&val atIndex:2];
+        [invocation invoke];
+    }
     UIView *containerView = transitionContext.containerView;
     UIImageView *transitionView = (UIImageView *)self.presentedTransitionView;
     UIScrollView *scrollView = (UIScrollView *)transitionView.superview.superview;
@@ -350,6 +361,9 @@
     // 获取转场的源视图
     UIView *sourceView = [self.delegate transitionViewForSourceController];
     CGRect sourceFrame = [self transitionFrameWithView:sourceView];
+    if (CGRectIsEmpty(sourceFrame)) {
+        NSLog(@"-------------------------- 12 --------------------------");
+    }
     UIView *shadeView;
     if (self.configuration.hideSourceViewWhenTransition) {
         if (@available(iOS 13.0, *)) {
@@ -383,7 +397,9 @@
     // 执行转场
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseIn animations:^{
         
-        self.backGroundView.alpha = 0;
+        if (AFBrowserConfiguration.isPortrait) {
+            self.backGroundView.alpha = 0;
+        }
         if (!self.isInteractive) {
             if (!sourceView || CGRectEqualToRect(sourceFrame, CGRectZero)) {
                 // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
@@ -452,6 +468,9 @@
         sourceView.hidden = self.configuration.hideSourceViewWhenTransition;
     }
 
+    if (CGRectIsEmpty(sourceFrame)) {
+        NSLog(@"-------------------------- 12 --------------------------");
+    }
     // 添加黑色背景
     [self addBackgroundViewToContainerView:containerView];
 
@@ -479,7 +498,7 @@
     }
     // 执行转场动画
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:0 animations:^{
-        if (!self.isCancel) {
+        if (!self.isCancel && AFBrowserConfiguration.isPortrait) {
             self.backGroundView.alpha = 0;
         }
         if (!self.isInteractive) {
@@ -639,13 +658,18 @@ static CGRect beginFrame;
 //                NSLog(@"-------------------------- beginFrame：%@ --------------------------", NSStringFromCGRect(beginFrame));
             }
             sourceFrame = self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo ? self.trasitionViewOriginalFrame : [self transitionFrameWithView:[self.delegate transitionViewForSourceController]];
+            if (CGRectIsEmpty(sourceFrame)) {
+                NSLog(@"-------------------------- 12 --------------------------");
+            }
             self.trasitionViewOriginalFrame = sourceFrame;
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"startPan开始手势：%@", self.displayStatus]];
         }
             break;
             
         case UIGestureRecognizerStateChanged: {
-            self.backGroundView.alpha = fmax(1-progress*3, 0);
+            if (AFBrowserConfiguration.isPortrait) {
+                self.backGroundView.alpha = fmax(1-progress*3, 0);
+            }
             CGFloat original_Y;
             if (self.isDirectionDown) {
                 original_Y = fmax((UIScreen.mainScreen.bounds.size.height - self.imgView_H)/2, 0);
@@ -846,7 +870,7 @@ static CGFloat ScaleDistance = 0.4;
     if (h == 0) h = (resultFrame.size.height - currentFrame.size.height)/number;
     [self.percentTransition updateInteractiveTransition:self.progress];
     self.backGroundView.alpha = progress;
-    if (![self.delegate transitionViewForSourceController] && !self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
+    if (![self.delegate transitionViewForSourceController] && self.configuration.transitionStyle != AFBrowserTransitionStyleContinuousVideo) {
         // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
         self.transitionView.alpha = progress;
     } else {

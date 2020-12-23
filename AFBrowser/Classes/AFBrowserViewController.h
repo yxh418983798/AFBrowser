@@ -8,7 +8,6 @@
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"
-#import "AFBrowserDelegate.h"
 #import "AFPlayer.h"
 #import "AFBrowserTool.h"
 #import "AFBrowserItem.h"
@@ -26,9 +25,6 @@
 
 /** 配置 */
 @property (nonatomic, strong) AFBrowserConfiguration *configuration;
-
-/** 代理 */
-@property (weak, nonatomic) id <AFBrowserDelegate>     delegate;
 
 
 /**
@@ -61,9 +57,6 @@
 
 
 #pragma mark - 链式调用
-/// 代理
-- (AFBrowserViewController * (^)(id <AFBrowserDelegate>))makeDelegate;
-
 /// 代理
 - (AFBrowserViewController * (^)(AFBrowserConfiguration *))makeConfiguration;
 

@@ -42,6 +42,24 @@
 + (void)addLogString:(NSString *)log;
 
 
+/**
+ * @brief 多语言适配
+ * @note  适配文字：查看原图
+ */
++ (NSString *)localizedString:(NSString *)string;
+
+
+/**
+ * @brief 占位图
+ */
++ (UIImage *)placeholderImageForBrowser;
+
+
+/**
+ * @brief 浏览器导航控制器的类，默认UINavigationController
+ */
++ (Class)navigationControllerClassForBrowser;
+
 @end
 
 

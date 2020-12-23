@@ -22,6 +22,12 @@
 /** 长按事件 */
 - (void)longPressActionAtCollectionViewCell:(AFBrowserCollectionViewCell *)cell;
 
+/** 查询图片缓存 */
+- (UIImage *)browserCell:(AFBrowserCollectionViewCell *)cell hasImageCache:(id)content atIndex:(NSInteger)index;
+
+/// 是否展示原图按钮
+- (BOOL)browserCell:(AFBrowserCollectionViewCell *)cell shouldAutoLoadOriginalImageForItemAtIndex:(NSInteger)index;
+
 @end
 
  

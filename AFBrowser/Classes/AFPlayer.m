@@ -10,7 +10,27 @@
 #import "AFBrowserLoaderProxy.h"
 #import "AFBrowserItem.h"
 #import "AFBrowserConfiguration.h"
+#import <objc/runtime.h>
 //#import <KVOController/KVOController.h>
+
+@interface AFPlayerProxy: NSObject
+
+/** AFPlayer */
+@property (nonatomic, weak) AFPlayer      *weakPlayer;
+
+/** AFPlayer */
+@property (nonatomic, strong) AFPlayer    *strongPlayer;
+
+/** target */
+@property (nonatomic, weak) id            target;
+
+/** item */
+@property (nonatomic, weak) AFBrowserItem       *item;
+
++ (AFPlayer *)cachePlayerWithItem:(AFBrowserItem *)item;
+
+@end
+
 
 @interface AFPlayer ()
 
@@ -62,32 +82,55 @@
 /** 监听进度对象 */
 @property (strong, nonatomic) id            playerObserver;
 
+/** proxy */
+@property (nonatomic, strong) AFPlayerProxy      *playerProxy;
+
 @end
 
-
-
-@implementation AFPlayer
 
 static NSString * const AFPlayerNotificationPauseAllPlayer = @"AFPlayerNotificationPauseAllPlayer";
 static NSString * const AFPlayerNotificationResumeAllPlayer = @"AFPlayerNotificationResumeAllPlayer";
 static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
-static int MaxPlayer = 5;
+static NSUInteger MaxCount = 5; /// 最大存储数量
+static NSUInteger MaxPlayer = 5;
+static dispatch_queue_t _playerQueue; /// 队列
+static NSMutableArray <AFPlayerProxy *> *_cacheArray; /// 存储容器
+static NSMutableArray <AFPlayerProxy *> *_playerArray;
+
+@implementation AFPlayer
 
 #pragma mark - 生命周期
 + (void)initialize {
-    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayer) name:UIApplicationWillEnterForegroundNotification object:nil];
-    [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayer) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    static dispatch_once_t onceToken;
+    dispatch_once(&onceToken, ^{
+        _cacheArray = NSMutableArray.array;
+        _playerArray = NSMutableArray.new;
+        _playerQueue = dispatch_queue_create("com.Alfie.AFPlayer", DISPATCH_QUEUE_CONCURRENT);
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayer) name:UIApplicationWillEnterForegroundNotification object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayer) name:UIApplicationDidEnterBackgroundNotification object:nil];
+    });
+}
+
++ (AFPlayer *)playerWithItem:(AFBrowserItem *)item configuration:(AFBrowserConfiguration *)configuration {
+    AFPlayer *player;
+    if (configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
+        player = [AFPlayerProxy cachePlayerWithItem:item];
+    } else {
+        player = [AFPlayer playerWithItem:item];
+    }
+    player.configuration = configuration;
+    if (configuration.muteOption == AFPlayerMuteOptionAlways) {
+        player.muted = YES;
+    }
+    return player;
 }
 
 + (AFPlayer *)playerWithItem:(AFBrowserItem *)item {
     AFPlayer *player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
-//    AFPlayer *player = [AFBrowserTool cachePlayerWithItem:item];
-//    if (!player) {
-//        player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
-//    }
     player.item = item;
     return player;
 }
+
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
@@ -99,7 +142,6 @@ static int MaxPlayer = 5;
     }
     return self;
 }
-
 
 - (void)didMoveToSuperview {
     self.clipsToBounds = YES;
@@ -113,6 +155,7 @@ static int MaxPlayer = 5;
         [self.contentView addSubview:self.dismissBtn];
         [self addSubview:self.bottomBar];
     }
+    
 }
 
 - (void)layoutSubviews {
@@ -128,7 +171,7 @@ static int MaxPlayer = 5;
     self.playBtn.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
     self.activityView.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
     if (self.item.showVideoControl) {
-        self.dismissBtn.frame = CGRectMake(0, UIApplication.sharedApplication.statusBarFrame.size.height == 44 ? 44 : 20, 50, 44);
+        self.dismissBtn.frame = CGRectMake(0, UIApplication.sharedApplication.statusBarFrame.size.height, 50, 44);
         self.bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
     }
     [super layoutSubviews];
@@ -326,7 +369,7 @@ static int MaxPlayer = 5;
         _playerLayer = [AVPlayerLayer playerLayerWithPlayer:self.player];
 //        _playerLayer.videoGravity = AVLayerVideoGravityResize;
 //        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspect;
-        _playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+        _playerLayer.videoGravity = self.configuration.videoGravity;
         _playerLayer.masksToBounds= YES;
     }
     return _playerLayer;
@@ -386,69 +429,6 @@ static int MaxPlayer = 5;
     } else {
         return self.bounds;
     }
-}
-
-/// 保存播放器的数组
-+ (NSPointerArray *)playerArray {
-    static NSPointerArray *_playerArray;
-    if (!_playerArray) {
-        _playerArray = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
-    }
-    return _playerArray;
-}
-
-/// 添加到数组
-- (void)addToPlayerArray {
-    NSArray *playerArray = AFPlayer.playerArray.allObjects;
-    self.isActive = YES;
-    if (![playerArray containsObject:self]) {
-        // 没有在数组中，则直接添加在首位
-        [AFPlayer.playerArray insertPointer:(__bridge void *)(self) atIndex:0];
-        playerArray = AFPlayer.playerArray.allObjects;
-        // 添加后播放器后，检查是否超过了限制数量，如果超过，需要设置成不活跃状态，避免播放器数量太多造成解码失败
-        if (playerArray.count > MaxPlayer) {
-            for (int i = MaxPlayer; i < playerArray.count; i++) {
-                AFPlayer *player = playerArray[i];
-                player.isActive = NO;
-            }
-        }
-    } else {
-        // 如果已经存在，更新index到首位
-        if (AFPlayer.playerArray.count != playerArray.count) {
-            for (NSInteger i = AFPlayer.playerArray.count - 1; i >= 0 ; i--) {
-                if (![AFPlayer.playerArray pointerAtIndex:i]) {
-                    [AFPlayer.playerArray removePointerAtIndex:i];
-                }
-            }
-        }
-        NSInteger index = [AFPlayer.playerArray.allObjects indexOfObject:self];
-        if (index != 0) {
-            [AFPlayer.playerArray removePointerAtIndex:index];
-            [AFPlayer.playerArray insertPointer:(__bridge void *)(self) atIndex:0];
-        }
-    }
-}
-
-/// 有播放器释放的时候，将等待中的不活跃播放器重新设置为活跃
-+ (void)resumeActiveExcludePlayer:(AFPlayer *)excludePlayer {
-    NSArray *playerArray = AFPlayer.playerArray.allObjects;
-    for (int i = 0; i < playerArray.count && i < MaxPlayer; i++) {
-        AFPlayer *player = playerArray[i];
-        if (player != excludePlayer) {
-            player.isActive = YES;
-        }
-    }
-}
-
-+ (AFPlayer *)cachePlayerWithItem:(AFBrowserItem *)item {
-    AFPlayer *result;
-    NSArray *array = AFPlayer.playerArray.allObjects;
-    for (AFPlayer *player in array) {
-        if ([player.item.content isEqualToString:item.content]) {
-            return player;
-        }
-    }
-    return nil;
 }
 
 
@@ -948,4 +928,120 @@ static int MaxPlayer = 5;
     }
 }
 
+
+#pragma mark - Player内存管理
+- (AFPlayerProxy *)playerProxy {
+    if (!_playerProxy) {
+        _playerProxy = AFPlayerProxy.new;
+        _playerProxy.weakPlayer = self;
+    }
+    return _playerProxy;
+}
+
+/// 添加到数组
+- (void)addToPlayerArray {
+    self.isActive = YES;
+    if ([_playerArray containsObject:self.playerProxy]) {
+        // 如果已经存在，更新index到首位
+        NSInteger index = [_playerArray indexOfObject:self.playerProxy];
+        if (index != 0) {
+            [_playerArray removeObjectAtIndex:index];
+            [_playerArray insertObject:self.playerProxy atIndex:0];
+        }
+    } else {
+        // 没有在数组中，则直接添加在首位
+        [_playerArray insertObject:self.playerProxy atIndex:0];
+        // 添加后播放器后，检查是否超过了限制数量，如果超过，需要设置成不活跃状态，避免播放器数量太多造成解码失败
+        if (_playerArray.count > MaxPlayer) {
+            for (int i = MaxPlayer; i < _playerArray.count; i++) {
+                _playerArray[i].weakPlayer.isActive = NO;
+            }
+        }
+    }
+}
+
+/// 有播放器释放的时候，将等待中的不活跃播放器重新设置为活跃
++ (void)resumeActiveExcludePlayer:(AFPlayer *)excludePlayer {
+    if (excludePlayer->_playerProxy && [_playerArray containsObject:excludePlayer.playerProxy]) {
+        [_playerArray removeObject:excludePlayer.playerProxy];
+    }
+    for (int i = 0; i < _playerArray.count && i < MaxPlayer; i++) {
+        _playerArray[i].weakPlayer.isActive = YES;
+    }
+}
+
+
 @end
+
+
+
+@implementation AFPlayerProxy
+
+- (void)dealloc {
+    [AFPlayerProxy removeCache:self];
+}
+
+
+#pragma mark - 获取player
++ (AFPlayer *)cachePlayerWithItem:(AFBrowserItem *)item {
+    if (!item || item.type != AFBrowserItemTypeVideo || !item.content) return [AFPlayer playerWithItem:item];
+//    if (!target) target = item;
+    AFPlayerProxy *proxy = objc_getAssociatedObject(item, "AFPlayerProxy");
+    if (!proxy) {
+        proxy = AFPlayerProxy.new;
+        objc_setAssociatedObject(item, "AFPlayerProxy", proxy, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+    }
+    proxy.item = item;
+    if (!proxy.strongPlayer) proxy.strongPlayer = [AFPlayer playerWithItem:item];
+    [self addCache:proxy];
+    return proxy.strongPlayer;
+}
+
+
+#pragma mark - 缓存tool
++ (void)addCache:(AFPlayerProxy *)proxy {
+    if (!proxy) return;
+    __block BOOL contains = NO;
+    dispatch_sync(_playerQueue, ^{
+        contains = ![_cacheArray containsObject:proxy];
+    });
+    if (contains) {
+        // 数量超出限制的话，需要先清除数据
+        while (self.cacheArrayCount >= MaxCount) {
+            dispatch_barrier_async(_playerQueue, ^{
+                [_cacheArray removeObjectAtIndex:0];
+            });
+        }
+        // 添加到数组进行缓存
+        dispatch_barrier_async(_playerQueue, ^{
+            [_cacheArray addObject:proxy];
+        });
+    }
+}
+
++ (NSUInteger)cacheArrayCount {
+    __block NSInteger count = 0;
+    dispatch_sync(_playerQueue, ^{
+        count = _cacheArray.count;
+    });
+    return count;
+}
+
+#pragma mark - 删除tool
++ (void)removeCache:(AFPlayerProxy *)proxy {
+    if (!proxy) return;
+    dispatch_sync(_playerQueue, ^{
+        if ([_cacheArray containsObject:proxy]) {
+//            if (tool.item) objc_setAssociatedObject(tool.item, "AFBrowserTool", nil, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+            // 清除数据
+            dispatch_barrier_async(_playerQueue, ^{
+                [_cacheArray removeObject:proxy];
+            });
+        }
+    });
+}
+
+@end
+
+
+
