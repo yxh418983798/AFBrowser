@@ -333,15 +333,6 @@
 
 #pragma mark - dismiss图片的转场动画
 - (void)dismissImageWithAnimateTransition:(id<UIViewControllerContextTransitioning>)transitionContext fromView:(UIView *)fromView toView:(UIView *)toView snapView:(UIView *)snapView {
-    if ([UIDevice.currentDevice respondsToSelector:@selector(setOrientation:)]) {
-        SEL selector = NSSelectorFromString(@"setOrientation:");
-        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[UIDevice instanceMethodSignatureForSelector:selector]];
-        [invocation setSelector:selector];
-        [invocation setTarget:[UIDevice currentDevice]];
-        int val = UIInterfaceOrientationPortrait;
-        [invocation setArgument:&val atIndex:2];
-        [invocation invoke];
-    }
     UIView *containerView = transitionContext.containerView;
     UIImageView *transitionView = (UIImageView *)self.presentedTransitionView;
     UIScrollView *scrollView = (UIScrollView *)transitionView.superview.superview;

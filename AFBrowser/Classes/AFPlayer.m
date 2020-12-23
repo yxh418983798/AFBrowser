@@ -440,7 +440,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
     self.isObserving = YES;
     if (!self.playerObserver) {
         __weak typeof(self) weakSelf = self;
-        self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.5, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+        self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.05, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
             weakSelf.progress = CMTimeGetSeconds(time) / weakSelf.duration;
 //                NSLog(@"-------------------------- progress：%g--------------------------", weakSelf.progress);
             if (isnan(weakSelf.progress) || weakSelf.progress > 1.0) {
@@ -449,7 +449,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
             } else {
                 weakSelf.item.currentTime = CMTimeGetSeconds(time);
             }
-            [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration];
+            [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration animated:YES];
         }];
     }
 }
@@ -479,7 +479,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
             
         case AVPlayerItemStatusReadyToPlay:
             NSLog(@"-------------------------- 播放器可以播放的状态:%@ --------------------------", _coverImgView);
-            [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration];
+            [self.bottomBar updateProgressWithCurrentTime:0.f durationTime:self.duration animated:YES];
             if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
                 [self.delegate prepareDoneWithPlayer:self];
                 
@@ -621,7 +621,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
         [self replacePlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
 //        self.progress = self.duration > 0 ? self.item.currentTime / self.duration : 0;
         [self seekToTime:self.item.currentTime];
-        [self updateProgressWithCurrentTime:self.item.currentTime durationTime:self.duration];
+        [self updateProgressWithCurrentTime:self.item.currentTime durationTime:self.duration animated:YES];
 //        [self updateProgressWithCurrentTime:0 durationTime:self.duration];
         if (self.playWhenPrepareDone) {
             // 准备完成，直接播放
@@ -671,6 +671,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
         // 播放结束，数据已经准备完成，只需要跳转到开头的位置重新播放
         case AFPlayerStatusFinished: {
             [self seekToTime:0.f];
+            [self.bottomBar updateProgressWithCurrentTime:0 durationTime:self.duration animated:NO];
             [self startPlay];
         }
             break;
@@ -822,9 +823,9 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
 
 
 #pragma mark - 更新bottomBar的进度
-- (void)updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime {
+- (void)updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime animated:(BOOL)animated{
     if (self.item.showVideoControl) {
-        [self.bottomBar updateProgressWithCurrentTime:currentTime durationTime:self.duration];
+        [self.bottomBar updateProgressWithCurrentTime:currentTime durationTime:self.duration animated:animated];
     } else {
         if (_bottomBar.superview) [_bottomBar removeFromSuperview];
         _bottomBar = nil;
@@ -844,7 +845,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
 - (void)sliderValueChangedAction:(UISlider *)sender {
     [self.player pause];
     [self seekToTime:(sender.value * self.duration)];
-    [self.bottomBar updateProgressWithCurrentTime:sender.value * self.duration durationTime:self.duration];
+    [self.bottomBar updateProgressWithCurrentTime:sender.value * self.duration durationTime:self.duration animated:YES];
 }
 
 - (void)sliderTouchUpAction:(UISlider *)sender{
@@ -857,7 +858,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
 - (void)slider:(AFPlayerSlider *)slider beginTouchWithValue:(float)value {
     [self.player pause];
     [self seekToTime:(value * self.duration)];
-    [self.bottomBar updateProgressWithCurrentTime:value * self.duration durationTime:self.duration];
+    [self.bottomBar updateProgressWithCurrentTime:value * self.duration durationTime:self.duration animated:NO];
 }
 
 

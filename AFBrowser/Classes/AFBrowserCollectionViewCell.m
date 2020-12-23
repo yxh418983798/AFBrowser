@@ -284,6 +284,7 @@ static CGFloat MaxScaleDistance = 3.f;
     //视频
     if (self.item.type == AFBrowserItemTypeVideo) {
         _scrollView.hidden = YES;
+        self.player.frame = UIScreen.mainScreen.bounds;
         [self addSubview:self.player];
 //        self.player.hidden = NO;
     }

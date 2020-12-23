@@ -60,7 +60,7 @@
  * @param currentTime   当前播放时间
  * @param durationTime  播放总时长
  */
-- (void)updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime;
+- (void)updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime animated:(BOOL)animated;
 
 
 @end

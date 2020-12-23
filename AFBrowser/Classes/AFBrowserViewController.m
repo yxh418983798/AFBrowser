@@ -55,6 +55,9 @@
 /** 记录屏幕方向 */
 @property (assign, nonatomic) BOOL            originalPortrait;
 
+/** 是否处于layout */
+@property (nonatomic, assign) BOOL            isLayoutView;
+
 @end
 
 
@@ -96,8 +99,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (void)viewDidLayoutSubviews {
 //    if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground) {
 //        return;
-//    }
-//    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
+//    }0x283dd7ba0
+    self.isLayoutView = YES;
+    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
     layout.itemSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
     self.collectionView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
@@ -115,6 +119,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.collectionView.contentSize = CGSizeMake(self.collectionView.frame.size.width * self.numberOfItems + 1, self.collectionView.frame.size.height);
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.configuration.selectedIndex)];
     [self.collectionView layoutIfNeeded];
+    self.isLayoutView = NO;
 }
 
 - (void)viewWillAppear:(BOOL)animated {
@@ -134,6 +139,19 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
         AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
         [cell.player browserCancelDismiss];
+    }
+}
+
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    if ([UIDevice.currentDevice respondsToSelector:@selector(setOrientation:)]) {
+        SEL selector = NSSelectorFromString(@"setOrientation:");
+        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:[UIDevice instanceMethodSignatureForSelector:selector]];
+        [invocation setSelector:selector];
+        [invocation setTarget:[UIDevice currentDevice]];
+        int val = UIInterfaceOrientationPortrait;
+        [invocation setArgument:&val atIndex:2];
+        [invocation invoke];
     }
 }
 
@@ -451,6 +469,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     if (scrollView == self.collectionView) {
         if (!self.isFinishedTransaction) return;
+        if (self.isLayoutView) return;
         int currentPageNum = round(scrollView.contentOffset.x / (scrollView.frame.size.width + lineSpacing));
         switch (self.configuration.pageControlType) {
                 
@@ -746,13 +765,13 @@ static Class _loaderProxy;
 
 #pragma mark -- 屏幕旋转控制
 - (BOOL)shouldAutorotate{
-    NSLog(@"-------------------------- shouldAutorotate --------------------------");
+//    NSLog(@"-------------------------- shouldAutorotate --------------------------");
     return YES;
 }
 
 //[[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
 - (UIInterfaceOrientationMask)supportedInterfaceOrientations{
-    NSLog(@"-------------------------- supportedInterfaceOrientations --------------------------");
+//    NSLog(@"-------------------------- supportedInterfaceOrientations --------------------------");
     return UIInterfaceOrientationMaskAll;
 }
 
@@ -770,7 +789,7 @@ static Class _loaderProxy;
 
 
 - (void)viewWillTransitionToSize:(CGSize)size withTransitionCoordinator:(id<UIViewControllerTransitionCoordinator>)coordinator {
-    NSLog(@"-------------------------- viewWillTransitionToSize:%@ --------------------------", NSStringFromCGSize(size));
+//    NSLog(@"-------------------------- viewWillTransitionToSize:%@ --------------------------", NSStringFromCGSize(size));
 }
 
 @end
