@@ -52,6 +52,8 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 
 
 
+
+
 @interface AFPlayer : UIView
 
 /** 播放器状态 */

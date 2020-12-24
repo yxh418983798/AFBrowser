@@ -106,8 +106,8 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
         _cacheArray = NSMutableArray.array;
         _playerArray = NSMutableArray.new;
         _playerQueue = dispatch_queue_create("com.Alfie.AFPlayer", DISPATCH_QUEUE_CONCURRENT);
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayer) name:UIApplicationWillEnterForegroundNotification object:nil];
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayer) name:UIApplicationDidEnterBackgroundNotification object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayer) name:UIApplicationDidBecomeActiveNotification object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayer) name:UIApplicationWillResignActiveNotification object:nil];
     });
 }
 
@@ -544,7 +544,8 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
         return;
     } else {
         if (self.player.currentItem) {
-            if (![self.url isEqualToString:[NSString stringWithFormat:@"file://%@", [AFDownloader filePathWithUrl:self.item.content]]]) {
+
+            if (![self.url isEqualToString:[self.configuration videoPathForItem:self.item]]) {
                 [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]数据错误, %@", self.displayDescription]];
                 self.url = nil;
 //                [self.player replaceCurrentItemWithPlayerItem:nil];
@@ -578,8 +579,13 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
                 [self replacePlayerItem:nil];
             }
             NSString *urlString = [self.item.content isKindOfClass:NSString.class] ? self.item.content : [(NSURL *)self.item.content absoluteString];
-            if ([urlString containsString:@"file://"]) {
+            if ([urlString hasPrefix:@"file://"]) {
                 self.url = urlString;
+                [self attachCoverImage:self.item.coverImage];
+                [self prepareDone];
+                return;
+            } else if ([urlString hasPrefix:@"/var/mobile/"]) {
+                self.url = [NSString stringWithFormat:@"file://%@", urlString];
                 [self attachCoverImage:self.item.coverImage];
                 [self prepareDone];
                 return;
@@ -589,6 +595,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
                 if (error) {
                     [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载错误：%@，描述：%@", error, self.displayDescription]];
                 } else {
+                    
                     if (![url isEqualToString:[NSString stringWithFormat:@"file://%@", [AFDownloader filePathWithUrl:self.item.content]]]) {
                         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，URL已切换：%@，描述：%@", url, self.displayDescription]];
                     } else if (url.length) {
@@ -697,6 +704,9 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
         }
     }
     [self.player play];
+    if ([self.configuration.delegate respondsToSelector:@selector(browser:willPlayVideoItem:)]) {
+        [self.configuration.delegate browser:[self.browserDelegate performSelector:@selector(delegate)] willPlayVideoItem:self.item];
+    }
     if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay || (self.player.currentItem.status == AVPlayerItemStatusUnknown && self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo)) {
         if (self.item.showVideoControl) {
             self.bottomBar.playBtn.selected = YES;
@@ -905,6 +915,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
 #pragma mark - 收到通知：暂停所有正在播放的播放器
 + (void)pauseAllPlayer {
     _AllPlayerSwitch = NO;
+    NSLog(@"-------------------------- 暂停所有播放器 --------------------------");
     [NSNotificationCenter.defaultCenter postNotificationName:AFPlayerNotificationPauseAllPlayer object:nil];
 }
 
@@ -920,6 +931,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
 #pragma mark - 收到通知：恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer {
     _AllPlayerSwitch = YES;
+    NSLog(@"-------------------------- 恢复所有播放器 --------------------------");
     [NSNotificationCenter.defaultCenter postNotificationName:AFPlayerNotificationResumeAllPlayer object:nil];
 }
 

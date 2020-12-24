@@ -51,6 +51,14 @@
 - (NSString *)filePath;
 
 
+/**
+ * @brief 返回content是否有值
+ */
+- (BOOL)validContent;
+
+
+- (BOOL)validRemoteUrl;
+
 
 /**
  * @brief 构造图片数据

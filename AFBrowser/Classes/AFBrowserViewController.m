@@ -125,6 +125,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
     [self.navigationController setNavigationBarHidden:YES animated:YES];
+    self.navigationController.view.frame = UIScreen.mainScreen.bounds;
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
@@ -695,9 +696,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.configuration.isOtherAudioPlaying = AVAudioSession.sharedInstance.isOtherAudioPlaying;
     AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     // 如果url为空，不弹出浏览器
-    if (!item.content) {
-        NSLog(@"-------------------------- Error：item的Url为空 --------------------------");
-        return;
+    if (!item.validContent) {
+        NSLog(@"-------------------------- Error：item的content为空，userInfo：%@ --------------------------", item.userInfo);
     }
     if (!self.configuration.shouldBrowseWhenNoCache) {
         // 没有加载图片到缓存的情况下，不弹出浏览器
@@ -709,8 +709,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
             }
         }
         if (item.type == AFBrowserItemTypeVideo) {
-            NSString *url = [item.content isKindOfClass:NSString.class] ? item.content : [(NSURL *)item.content absoluteString];
-            if (![url containsString:@"file://"] && ![AFDownloader videoPathWithUrl:item.content]) {
+            if (![self.configuration videoPathForItem:item]) {
                 [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"Error：视频没有加载完成，不展示浏览器:%@", item.content]];
                 return;
             }
@@ -731,13 +730,15 @@ static const CGFloat lineSpacing = 0.f; //间隔
 //        [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
         navigationController.navigationBar.hidden = YES;
         navigationController.transitioningDelegate = self.transformer;
+        navigationController.hidesBottomBarWhenPushed = YES;
         [currentVc presentViewController:navigationController animated:YES completion:nil];
     } else {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"Error：找不到CurrentVc，无法跳转:%@", UIApplication.sharedApplication.delegate.window]];
     }
 }
 
-/// 查询是否有图片缓存
+
+#pragma mark - 查询图片缓存
 - (UIImage *)imageFromCacheForKey:(id)key {
     if ([key isKindOfClass:NSString.class] || [key isKindOfClass:NSURL.class]) {
         NSString *keyString = [key isKindOfClass:NSString.class] ? key : [(NSURL *)key absoluteString];
@@ -778,7 +779,6 @@ static Class _loaderProxy;
 //- (UIInterfaceOrientation)preferredInterfaceOrientationForPresentation{
 //    return UIInterfaceOrientationPortrait;
 //}
-
 
 
 #pragma mark - 完成转场，刷新UI

@@ -28,7 +28,7 @@
 /** 播放视频时，是否无限循环播放，默认NO */
 @property (assign, nonatomic) BOOL                     infiniteLoop;
 
-/** 转场时，是否隐藏源视图，默认YES */
+/** 转场时，是否隐藏源视图，默认NO */
 @property (assign, nonatomic) BOOL                     hideSourceViewWhenTransition;
 
 /** 是否有其他第三方APP在播放 */
@@ -67,6 +67,10 @@
 + (UIViewController *)currentVc;
 
 + (BOOL)isPortrait;
+
+/// 查询视频缓存
+- (NSString *)videoPathForItem:(AFBrowserItem *)item;
+
 
 #pragma mark - 链式调用
 /// 代理

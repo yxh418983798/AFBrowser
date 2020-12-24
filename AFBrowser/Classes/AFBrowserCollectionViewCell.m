@@ -58,7 +58,7 @@
 @end
 
 
-static CGFloat MinScaleDistance = 0.4; 
+static CGFloat MinScaleDistance = 0.4;
 static CGFloat MaxScaleDistance = 3.f;
 
 @implementation AFBrowserCollectionViewCell
@@ -607,15 +607,18 @@ static CGFloat MaxScaleDistance = 3.f;
         
 //        self.aiView.hidden = YES;
 //        [self.aiView stopAnimating];
-        if(!error){
+        if ([self.configuration.delegate respondsToSelector:@selector(browser:didCompletedDownloadOriginalImageItem:error:)]) {
+            [self.configuration.delegate browser:self.delegate didCompletedDownloadOriginalImageItem:self.item error:error];
+        }
+        if(error){
+            [self.loadOriginalImgBtn setTitle:@"下载失败，重新下载" forState:(UIControlStateNormal)];
+            self.loadOriginalImgBtn.userInteractionEnabled = YES;
+        } else {
             if (_loadOriginalImgBtn) {
                 [_loadOriginalImgBtn removeFromSuperview];
                 _loadOriginalImgBtn = nil;
             }
             self.imageView.image = image;
-        } else {
-            [self.loadOriginalImgBtn setTitle:@"下载失败，重新下载" forState:(UIControlStateNormal)];
-            self.loadOriginalImgBtn.userInteractionEnabled = YES;
         }
     }];
 }

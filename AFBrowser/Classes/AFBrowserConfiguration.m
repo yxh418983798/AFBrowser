@@ -6,6 +6,8 @@
 //
 
 #import "AFBrowserConfiguration.h"
+#import "AFBrowserItem.h"
+#import "AFDownloader.h"
 
 @interface AFBrowserConfiguration ()
 
@@ -26,7 +28,6 @@ static UIDeviceOrientation *_lastOrientation;
 - (instancetype)init {
     if (self = [super init]) {
         self.selectedIndex = 0;
-        self.hideSourceViewWhenTransition = YES;
         self.autoLoadOriginalImage = YES;
         self.videoGravity = AVLayerVideoGravityResizeAspectFill;
     }
@@ -196,6 +197,24 @@ static UIDeviceOrientation *_lastOrientation;
 + (BOOL)isPortrait {
     return UIDeviceOrientationIsPortrait(_lastOrientation);
 }
+
+
+
+
+#pragma mark - 查询视频缓存
+- (NSString *)videoPathForItem:(AFBrowserItem *)item {
+    NSString *key = [item.content isKindOfClass:NSString.class] ? item.content : [(NSURL *)item.content absoluteString];
+    if ([key containsString:@"file://"]) return [NSFileManager.defaultManager fileExistsAtPath:key] ? key : nil;
+    NSString *path;
+    if ([self.delegate respondsToSelector:@selector(browser:videoPathWithKey:atIndex:)]) {
+        path = [self.delegate browser:self videoPathForItem:item];
+    }
+    if (!path) path = [AFDownloader videoPathWithUrl:key];
+    return path;
+}
+
+
+
 
 @end
 

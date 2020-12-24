@@ -511,7 +511,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "AFBrowser/AFBrowser-Prefix.pch";
 				INFOPLIST_FILE = "AFBrowser/AFBrowser-Info.plist";
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mostone.qiye;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -529,7 +529,7 @@
 				GCC_PRECOMPILE_PREFIX_HEADER = YES;
 				GCC_PREFIX_HEADER = "AFBrowser/AFBrowser-Prefix.pch";
 				INFOPLIST_FILE = "AFBrowser/AFBrowser-Info.plist";
-				MARKETING_VERSION = 1.4.1;
+				MARKETING_VERSION = 1.4.2;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mostone.qiye;
 				PRODUCT_NAME = "$(TARGET_NAME)";

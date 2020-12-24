@@ -51,5 +51,26 @@
 
 
 
+- (BOOL)validContent {
+    if ([self.content isKindOfClass:NSString.class]) {
+        return [(NSString *)self.content length] ;
+    } else if ([self.content isKindOfClass:NSURL.class]) {
+        return [(NSURL *)self.content absoluteString].length;
+    } else if ([self.content isKindOfClass:NSData.class]) {
+        return [(NSData *)self.content length];
+    }
+    return YES;
+}
+
+
+- (BOOL)validRemoteUrl {
+    if ([self.content isKindOfClass:NSString.class]) {
+        return [self.content hasPrefix:@"http"];
+    } else if ([self.content isKindOfClass:NSURL.class]) {
+        return [[(NSURL *)self.content absoluteString] hasPrefix:@"http"];
+    }
+    return NO;
+}
+
 
 @end

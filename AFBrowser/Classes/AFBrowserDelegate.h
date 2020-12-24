@@ -134,7 +134,20 @@
 /**
  * @brief 查询视频缓存的本地路径，如果没有实现，会从AFBrowserLoaderDelegate方法中查询
  */
-- (NSString *)browser:(AFBrowserViewController *)browser videoPathWithKey:(NSString *)key atIndex:(NSInteger)index;
+- (NSString *)browser:(AFBrowserViewController *)browser videoPathForItem:(AFBrowserItem *)item;
+
+
+/**
+ * @brief 开始播放视频的回调
+ */
+- (void)browser:(AFBrowserViewController *)browser willPlayVideoItem:(AFBrowserItem *)item;
+
+
+/**
+ * @brief 点击查看原图，下载完成的回调
+ */
+- (void)browser:(AFBrowserViewController *)browser didCompletedDownloadOriginalImageItem:(AFBrowserItem *)item error:(NSError *)error;
 
 @end
+
 
