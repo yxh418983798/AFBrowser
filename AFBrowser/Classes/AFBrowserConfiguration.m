@@ -199,12 +199,13 @@ static UIDeviceOrientation *_lastOrientation;
 }
 
 
-
-
 #pragma mark - 查询视频缓存
 - (NSString *)videoPathForItem:(AFBrowserItem *)item {
     NSString *key = [item.content isKindOfClass:NSString.class] ? item.content : [(NSURL *)item.content absoluteString];
-    if ([key containsString:@"file://"]) return [NSFileManager.defaultManager fileExistsAtPath:key] ? key : nil;
+    if ([key containsString:@"/var/mobile"]) {
+        if ([key hasPrefix:@"file://"]) key = [key substringFromIndex:7];
+        return [NSFileManager.defaultManager fileExistsAtPath:key] ? key : nil;
+    }
     NSString *path;
     if ([self.delegate respondsToSelector:@selector(browser:videoPathWithKey:atIndex:)]) {
         path = [self.delegate browser:self videoPathForItem:item];
@@ -214,7 +215,10 @@ static UIDeviceOrientation *_lastOrientation;
 }
 
 
-
+- (BOOL)isBrowsed {
+    if (!_browserVc) return NO;
+    return _isBrowsed;
+}
 
 @end
 

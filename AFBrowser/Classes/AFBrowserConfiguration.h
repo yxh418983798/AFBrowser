@@ -11,6 +11,8 @@
 #import "AFBrowserEnum.h"
 #import "AFBrowserDelegate.h"
 
+@class AFBrowserViewController;
+
 @interface AFBrowserConfiguration : NSObject
 
 /** 代理 */
@@ -61,11 +63,19 @@
 /** 播放器的填充方式，默认AVLayerVideoGravityResizeAspectFill完全填充 */
 @property (nonatomic, copy) AVLayerVideoGravity        videoGravity;
 
+/** 图片或视频 是否在浏览器中，当进行转场以及在外部列表播放时为NO */
+@property (nonatomic, assign) BOOL              isBrowsed;
+
+/** browserVc */
+@property (nonatomic, weak) AFBrowserViewController            *browserVc;
+
+
 /**
  * @brief 获取当前展示的控制器
  */
 + (UIViewController *)currentVc;
 
+/// 是否竖屏
 + (BOOL)isPortrait;
 
 /// 查询视频缓存
@@ -111,8 +121,6 @@
 
 /// 播放器填充方式
 - (AFBrowserConfiguration * (^)(AVLayerVideoGravity))makeVideoGravity;
-
-
 
 @end
 

@@ -124,12 +124,14 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
+    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
     [self.navigationController setNavigationBarHidden:YES animated:YES];
     self.navigationController.view.frame = UIScreen.mainScreen.bounds;
 }
 
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
+    self.isFinishedTransaction = YES;
     [self.navigationController setNavigationBarHidden:NO animated:YES];
 //    [[UIApplication sharedApplication] setStatusBarOrientation:UIInterfaceOrientationPortrait animated:NO];
 }
@@ -198,6 +200,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
     self.collectionView = [[UICollectionView alloc] initWithFrame:(CGRectMake(0, 0, layout.itemSize.width, layout.itemSize.height)) collectionViewLayout:layout];
     [self.collectionView registerClass:[AFBrowserCollectionViewCell class] forCellWithReuseIdentifier:@"AFBrowserCollectionViewCell"];
+    self.collectionView.bounces = NO;
     self.collectionView.pagingEnabled = YES;
     self.collectionView.showsHorizontalScrollIndicator = NO;
     self.collectionView.showsVerticalScrollIndicator   = NO;
@@ -727,7 +730,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
             [navigationController.navigationBar setBackgroundImage:[UIImage new] forBarMetrics:(UIBarMetricsDefault)];
             [navigationController.navigationBar setShadowImage:[UIImage new]];
         }
-//        [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
         navigationController.navigationBar.hidden = YES;
         navigationController.transitioningDelegate = self.transformer;
         navigationController.hidesBottomBarWhenPushed = YES;

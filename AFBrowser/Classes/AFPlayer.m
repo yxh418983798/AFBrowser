@@ -1040,6 +1040,7 @@ static NSMutableArray <AFPlayerProxy *> *_playerArray;
     return count;
 }
 
+
 #pragma mark - 删除tool
 + (void)removeCache:(AFPlayerProxy *)proxy {
     if (!proxy) return;

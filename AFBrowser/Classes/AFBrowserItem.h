@@ -44,6 +44,30 @@
 /** userInfo，自定义参数 */
 @property (strong, nonatomic) id                userInfo;
 
+/** presentedTrasitionView的原始frame */
+@property (assign, nonatomic) CGRect          presentedTrasitionViewFrame;
+
+/** 记录trasitionView的原始frame */
+@property (assign, nonatomic) CGRect          trasitionViewOriginalFrame;
+
+/** 图片转场，记录开始转场的frame，用于转场后意外情况的恢复 */
+@property (assign, nonatomic) CGRect          imageBeginTransitionFrame;
+
+/** 记录转场View的present前的frame */
+@property (assign, nonatomic) CGRect          frameBeforePresent;
+
+/** 记录转场view的dismiss前的frame */
+@property (assign, nonatomic) CGRect          frameBeforeDismiss;
+
+/** 浏览器imageView的高度 */
+@property (assign, nonatomic) CGFloat         imgView_H;
+
+/** 浏览器imageView的高度 */
+@property (assign, nonatomic) CGFloat         progress;
+
+/** 记录tag */
+@property (nonatomic, assign) NSInteger       originalTag;
+
 
 /**
  * @brief 返回已下载的视频或图片的本地地址

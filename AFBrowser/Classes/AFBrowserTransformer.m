@@ -303,6 +303,7 @@
             }
         }
         [transitionContext completeTransition:![transitionContext transitionWasCancelled]];
+        [NSNotificationCenter.defaultCenter postNotificationName:@"AFBrowserFinishedTransaction" object:nil];
         transitionView.hidden = NO;
         if ([transitionContext transitionWasCancelled]) {
             
@@ -316,7 +317,6 @@
             
         } else {
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"完成Present：%@ --------------------------", self.displayStatus]];
-            [NSNotificationCenter.defaultCenter postNotificationName:@"AFBrowserFinishedTransaction" object:nil];
             toView.hidden = NO;
             [self.backGroundView removeFromSuperview];
             [self.transitionView removeFromSuperview];
@@ -589,22 +589,27 @@
 static CGRect sourceFrame;
 static CGRect beginFrame;
 
-- (BOOL)gestureRecognizerShouldBegin:(UIGestureRecognizer *)gestureRecognizer {
-    if (![gestureRecognizer isKindOfClass:UIPanGestureRecognizer.class]) return YES;
-    
+- (BOOL)gestureRecognizerShouldBegin:(UIPanGestureRecognizer *)pan {
+    if (![pan isKindOfClass:UIPanGestureRecognizer.class]) return YES;
+    CGPoint velocity = [pan velocityInView:pan.view];
+    NSLog(@"-------------------------- 打印：%@ -- %@ --------------------------", NSStringFromCGPoint(velocity), NSStringFromCGPoint([pan translationInView:pan.view]));
+    if (fabs(velocity.x) > 0 && fabs(velocity.y / velocity.x) < 2) {
+        return NO;
+    }
     if (self.isTransitioning) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场未结束，新手势事件过滤：%@", self.displayStatus]];
         return NO;
     }
     CGFloat systemVersion = UIDevice.currentDevice.systemVersion.floatValue;
     if (systemVersion < 12) {
-        double velocity = [(UIPanGestureRecognizer *)gestureRecognizer velocityInView:gestureRecognizer.view].y;
+        CGFloat velocityY = velocity.y;
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"轻扫:%g：%@", velocity, self.displayStatus]];
-        if (fabs(velocity) > 1000) {
+        if (fabs(velocityY) > 1000) {
             [self.presentedVc dismissViewControllerAnimated:YES completion:nil];
             return NO;
         }
     }
+    self.isDirectionDown = (velocity.y > 0);
     return YES;
 }
 
@@ -626,7 +631,6 @@ static CGRect beginFrame;
             }
             self.isInteractive = YES;
             self.isCancel = NO;
-            self.isDirectionDown = (point.y > 0);
             self.percentTransition = [[UIPercentDrivenInteractiveTransition alloc] init];
             [self.presentedVc dismissViewControllerAnimated:YES completion:nil];
             self.transitionView = self.presentedTransitionView;
@@ -661,16 +665,27 @@ static CGRect beginFrame;
                 self.backGroundView.alpha = fmax(1-progress*3, 0);
             }
             CGFloat original_Y;
-            if (self.isDirectionDown) {
-                original_Y = fmax((UIScreen.mainScreen.bounds.size.height - self.imgView_H)/2, 0);
-            } else {
-                original_Y = fmax((UIScreen.mainScreen.bounds.size.height - self.imgView_H)/2, self.imgView_H - UIScreen.mainScreen.bounds.size.height);
-            }
             CGFloat distance_W = (beginFrame.size.width - sourceFrame.size.width) * progress;
             CGFloat current_W = beginFrame.size.width - distance_W;
             CGFloat scale = current_W / beginFrame.size.width;
-            self.transitionView.frame = CGRectMake(distance_W/2 + point.x + beginFrame.origin.x, original_Y + point.y, current_W, self.imgView_H * scale);
+            if (self.isDirectionDown) {
+                if (self.imgView_H > UIScreen.mainScreen.bounds.size.height) {
+                    original_Y = 0;
+                } else {
+                    original_Y = (UIScreen.mainScreen.bounds.size.height - self.imgView_H)/2;
+                }
+                self.transitionView.frame = CGRectMake(distance_W/2 + point.x + beginFrame.origin.x, original_Y + point.y, current_W, self.imgView_H * scale);
+            } else {
+                if (self.imgView_H > UIScreen.mainScreen.bounds.size.height) {
+                    original_Y = (UIScreen.mainScreen.bounds.size.height - self.imgView_H);
+                } else {
+                    original_Y = (UIScreen.mainScreen.bounds.size.height - self.imgView_H)/2;
+                }
+                CGFloat height = self.imgView_H * scale;
+                self.transitionView.frame = CGRectMake(distance_W/2 + point.x + beginFrame.origin.x, original_Y + point.y + (self.imgView_H - height), current_W, height);
+            }
             [self.percentTransition updateInteractiveTransition:progress];
+            NSLog(@"-------------------------- %@ --------------------------", NSStringFromCGRect(self.transitionView.frame));
         }
             break;
             
@@ -684,7 +699,7 @@ static CGRect beginFrame;
                 if (item.type == AFBrowserItemTypeImage && ([[[UIDevice currentDevice]systemVersion]floatValue] >= 11.0)) {
                     [UIView animateWithDuration:0.4 delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:0 animations:^{
                         self.backGroundView.alpha = 0;
-                        if (![self.delegate transitionViewForSourceController] && !self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
+                        if ((CGRectEqualToRect(sourceFrame, CGRectZero) || ![self.delegate transitionViewForSourceController] && !self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo)) {
                             // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
                             self.transitionView.alpha = 0;
                         } else {
