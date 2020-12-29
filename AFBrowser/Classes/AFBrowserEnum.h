@@ -91,6 +91,13 @@ typedef NS_ENUM(NSUInteger, AFLoadImageStatus) {
     AFLoadImageStatusOriginal,  /// 已加载原始高清图片
 };
 
+/// 播放器转场状态
+typedef NS_ENUM(NSUInteger, AFTransitionStatus) {
+    AFTransitionStatusNormal,         /// 小屏
+    AFTransitionStatusTransitioning, /// 转场中
+    AFTransitionStatusPresented,    /// 全屏
+};
+
 
 
 #endif /* AFBrowserEnum_h */

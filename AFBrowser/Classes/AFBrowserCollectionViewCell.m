@@ -13,6 +13,7 @@
 #import <YYImage/YYImage.h>
 #import "AFBrowserEnum.h"
 #import <SDWebImage/SDWebImage.h>
+#import "AFPlayerController.h"
 
 @interface AFBrowserScrollView: UIScrollView
 @end
@@ -67,7 +68,7 @@ static CGFloat MaxScaleDistance = 3.f;
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
     if (self) {
-        self.backgroundColor = [UIColor blackColor];
+        self.backgroundColor = UIColor.blackColor;
         _scrollView = [[AFBrowserScrollView alloc] init];
         if (@available(iOS 11.0, *)) {
             _scrollView.contentInsetAdjustmentBehavior = UIScrollViewContentInsetAdjustmentNever;
@@ -116,7 +117,19 @@ static CGFloat MaxScaleDistance = 3.f;
 #pragma mark - UI
 - (AFPlayer *)player {
     if (!_player) {
-        _player = [AFPlayer playerWithItem:self.item configuration:self.configuration];
+        if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
+            if ([self.configuration.delegate respondsToSelector:@selector(browser:viewForTransitionAtIndex:)]) {
+                _player = [self.configuration.delegate browser:self.delegate viewForTransitionAtIndex:self.indexPath.row];
+            }
+            if (![_player isKindOfClass:AFPlayer.class]) {
+                _player = [AFPlayer playerWithItem:self.item configuration:self.configuration];
+            }
+        } else {
+            AFPlayerController *controller = [AFPlayerController controllerWithTarget:self.delegate];
+            _player = controller.player;
+            _player.item = self.item;
+            _player.configuration = self.configuration;
+        }
         for (UIGestureRecognizer *gestureRecognizer in _player.gestureRecognizers) {
             if ([gestureRecognizer isKindOfClass:UILongPressGestureRecognizer.class]) {
                 [gestureRecognizer requireGestureRecognizerToFail:self.longPressGestureRecognizer];
@@ -474,8 +487,9 @@ static CGFloat MaxScaleDistance = 3.f;
             break;
             
         case AFBrowserItemTypeVideo: {
+            [self addSubview:self.player];
             self.player.item = item;
-            self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
+//            self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
             self.player.browserDelegate = self;
             [self.player prepare];
             [self resizeSubviewSize];
@@ -610,16 +624,15 @@ static CGFloat MaxScaleDistance = 3.f;
         if ([self.configuration.delegate respondsToSelector:@selector(browser:didCompletedDownloadOriginalImageItem:error:)]) {
             [self.configuration.delegate browser:self.delegate didCompletedDownloadOriginalImageItem:self.item error:error];
         }
-        if(error){
-            [self.loadOriginalImgBtn setTitle:@"下载失败，重新下载" forState:(UIControlStateNormal)];
-            self.loadOriginalImgBtn.userInteractionEnabled = YES;
-        } else {
-            if (_loadOriginalImgBtn) {
-                [_loadOriginalImgBtn removeFromSuperview];
-                _loadOriginalImgBtn = nil;
-            }
+        if (_loadOriginalImgBtn) {
+            [_loadOriginalImgBtn removeFromSuperview];
+            _loadOriginalImgBtn = nil;
+        }
+        if(!error){
             self.imageView.image = image;
         }
+//        [self.loadOriginalImgBtn setTitle:@"下载失败，重新下载" forState:(UIControlStateNormal)];
+//        self.loadOriginalImgBtn.userInteractionEnabled = YES;
     }];
 }
 

@@ -30,7 +30,17 @@
     if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(imageFromCacheForKey:)]) {
         return [AFBrowserViewController.loaderProxy imageFromCacheForKey:key];
     } else {
-        return [SDImageCache.sharedImageCache imageFromCacheForKey:key];
+        NSData *imageData = [SDImageCache.sharedImageCache diskImageDataForKey:key];
+        if ([self isGIFData:imageData]) {
+            YYImage *gifImage = [YYImage imageWithData:imageData];
+            if (gifImage) {
+                return gifImage;
+            }
+        }
+        if (imageData) {
+            return [UIImage imageWithData:imageData];
+        }
+        return nil;
     }
 }
 
@@ -104,9 +114,11 @@
 
 + (void)addLogString:(NSString *)log {
 #ifdef DEBUG
-    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(addLogString:)]) {
-        [AFBrowserViewController.loaderProxy addLogString:log];
-    }
+//    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(addLogString:)]) {
+//        [AFBrowserViewController.loaderProxy addLogString:log];
+//    } else {
+//        NSLog(@"%@", log);
+//    }
 #endif
 }
 

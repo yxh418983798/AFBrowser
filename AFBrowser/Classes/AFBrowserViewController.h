@@ -8,9 +8,9 @@
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"
-#import "AFPlayer.h"
 #import "AFBrowserItem.h"
 #import "AFBrowserConfiguration.h"
+#import "AFPlayerController.h"
 
 @interface AFBrowserViewController : UIViewController
 

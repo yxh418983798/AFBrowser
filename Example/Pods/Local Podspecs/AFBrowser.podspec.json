@@ -1,6 +1,6 @@
 {
   "name": "AFBrowser",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "summary": "图片/视频浏览器",
   "homepage": "https://github.com/yxh418983798/AFBrowser",
   "license": {
@@ -12,7 +12,7 @@
   },
   "source": {
     "git": "https://github.com/yxh418983798/AFBrowser.git",
-    "tag": "1.4.2"
+    "tag": "1.4.3"
   },
   "platforms": {
     "ios": "9.0"

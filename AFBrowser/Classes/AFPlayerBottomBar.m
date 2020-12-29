@@ -10,13 +10,26 @@
 @implementation AFPlayerSlider
 
 - (void)touchesBegan:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event{
-    
     CGRect rect = [self trackRectForBounds:self.bounds];
     float value = [self minimumValue] + ([[touches anyObject] locationInView: self].x - rect.origin.x - 4.0) * (([self maximumValue]-[self minimumValue]) / (rect.size.width - 8.0));
     if ([self.delegate respondsToSelector:@selector(slider:beginTouchWithValue:)] ) {
         [self.delegate slider:self beginTouchWithValue:value];
     }
-    [super touchesBegan: touches withEvent: event];
+    [super touchesBegan:touches withEvent: event];
+}
+
+- (void)touchesEnded:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    if ([self.delegate respondsToSelector:@selector(endTouchSlider:)]) {
+        [self.delegate endTouchSlider:self];
+    }
+    [super touchesEnded:touches withEvent: event];
+}
+//
+- (void)touchesCancelled:(NSSet<UITouch *> *)touches withEvent:(UIEvent *)event {
+    if ([self.delegate respondsToSelector:@selector(endTouchSlider:)]) {
+        [self.delegate endTouchSlider:self];
+    }
+    [super touchesCancelled:touches withEvent: event];
 }
 
 @end

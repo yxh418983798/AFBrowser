@@ -1,0 +1,1 @@
+../../../../../AFBrowser/Classes/AFBrowserViewModel.h

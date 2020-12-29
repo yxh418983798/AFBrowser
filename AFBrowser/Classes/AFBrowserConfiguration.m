@@ -8,6 +8,7 @@
 #import "AFBrowserConfiguration.h"
 #import "AFBrowserItem.h"
 #import "AFDownloader.h"
+#import "AFBrowserViewController.h"
 
 @interface AFBrowserConfiguration ()
 
@@ -153,7 +154,7 @@ static UIDeviceOrientation *_lastOrientation;
 + (void)deviceOrientationDidChangeNotification {
     // 旋转之后当前的设备方向
     UIDeviceOrientation orient = UIDevice.currentDevice.orientation;
-    NSLog(@"-------------------------- 收到屏幕旋转的通知：%d --------------------------", orient);
+//    NSLog(@"-------------------------- 收到屏幕旋转的通知：%d --------------------------", orient);
     if (orient == UIDeviceOrientationUnknown) orient = UIDeviceOrientationPortrait;
     if (UIDeviceOrientationIsFlat(orient)) return;
     if (_lastOrientation == orient) return;
@@ -203,7 +204,7 @@ static UIDeviceOrientation *_lastOrientation;
 - (NSString *)videoPathForItem:(AFBrowserItem *)item {
     NSString *key = [item.content isKindOfClass:NSString.class] ? item.content : [(NSURL *)item.content absoluteString];
     if ([key containsString:@"/var/mobile"]) {
-        if ([key hasPrefix:@"file://"]) key = [key substringFromIndex:7];
+        if ([key hasPrefix:@"file:///"]) key = [key substringFromIndex:7];
         return [NSFileManager.defaultManager fileExistsAtPath:key] ? key : nil;
     }
     NSString *path;
@@ -215,10 +216,30 @@ static UIDeviceOrientation *_lastOrientation;
 }
 
 
+- (BOOL)isEqualUrl:(NSString *)url toUrl:(NSString *)toUrl {
+    NSString *urlString = url;
+    if ([urlString hasPrefix:@"file:///"]) {
+        urlString = [urlString substringFromIndex:7];
+    }
+    NSString *toUrlString = toUrl;
+    if ([toUrlString hasPrefix:@"file:///var"]) {
+        toUrlString = [toUrlString substringFromIndex:7];
+    }
+    return [urlString isEqualToString:toUrlString];
+}
+
+
 - (BOOL)isBrowsed {
     if (!_browserVc) return NO;
     return _isBrowsed;
 }
+
+
+- (AFBrowserItem *)currentItem {
+    if (self.browserVc) return [self.browserVc itemAtIndex:self.selectedIndex];
+    return [self.delegate browser:nil itemForBrowserAtIndex:self.selectedIndex];
+}
+
 
 @end
 

@@ -69,6 +69,13 @@
 /** browserVc */
 @property (nonatomic, weak) AFBrowserViewController            *browserVc;
 
+/** 是否在转场 */
+@property (nonatomic, assign) AFTransitionStatus         transitionStatus;
+
+
+- (BOOL)isEqualUrl:(NSString *)url toUrl:(NSString *)toUrl;
+
+- (AFBrowserItem *)currentItem;
 
 /**
  * @brief 获取当前展示的控制器

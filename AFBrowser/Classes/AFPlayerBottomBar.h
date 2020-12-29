@@ -13,6 +13,7 @@
 @protocol AFPlayerSliderDelegate <NSObject>
 
 - (void)slider:(AFPlayerSlider *)slider beginTouchWithValue:(float)value;
+- (void)endTouchSlider:(AFPlayerSlider *)slider;
 
 @end
 

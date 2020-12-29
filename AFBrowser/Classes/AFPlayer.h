@@ -8,6 +8,7 @@
 
 #import <AVFoundation/AVFoundation.h>
 #import "AFPlayerBottomBar.h"
+#import "AFBrowserEnum.h"
 
 /// 播放器状态
 typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
@@ -18,14 +19,6 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
     AFPlayerStatusPause,        /// 暂停
     AFPlayerStatusStop,         /// 停止
     AFPlayerStatusFinished,     /// 播放结束
-};
-
-
-/// 播放器转场状态
-typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
-    AFPlayerTransitionStatusSmall,         /// 小屏
-    AFPlayerTransitionStatusTransitioning, /// 转场中
-    AFPlayerTransitionStatusFullScreen,    /// 全屏
 };
 
 
@@ -69,7 +62,7 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 @property (strong, nonatomic) AFPlayerBottomBar   *bottomBar;
 
 /** 记录toolBar的显示状态 */
-@property (assign, nonatomic) BOOL                showToolBar;
+@property (assign, nonatomic) BOOL                showVideoControl;
 
 /** 是否静音 */
 @property (nonatomic, assign) BOOL                muted;
@@ -82,11 +75,10 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
 
 @property(copy) AVLayerVideoGravity videoGravity;
 
-/** 是否在转场 */
-@property (nonatomic, assign) AFPlayerTransitionStatus          transitionStatus;
-
 @property (class) int          maxPlayer;
 
+/** 是否活跃，默认YES */
+@property (nonatomic, assign) BOOL          isActive;
 
 /**
  * @brief 构造播放器
@@ -118,9 +110,9 @@ typedef NS_ENUM(NSUInteger, AFPlayerTransitionStatus) {
  */
 - (void)seekToTime:(NSTimeInterval)time;
 
-- (BOOL)isSliderTouch;
+- (void)destroy;
 
-- (BOOL)isActive;
+- (BOOL)isSliderTouch;
 
 /// 释放播放器
 //- (void)releasePlayer;

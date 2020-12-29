@@ -69,6 +69,8 @@
 @property (nonatomic, assign) NSInteger       originalTag;
 
 
+- (BOOL)isEqualToItem:(AFBrowserItem *)item;
+
 /**
  * @brief 返回已下载的视频或图片的本地地址
  */

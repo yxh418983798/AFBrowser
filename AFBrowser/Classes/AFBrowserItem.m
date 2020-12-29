@@ -73,4 +73,8 @@
 }
 
 
+- (BOOL)isEqual:(AFBrowserItem *)item {
+    return [self.content isEqual:item.content] && [self.coverImage isEqual:item.coverImage];
+}
+
 @end
