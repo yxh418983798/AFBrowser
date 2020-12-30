@@ -15,6 +15,7 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
     AFPlayerStatusNone,         /// 初始状态
     AFPlayerStatusPrepare,      /// 准备播放
     AFPlayerStatusPrepareDone,  /// 准备完成
+    AFPlayerStatusReadToPlay,   /// 已经可以播放，此时隐藏封面
     AFPlayerStatusPlay,         /// 播放中
     AFPlayerStatusPause,        /// 暂停
     AFPlayerStatusStop,         /// 停止
@@ -80,10 +81,17 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
 /** 是否活跃，默认YES */
 @property (nonatomic, assign) BOOL          isActive;
 
+- (BOOL)isReadyToPlay;
 /**
  * @brief 构造播放器
  */
 + (AFPlayer *)playerWithItem:(AFBrowserItem *)item configuration:(AFBrowserConfiguration *)configuration;
+
+
+/**
+ * @brief 准备播放
+ */
+//- (void)showCover;
 
 /**
  * @brief 准备播放

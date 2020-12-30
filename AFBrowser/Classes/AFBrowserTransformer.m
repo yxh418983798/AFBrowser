@@ -73,6 +73,9 @@
 /** player */
 @property (nonatomic, weak) AFPlayer            *player;
 
+/** 异常情况下，重置下view */
+@property (nonatomic, assign) BOOL            shouldReset;
+
 @end
 
 
@@ -82,6 +85,7 @@
 - (instancetype)init {
     if (self = [super init]) {
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationWillResignActiveNotification) name:UIApplicationWillResignActiveNotification object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationDidBecomeActive) name:UIApplicationDidBecomeActiveNotification object:nil];
     }
     return self;
 }
@@ -95,18 +99,21 @@
 - (void)applicationWillResignActiveNotification {
     // 进入后台，需要取消正常进行中的转场，避免View出现问题
     if (self.isInteractive) {
+//        self.shouldReset = YES;
         self.isInteractive = NO;
         [self.percentTransition finishInteractiveTransition];
-        self.sourceVc.view.frame = UIScreen.mainScreen.bounds;
-        [UIApplication.sharedApplication.delegate.window layoutIfNeeded];
-//        self.configuration.browserVc = nil;
-//        self.player.browserDelegate = nil;
-//        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        //        self.configuration.browserVc = nil;
+
+//        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1.f * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
 //            [self.percentTransition finishInteractiveTransition];
 ////            [self dismiss];
 ////            [self cancelInteractiveTransition];
 //        });
     }
+}
+
+- (void)applicationDidBecomeActive {
+
 }
 
 
@@ -160,6 +167,7 @@
 #pragma mark - 自定义转场动画
 - (void)animateTransition:(id<UIViewControllerContextTransitioning>)transitionContext {
     self.configuration.transitionStatus = AFTransitionStatusTransitioning;
+    NSLog(@"-------------------------- 设置：转场中 333 --------------------------");
     UIViewController *fromVC = [transitionContext viewControllerForKey:UITransitionContextFromViewControllerKey];
     UIViewController *toVC = [transitionContext viewControllerForKey:UITransitionContextToViewControllerKey];
     UIView *fromView = fromVC.view;
@@ -348,6 +356,7 @@
 //            }
         }
         self.configuration.transitionStatus = AFTransitionStatusPresented;
+        NSLog(@"-------------------------- 设置：Presented 555 --------------------------");
     }];
 }
 
@@ -365,6 +374,8 @@
             fromView.frame = CGRectMake(0, UIScreen.mainScreen.bounds.size.height, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         } completion:^(BOOL finished) {
             [transitionContext completeTransition:YES];
+            self.configuration.transitionStatus = AFTransitionStatusNormal;
+            NSLog(@"-------------------------- 设置：Normal 555 --------------------------");
         }];
         return;
     }
@@ -437,6 +448,7 @@
         [shadeView removeFromSuperview];
         if ([transitionContext transitionWasCancelled]) {
             self.configuration.transitionStatus = AFTransitionStatusPresented;
+            NSLog(@"-------------------------- 设置：Presented 666 --------------------------");
             fromView.hidden = NO;
             [self.transitionView removeFromSuperview];
             [self.backGroundView removeFromSuperview];
@@ -446,12 +458,23 @@
 
         } else {
             self.configuration.transitionStatus = AFTransitionStatusNormal;
+            NSLog(@"-------------------------- 设置：Normal 666 --------------------------");
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"完成DismissImage：%@ --------------------------", self.displayStatus]];
             [self.transitionView removeFromSuperview];
             [self.backGroundView removeFromSuperview];
             [snapView removeFromSuperview];
             self.backGroundView = nil;
             self.transitionView = nil;
+            if (self.shouldReset) {
+                UIView *view = toView;
+                while (view.superview) {
+                    toView.frame = UIScreen.mainScreen.bounds;
+                    view.transform = CGAffineTransformIdentity;
+                    view = view.superview;
+                }
+                UIApplication.sharedApplication.delegate.window.frame = UIScreen.mainScreen.bounds;
+                self.shouldReset = NO;
+            }
         }
     }];
 }
@@ -472,6 +495,8 @@
             fromView.frame = CGRectMake(0, UIScreen.mainScreen.bounds.size.height, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height);
         } completion:^(BOOL finished) {
             [transitionContext completeTransition:YES];
+            self.configuration.transitionStatus = AFTransitionStatusNormal;
+            NSLog(@"-------------------------- 设置：Normal 777 --------------------------");
         }];
         return;
     }
@@ -572,6 +597,7 @@
         self.player.videoGravity = gravity;
         if ([transitionContext transitionWasCancelled]) {
             self.configuration.transitionStatus = AFTransitionStatusPresented;
+            NSLog(@"-------------------------- 设置：Presented 888 --------------------------");
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"dismissVideo，completion取消转场！：%@", self.displayStatus]];
             fromView.hidden = NO;
             self.transitionView.frame = self.frameBeforeDismiss;
@@ -584,8 +610,10 @@
             }
             NSLog(@"-------------------------- 取消了转场 --------------------------");
             self.player.showVideoControl = self.player.item.showVideoControl;
+            [self.player browserCancelDismiss];
         } else {
             self.configuration.transitionStatus = AFTransitionStatusNormal;
+            NSLog(@"-------------------------- 设置：Normal 999 --------------------------");
             if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
                 if (self.configuration.muteOption != AFPlayerMuteOptionNever) {
                     self.player.muted = YES;
@@ -662,6 +690,11 @@ static CGRect beginFrame;
 
 - (BOOL)gestureRecognizerShouldBegin:(UIPanGestureRecognizer *)pan {
     if (![pan isKindOfClass:UIPanGestureRecognizer.class]) return YES;
+    if (UIApplication.sharedApplication.statusBarOrientation != UIInterfaceOrientationPortrait) {
+        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"不是竖屏，过滤手势:%d",  UIApplication.sharedApplication.statusBarOrientation]];
+        return NO;
+    }
+    
     CGPoint velocity = [pan velocityInView:pan.view];
 //    NSLog(@"-------------------------- 打印：%@ -- %@ --------------------------", NSStringFromCGPoint(velocity), NSStringFromCGPoint([pan translationInView:pan.view]));
     if (fabs(velocity.x) > 0 && fabs(velocity.y / velocity.x) < 2) {
@@ -681,7 +714,6 @@ static CGRect beginFrame;
         }
     }
     self.isDirectionDown = (velocityY > 0);
-    self.configuration.transitionStatus = AFTransitionStatusTransitioning;
     return YES;
 }
 
@@ -693,6 +725,8 @@ static CGRect beginFrame;
 
     switch (pan.state) {
         case UIGestureRecognizerStateBegan: {
+            self.configuration.transitionStatus = AFTransitionStatusTransitioning;
+            NSLog(@"-------------------------- 设置：转场中 --------------------------");
             if (([[[UIDevice currentDevice]systemVersion]floatValue] < 11.0) && self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
                 AVPlayer *player = [self.player valueForKey:@"_player"];
                 [player pause];
@@ -763,8 +797,13 @@ static CGRect beginFrame;
             
         case UIGestureRecognizerStateCancelled:
         case UIGestureRecognizerStateEnded:
-            
-            if (!self.isInteractive) return;
+            if (!self.isInteractive) {
+                if (self.configuration.transitionStatus == AFTransitionStatusTransitioning) {
+                    self.configuration.transitionStatus = AFTransitionStatusPresented;
+                    NSLog(@"-------------------------- 设置：Presented --------------------------");
+                }
+                return;
+            }
             self.isInteractive = NO;
             if(progress > 0.15){
                 AFBrowserItem *item = self.delegate.currentItem;
@@ -785,6 +824,8 @@ static CGRect beginFrame;
                         }
                     } completion:^(BOOL finished) {
 //                        NSLog(@"-------------------------- 完成手势：%@ -- %@--------------------------", NSStringFromCGRect(self.transitionView.frame), NSStringFromCGRect(beginFrame));
+                        self.configuration.transitionStatus = AFTransitionStatusNormal;
+                        NSLog(@"-------------------------- 设置:Normal 222 --------------------------");
                         [self.percentTransition finishInteractiveTransition];
                         self.percentTransition = nil;
                     }];
@@ -801,10 +842,18 @@ static CGRect beginFrame;
                 }
                 [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"endPan完成手势：%@", self.displayStatus]];
             } else {
+                self.configuration.transitionStatus = AFTransitionStatusPresented;
+                NSLog(@"-------------------------- 设置：Presented 222 --------------------------");
                 [self cancelInteractiveTransition];
             }
             
+            break;
+            
         default:
+            if (self.configuration.transitionStatus == AFTransitionStatusTransitioning) {
+                self.configuration.transitionStatus = AFTransitionStatusPresented;
+                NSLog(@"-------------------------- 设置：Presented 333 --------------------------");
+            }
             break;
     }
 }
@@ -952,7 +1001,7 @@ static CGFloat ScaleDistance = 0.4;
     if (h == 0) h = (resultFrame.size.height - currentFrame.size.height)/number;
     [self.percentTransition updateInteractiveTransition:self.progress];
     self.backGroundView.alpha = progress;
-    if (![self.delegate transitionViewForSourceController] && self.configuration.transitionStyle != AFBrowserTransitionStyleContinuousVideo) {
+    if (!self.isCancel && ![self.delegate transitionViewForSourceController] && self.configuration.transitionStyle != AFBrowserTransitionStyleContinuousVideo) {
         // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
         self.transitionView.alpha = progress;
     } else {
@@ -968,9 +1017,13 @@ static CGFloat ScaleDistance = 0.4;
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"timerAction结束：%@", self.displayStatus]];
         if (self.isCancel) {
             self.backGroundView.alpha = 1;
+            self.configuration.transitionStatus = AFTransitionStatusPresented;
+            NSLog(@"-------------------------- 设置：Presented 444 --------------------------");
             [self.percentTransition cancelInteractiveTransition];
         } else {
             self.backGroundView.alpha = 0;
+            self.configuration.transitionStatus = AFTransitionStatusNormal;
+            NSLog(@"-------------------------- 设置：Normal 333 --------------------------");
             [self.percentTransition finishInteractiveTransition];
         }
         self.percentTransition = nil;

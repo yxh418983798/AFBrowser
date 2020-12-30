@@ -25,12 +25,14 @@
 
 @implementation AFBrowserLoaderProxy
 
+
 #pragma mark - 判断图片是否在缓存中
 + (UIImage *)imageFromCacheForKey:(NSString *)key {
     if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(imageFromCacheForKey:)]) {
         return [AFBrowserViewController.loaderProxy imageFromCacheForKey:key];
     } else {
         NSData *imageData = [SDImageCache.sharedImageCache diskImageDataForKey:key];
+        [SDImageCache.sharedImageCache clearMemory];
         if ([self isGIFData:imageData]) {
             YYImage *gifImage = [YYImage imageWithData:imageData];
             if (gifImage) {
@@ -50,7 +52,6 @@
     if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(loadImage:completion:)]) {
         [AFBrowserViewController.loaderProxy loadImage:imageUrl completion:completion];
     } else {
-
         [SDWebImageManager.sharedManager loadImageWithURL:imageUrl options:SDWebImageRetryFailed progress:nil completed:^(UIImage * _Nullable image, NSData * _Nullable data, NSError * _Nullable error, SDImageCacheType cacheType, BOOL finished, NSURL * _Nullable imageURL) {
             NSString *url = imageURL.absoluteString;
             NSData *imageData = [SDImageCache.sharedImageCache diskImageDataForKey:url];

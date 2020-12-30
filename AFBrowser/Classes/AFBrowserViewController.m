@@ -78,11 +78,17 @@
 @implementation AFBrowserViewController
 static const CGFloat lineSpacing = 0.f; //间隔
 
+
 #pragma mark - 生命周期
 - (instancetype)init {
     self = [super init];
     if (self) {
-        
+        static dispatch_once_t onceToken;
+        dispatch_once(&onceToken, ^{
+            if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(initializeAFBrowserViewController)]) {
+                [AFBrowserViewController.loaderProxy initializeAFBrowserViewController];
+            }
+        });
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationDidBecomeActiveNotification) name:UIApplicationDidBecomeActiveNotification object:nil];
         _configuration = AFBrowserConfiguration.new;
         self.transformer = [AFBrowserTransformer new];
@@ -115,7 +121,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 //        return;
 //    }0x283dd7ba0
     self.isLayoutView = YES;
-    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
+//    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
     layout.itemSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
     self.collectionView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
@@ -147,7 +153,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (void)viewWillDisappear:(BOOL)animated {
     [super viewWillDisappear:animated];
 //    self.isFinishedTransaction = YES;
-    NSLog(@"-------------------------- 浏览器即将消失--------------------------");
+//    NSLog(@"-------------------------- 浏览器即将消失--------------------------");
     [self.navigationController setNavigationBarHidden:NO animated:YES];
 //    [[UIApplication sharedApplication] setStatusBarOrientation:UIInterfaceOrientationPortrait animated:NO];
 }
@@ -159,12 +165,21 @@ static const CGFloat lineSpacing = 0.f; //间隔
         [self.collectionView reloadData];
     }
 //    [UIApplication.sharedApplication.delegate.window insertSubview:self.windowBackgroundView atIndex:0];
-    NSLog(@"-------------------------- viewDidAppear --------------------------");
+//    NSLog(@"-------------------------- viewDidAppear --------------------------");
     if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
         AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
         [cell.player browserCancelDismiss];
     }
 }
+
+- (void)pauseCurrentPlayer {
+    if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
+        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
+        [cell.player pause];
+        cell.player.status = AFPlayerStatusPlay;
+    }
+}
+
 - (UIView *)windowBackgroundView {
     if (!_windowBackgroundView) {
         _windowBackgroundView = UIView.new;
@@ -198,6 +213,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
     AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
     if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) [cell.player browserWillDismiss];
+    if (UIApplication.sharedApplication.statusBarOrientation != UIInterfaceOrientationPortrait) {
+        self.navigationController.transitioningDelegate = nil;
+    }
     [super dismissViewControllerAnimated:flag completion:^{
         if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
             [cell.player browserDidDismiss];
@@ -214,12 +232,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 - (void)applicationDidBecomeActiveNotification {
-    self.configuration.isOtherAudioPlaying = AVAudioSession.sharedInstance.isOtherAudioPlaying;
-    if (AVAudioSession.sharedInstance.otherAudioPlaying) {
-        [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategorySoloAmbient error:nil];
-        [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayback error:nil];
-        [AVAudioSession.sharedInstance setActive:YES error:nil];
-    }
+//    self.configuration.isOtherAudioPlaying = AVAudioSession.sharedInstance.isOtherAudioPlaying;
 }
 
 
@@ -483,16 +496,16 @@ static const CGFloat lineSpacing = 0.f; //间隔
 #pragma mark UICollectionViewDataSource
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
     if (!self.didViewAppear) {
-        NSLog(@"-------------------------- 未完成转场，不显示 --------------------------");
+//        NSLog(@"-------------------------- 未完成转场，不显示 --------------------------");
         return 0;
     }
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-        [self startCurrentPlayer];
-    });
     self.numberOfItems = [self.configuration.delegate numberOfItemsInBrowser:self];
     _pageControl.numberOfPages = self.numberOfItems;
     self.collectionView.contentOffset = CGPointMake(self.configuration.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
     self.collectionView.contentSize = CGSizeMake(self.collectionView.frame.size.width * self.numberOfItems + 1, self.collectionView.frame.size.height);
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        [self startCurrentPlayer];
+    });
     return 1;
 //    if (self.isFinishedTransaction) {
 //        self.collectionView.contentOffset = CGPointMake(self.configuration.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
@@ -543,7 +556,14 @@ static const CGFloat lineSpacing = 0.f; //间隔
             default:
                 break;
         }
-        self.configuration.selectedIndex = currentPageNum;
+        if (self.configuration.selectedIndex != currentPageNum) {
+            self.configuration.selectedIndex = currentPageNum;
+            AFBrowserItem *item = [self itemAtIndex:currentPageNum];
+            if (item.type == AFBrowserItemTypeVideo) {
+                AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
+                [cell.player pause];
+            }
+        }
     }
 }
 
@@ -591,7 +611,11 @@ static const CGFloat lineSpacing = 0.f; //间隔
         }
         [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayback error:nil];
         [AVAudioSession.sharedInstance setActive:YES error:nil];
-        cell.player.showVideoControl = item.showVideoControl;
+        if (self.configuration.transitionStatus == AFTransitionStatusPresented && cell.player.frame.size.width == UIScreen.mainScreen.bounds.size.width) {
+            cell.player.showVideoControl = item.showVideoControl;
+        } else {
+            NSLog(@"-------------------------- 未完成转场，过滤设置 --------------------------");
+        }
         [NSNotificationCenter.defaultCenter postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.configuration.selectedIndex)];
     }
 }

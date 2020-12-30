@@ -11,6 +11,10 @@
 @protocol AFBrowserLoaderDelegate <NSObject>
 @optional;
 
+
++ (void)initializeAFBrowserViewController;
+
+
 /**
  * @brief 从缓存中获取图片
  *

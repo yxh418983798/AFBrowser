@@ -127,8 +127,8 @@ static CGFloat MaxScaleDistance = 3.f;
         } else {
             AFPlayerController *controller = [AFPlayerController controllerWithTarget:self.delegate];
             _player = controller.player;
-            _player.item = self.item;
             _player.configuration = self.configuration;
+            _player.item = self.item;
         }
         for (UIGestureRecognizer *gestureRecognizer in _player.gestureRecognizers) {
             if ([gestureRecognizer isKindOfClass:UILongPressGestureRecognizer.class]) {
@@ -523,10 +523,13 @@ static CGFloat MaxScaleDistance = 3.f;
     // 播放视频
     if ([@(self.indexPath.item) isEqualToNumber:notification.object]) {
         if (self.item.autoPlay) {
+            NSLog(@"-------------------------- 播放:%@ --------------------------", self.player);
             [self.player play];
             if (self.configuration.playOption == AFBrowserPlayOptionNeverAutoPlay) {
                 self.item.autoPlay = NO;
             }
+        } else {
+            NSLog(@"-------------------------- 不播放:%@ --------------------------", self.player);
         }
     }
     

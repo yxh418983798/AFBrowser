@@ -186,13 +186,14 @@ static NSMutableDictionary *_downloadTasks;
 + (void)cancelTask:(NSString *)url {
     AFDownloader *downloader = [self downloaderForKey:url];
     if (!downloader) return;
+    __weak typeof(self) weakSelf = self;
     [downloader.task cancelByProducingResumeData:^(NSData * _Nullable resumeData) {
         NSLog(@"-------------------------- 取消任务：%@ --------------------------", NSThread.currentThread);
         if (resumeData) {
             /// 将数据临时写入本地
-            [downloader.resumeData writeToFile:[self resumeFilePathWithUrl:url] atomically:YES];
+            [downloader.resumeData writeToFile:[weakSelf resumeFilePathWithUrl:url] atomically:YES];
         }
-        [self removeDownloader:url];
+        [weakSelf removeDownloader:url];
     }];
 }
 

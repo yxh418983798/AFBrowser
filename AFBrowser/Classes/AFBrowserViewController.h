@@ -54,6 +54,8 @@
  */
 - (void)browse;
 
+- (void)pauseCurrentPlayer;
+
 
 #pragma mark - 链式调用
 /// 代理

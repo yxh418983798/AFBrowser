@@ -35,6 +35,21 @@
 
 
 @implementation AFPlayerController
+static int playerCount = 0;
+
+- (instancetype)init {
+    if (self = [super init]) {
+        playerCount ++;
+        NSLog(@"-------------------------- 创建PlayerController：%d --------------------------", playerCount);
+    }
+    return self;
+}
+
+- (void)dealloc {
+    playerCount --;
+    NSLog(@"-------------------------- 释放PlayerController：%d --------------------------", playerCount);
+}
+
 
 #pragma mark - 构造方法，并绑定到某个对象
 + (instancetype)controllerWithTarget:(id)target {
@@ -80,6 +95,7 @@
 - (AFPlayer *)player {
     if (!_player) {
         _player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
+//        objc_setAssociatedObject(_player, "AFPlayerController", self, OBJC_ASSOCIATION_ASSIGN);
     }
     return _player;
 }
@@ -91,7 +107,12 @@
         NSMutableArray *proxyArray = objc_getAssociatedObject(target, "AFPlayerControllerProxyArray");
         for (AFPlayerControllerProxy *proxy in proxyArray) {
             AFPlayer *player = proxy.player;
-            player.isActive = active;
+//            id controller = objc_getAssociatedObject(player, "AFPlayerController");
+//            if (player && controller) {
+                player.isActive = active;
+//            } else {
+//                NSLog(@"-------------------------- 发现错误！！ --------------------------");
+//            }
         }
     } else {
         if (active) {
@@ -103,7 +124,4 @@
 }
 
 
-- (void)dealloc {
-    NSLog(@"-------------------------- 销毁AFPlayerController:%@ --------------------------", self);
-}
 @end

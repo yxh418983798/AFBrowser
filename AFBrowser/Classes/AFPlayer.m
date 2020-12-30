@@ -12,7 +12,6 @@
 #import "AFBrowserConfiguration.h"
 #import <objc/runtime.h>
 
-
 //#import <KVOController/KVOController.h>
 
 //@interface AFPlayerProxy: NSObject
@@ -85,6 +84,8 @@
 /** proxy */
 //@property (nonatomic, strong) AFPlayerProxy      *playerProxy;
 
+/** isFirstFrame */
+@property (nonatomic, assign) BOOL            didFirstFrame;
 @end
 
 
@@ -140,16 +141,26 @@ static int playerCount = 0;
 
 - (instancetype)initWithFrame:(CGRect)frame {
     if (self = [super initWithFrame:frame]) {
+        
         playerCount ++;
         self.tag = playerCount;
-        NSLog(@"-------------------------- 创建播放器:%d --------------------------", playerCount);
+        NSLog(@"-------------------------- 创建播放器:%d ,%@--------------------------", playerCount, self);
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"创建播放器, %@", self.displayDescription]];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayerNotification) name:AFPlayerNotificationPauseAllPlayer object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(resumeAllPlayerNotification) name:AFPlayerNotificationResumeAllPlayer object:nil];
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(finishedPlayAction:) name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(applicationDidReceiveMemoryWarningNotification) name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
         self.isActive = YES;
     }
     return self;
+}
+- (void)applicationDidReceiveMemoryWarningNotification {
+    NSLog(@"-------------------------- 收到内存警告:%@ --------------------------", self.superview);
+    if (!self.superview ) {
+        if (!_player) {
+            self.coverImgView.image = nil;
+        }
+    }
 }
 
 - (void)didMoveToSuperview {
@@ -164,7 +175,6 @@ static int playerCount = 0;
         [self.contentView addSubview:self.dismissBtn];
         [self addSubview:self.bottomBar];
     }
-    
 }
 
 - (void)layoutSubviews {
@@ -195,24 +205,51 @@ static int playerCount = 0;
     _player = nil;
     _playerLayer = nil;
     [AFPlayer resumeActiveExcludePlayer:self];
+    
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+    [NSNotificationCenter.defaultCenter removeObserver:self];
 }
 
 
 /// 释放
 - (void)destroy {
-    if (_player) [_player pause];
-    [self removeKVO];
-    [_player replaceCurrentItemWithPlayerItem:nil];
-    [_playerLayer removeFromSuperlayer];
-    _player = nil;
-    _playerLayer = nil;
-    if (self.superview) [self removeFromSuperview];
-    [AFPlayer resumeActiveExcludePlayer:self];
+    if (!NSThread.isMainThread) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            if (_player) [_player pause];
+            [self removeKVO];
+            [_player replaceCurrentItemWithPlayerItem:nil];
+            [_playerLayer removeFromSuperlayer];
+            _player = nil;
+            _playerLayer = nil;
+            if (self.superview) [self removeFromSuperview];
+            self.status = AFPlayerStatusNone;
+            [AFPlayer resumeActiveExcludePlayer:self];
+        });
+    } else {
+        if (_player) [_player pause];
+        [self removeKVO];
+        [_player replaceCurrentItemWithPlayerItem:nil];
+        [_playerLayer removeFromSuperlayer];
+        _player = nil;
+        _playerLayer = nil;
+        if (self.superview) [self removeFromSuperview];
+        self.status = AFPlayerStatusNone;
+        [AFPlayer resumeActiveExcludePlayer:self];
+    }
+//    [[NSNotificationCenter defaultCenter] removeObserver:self name:UIApplicationDidReceiveMemoryWarningNotification object:nil];
+//    [[NSNotificationCenter defaultCenter] removeObserver:self name:AVPlayerItemDidPlayToEndTimeNotification object:nil];
+//    [NSNotificationCenter.defaultCenter removeObserver:self];
+    
+//    id detector = [NSClassFromString(@"FBRetainCycleDetector") new];
+//    [detector performSelector:@selector(addCandidate:) withObject:self];
+//    NSSet *retainCycles = [detector performSelector:@selector(findRetainCycles)];
+//    NSLog(@"---destory %@", retainCycles);
 }
 
 
 - (NSString *)displayDescription {
-    return [NSString stringWithFormat:@"播放器描述：%p\n url:%@\n item.content:%@, status:%d, hidden:%d\nProgress：%g, \ncover:%@, \nduration:%g, width:%g, height:%g\ncurrentItem:%@\n showVideoControl:%d", self,  self.url, self.item.content, self.status, self.hidden, self.progress, self.item.coverImage, self.duration, self.item.width, self.item.height, self.player.currentItem, self.showVideoControl];
+    return [NSString stringWithFormat:@"播放器描述：%p\n url:%@\n item.content:%@, status:%d, hidden:%d\nProgress：%g, \ncover:%@, \nduration:%g, width:%g, height:%g\ncurrentItem:%@\n showVideoControl:%d", self,  self.url, self.item.content, self.status, self.hidden, self.progress, self.item.coverImage, self.duration, self.item.width, self.item.height, _player.currentItem, self.showVideoControl];
 }
 
 
@@ -232,11 +269,23 @@ static int playerCount = 0;
 
 /// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss {
-    self.showVideoControl = self.item.showVideoControl;
+    if (self.isPlay) {
+        [self startPlay];
+    }
+//    self.showVideoControl = self.item.showVideoControl;
 //    self.transitionStatus = AFPlayerTransitionStatusFullScreen;
 //    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"取消转场恢复Toolbar, %@", self.displayDescription]];
 }
 
+
+- (void)resetPlayer {
+    [_playerLayer removeFromSuperlayer];
+    _playerLayer = nil;
+    [self replacePlayerItem:nil];
+//    self.status = AFPlayerStatusNone;
+//    self.playWhenPrepareDone = YES;
+//    [self play];
+}
 
 #pragma mark - setter
 - (void)setShowVideoControl:(BOOL)showVideoControl {
@@ -249,12 +298,15 @@ static int playerCount = 0;
         if (self.configuration.transitionStatus != AFTransitionStatusPresented) {
             return;
         }
-        NSLog(@"-------------------------- 显示控制条 --------------------------");
+//        NSLog(@"-------------------------- 显示控制条 --------------------------");
+        self.dismissBtn.alpha = 1;
+        self.bottomBar.alpha = 1;
+        self.bottomBar.playBtn.selected = self.isPlay;
+    } else {
+        _bottomBar.alpha = 0;
+        _dismissBtn.alpha = 0;
     }
     _showVideoControl = showVideoControl;
-    _bottomBar.alpha = _showVideoControl ? 1 : 0;
-    _dismissBtn.alpha = _showVideoControl ? 1 : 0;
-
 }
 
 - (void)setItem:(AFBrowserItem *)item {
@@ -264,13 +316,24 @@ static int playerCount = 0;
         _url = nil;
 //        [self.player replaceCurrentItemWithPlayerItem:nil];
         [self replacePlayerItem:nil];
-        self.playWhenPrepareDone = NO;
         if (_item.showVideoControl && _bottomBar.superview) [self addSubview:self.bottomBar];
+        self.playWhenPrepareDone = NO;
         self.status = AFPlayerStatusNone;
+        self.url = nil;
         _coverImgView.image = nil;
+//        NSLog(@"-------------------------- 切换item，重置状态：%@ --------------------------", _item.content);
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"设置item: %@", self.displayDescription]];
     } else {
         _item = item;
+    }
+}
+
+- (void)setConfiguration:(AFBrowserConfiguration *)configuration {
+    _configuration = configuration;
+    if (_configuration.muteOption == AFPlayerMuteOptionNever) {
+        self.player.muted = NO;
+    } else if (_configuration.muteOption == AFPlayerMuteOptionAlways) {
+        self.player.muted = YES;
     }
 }
 
@@ -281,21 +344,30 @@ static int playerCount = 0;
 }
 
 - (void)attachCoverImage:(id)image {
+    __weak typeof(self) weakSelf = self;
     if ([self.item.coverImage isKindOfClass:NSString.class]) {
         UIImage *image = [AFBrowserLoaderProxy imageFromCacheForKey:self.item.coverImage];
-        if (!image && !self.coverImgView.image) {
+        if (image) {
+            self.coverImgView.image = image;
+            return;
+        }
+        if (!self.coverImgView.image) {
             self.coverImgView.image = [self imageWithColor:UIColor.whiteColor];
         }
         [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:(NSString *)self.item.coverImage] completion:^(UIImage *image, NSError *error) {
-            self.coverImgView.image = image;
+            weakSelf.coverImgView.image = image;
         }];
     } else if ([self.item.coverImage isKindOfClass:NSURL.class]) {
         UIImage *image = [AFBrowserLoaderProxy imageFromCacheForKey:[(NSURL *)self.item.coverImage absoluteString]];
-        if (!image && !self.coverImgView.image) {
+        if (image) {
+            self.coverImgView.image = image;
+            return;
+        }
+        if (!self.coverImgView.image) {
             self.coverImgView.image = [self imageWithColor:UIColor.whiteColor];
         }
         [AFBrowserLoaderProxy loadImage:(NSURL *)self.item.coverImage completion:^(UIImage *image, NSError *error) {
-            self.coverImgView.image = image;
+            weakSelf.coverImgView.image = image;
         }];
     } else if ([self.item.coverImage isKindOfClass:UIImage.class]) {
         self.coverImgView.image = self.item.coverImage;
@@ -318,40 +390,37 @@ static int playerCount = 0;
 }
 
 - (void)setIsActive:(BOOL)isActive {
-    if (_isActive != isActive) {
+    if (isActive) {
         _isActive = isActive;
-        if (isActive) {
-            if (self.playerItem) {
-                [self addToPlayerArray];
-                [self removeKVO];
-                if (self.status == AFPlayerStatusPlay) {
-                    self.playWhenPrepareDone = YES;
-                }
-                [self prepareDone];
+        if (self.url.length && self.isPlay) {
+            [self addToPlayerArray];
+            [self removeKVO];
+            if (self.status == AFPlayerStatusPlay) {
+                self.playWhenPrepareDone = YES;
+                NSLog(@"-------------------------- 设置自动播放 --------------------------");
+            }
+            [self prepareDone];
 //                [self.player replaceCurrentItemWithPlayerItem:self.playerItem];
 //                if (!self.isObserving) {
 //                    self.isObserving = YES;
 //                    [self.player.currentItem addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
 //                }
 //                [self seekToTime:self.item.currentTime];
-                NSLog(@"-------------------------- 设置成活跃：%@ tag:%d--------------------------", self, self.tag);
-                if (!self.player.muted) {
-                    NSLog(@"-------------------------- 没有静音：%d --------------------------", self.tag);
-                }
+            NSLog(@"-------------------------- 设置成活跃：%@ tag:%d--------------------------", self, self.tag);
+            if (!self.player.muted) {
+                NSLog(@"-------------------------- 没有静音：%d --------------------------", self.tag);
             }
-        } else {
+        }
+    } else {
+        if (_isActive != isActive) {
+            _isActive = isActive;
             AFPlayerStatus status = self.status;
             [self pausePlay];
             self.status = status;
+            [self removeKVO];
             [self replacePlayerItem:nil];
-
-//            if (self.player.currentItem) {
-//                if (self.isObserving) {
-//                    self.isObserving = NO;
-//                    [self.player.currentItem removeObserver:self forKeyPath:@"status"];
-//                }
-//                [self.player replaceCurrentItemWithPlayerItem:nil];
-//            }
+            [_playerLayer removeFromSuperlayer];
+            _playerLayer = nil;
             NSLog(@"-------------------------- 设置成不活跃：%@ --------------------------", self);
         }
     }
@@ -439,6 +508,7 @@ static int playerCount = 0;
         _bottomBar = [AFPlayerBottomBar new];
         _bottomBar.slider.delegate = self;
         _bottomBar.alpha = _showVideoControl ? 1 : 0;
+        _bottomBar.playBtn.selected = self.isPlay;
         [_bottomBar.playBtn addTarget:self action:@selector(playBtnAction:) forControlEvents:UIControlEventTouchUpInside];
         [_bottomBar.slider addTarget:self action:@selector(sliderTouchDownAction:) forControlEvents:UIControlEventTouchDown];
         [_bottomBar.slider addTarget:self action:@selector(sliderValueChangedAction:) forControlEvents:UIControlEventValueChanged];
@@ -490,6 +560,18 @@ static int playerCount = 0;
     }
 }
 
+- (BOOL)isPlay {
+    return self.status == AFPlayerStatusPlay || (self.status == AFPlayerStatusFinished && self.configuration.infiniteLoop) || (self.status == AFPlayerStatusPrepareDone && self.playWhenPrepareDone);
+}
+
+- (void)checkFirstFrame {
+    if (!self.didFirstFrame) {
+        if (self.playerLayer.isReadyForDisplay) {
+            self.didFirstFrame = YES;
+            [self onFirstFrame];
+        }
+    }
+}
 
 #pragma mark - KVO
 /// 添加观察者
@@ -500,6 +582,8 @@ static int playerCount = 0;
     if (!self.playerObserver) {
         __weak typeof(self) weakSelf = self;
         self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.05, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
+            [weakSelf checkFirstFrame];
+            //视频第一次回调
             weakSelf.progress = CMTimeGetSeconds(time) / weakSelf.duration;
 //                NSLog(@"-------------------------- progress：%g--------------------------", weakSelf.progress);
             if (isnan(weakSelf.progress) || weakSelf.progress > 1.0) {
@@ -515,14 +599,24 @@ static int playerCount = 0;
 
 /// 移除观察者
 - (void)removeKVO {
-    if (self.isObserving) {
-        self.isObserving = NO;
+    @try {
         [_player.currentItem removeObserver:self forKeyPath:@"status"];
-    }
-    if (self.playerObserver) {
         [_player removeTimeObserver:self.playerObserver];
-        self.playerObserver = nil;
+    } @catch (NSException *exception) {
+        if (self.isObserving || self.playerObserver) {
+            NSLog(@"-------------------------- 发现异常 --------------------------");
+        }
     }
+    self.isObserving = NO;
+    self.playerObserver = nil;
+//    if (self.isObserving) {
+//        self.isObserving = NO;
+//        [_player.currentItem removeObserver:self forKeyPath:@"status"];
+//    }
+//    if (self.playerObserver) {
+//        [_player removeTimeObserver:self.playerObserver];
+//        self.playerObserver = nil;
+//    }
 }
 
 /// 监听回调
@@ -545,10 +639,12 @@ static int playerCount = 0;
             }
             if (self.playWhenPrepareDone) {
                 [self play];
+                NSLog(@"-------------------------- 准备完成了自动播放：%@ --------------------------", self);
             } else {
                 self.playBtn.hidden = NO;
-            }
-            [self stopLoading];
+                [self stopLoading];
+                NSLog(@"-------------------------- 准备完成了，先不播放：%@ --------------------------", self);
+            }//http://alicvid6.mowang.online/vid/3448868F0E885E0E6152D2F7D186C56E.mp4       video/c1a167bd94b63dcc70cd885212188c70.mp4
             break;
             
         case AVPlayerItemStatusFailed:
@@ -567,13 +663,21 @@ static int playerCount = 0;
 }
 
 
+#pragma mark - 首帧回调
+- (void)onFirstFrame {
+    self.coverImgView.hidden = YES;
+    self.playBtn.hidden = YES;
+    [self stopLoading];
+}
+
 #pragma mark - 切换PlayerItem
 - (void)replacePlayerItem:(AVPlayerItem *)item {
     
-    if (item == self.player.currentItem) return;
+    if (item && item == self.player.currentItem) return;
     self.playerItem = item;
-    
+//    NSLog(@"-------------------------- 重置Item:%@ --------------------------", item);
     if (self.player.currentItem) {
+        [self.player pause];
         [self removeKVO];
         [self.player replaceCurrentItemWithPlayerItem:nil];
         if (item) {
@@ -615,20 +719,7 @@ static int playerCount = 0;
     }
 
     switch (self.status) {
-        case AFPlayerStatusPlay:
-            [self startPlay];
-            break;
-            
-        case AFPlayerStatusPrepare:
-            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]准备状态, %@", self.displayDescription]];
-            [self startLoading];
-            self.playBtn.hidden = YES;
-            self.coverImgView.hidden = NO;
-            if ([self.url containsString:@"file://"]) {
-                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]正在Prepare, %@", self.displayDescription]];
-            }
-            break;
-            
+
         case AFPlayerStatusNone: {
             self.status = AFPlayerStatusPrepare;
             [self startLoading];
@@ -652,27 +743,43 @@ static int playerCount = 0;
                 return;
             }
             [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态, %@", self.displayDescription]];
+            __weak typeof(self) weakSelf = self;
             [AFBrowserLoaderProxy loadVideo:urlString progress:nil completion:^(NSString *url, NSError *error) {
                 if (error) {
-                    self.status == AFPlayerStatusNone;
-                    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载错误：%@，描述：%@", error, self.displayDescription]];
+                    weakSelf.status == AFPlayerStatusNone;
+                    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载错误：%@，描述：%@", error, weakSelf.displayDescription]];
                 } else {
 
-                    if (![self.configuration isEqualUrl:url toUrl:[AFDownloader filePathWithUrl:self.item.content]]) {
-                        self.status == AFPlayerStatusNone;
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，URL已切换：%@，描述：%@", url, self.displayDescription]];
+                    if (![weakSelf.configuration isEqualUrl:url toUrl:[AFDownloader filePathWithUrl:weakSelf.item.content]]) {
+                        weakSelf.status == AFPlayerStatusNone;
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，URL已切换：%@，描述：%@", url, weakSelf.displayDescription]];
                     } else if (url.length) {
-                        self.url = url;
-                        [self prepareDone];
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，视频下载完成：%@，描述：%@", url, self.displayDescription]];
+                        weakSelf.url = url;
+                        [weakSelf prepareDone];
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，视频下载完成：%@，描述：%@", url, weakSelf.displayDescription]];
                     } else {
-                        self.status == AFPlayerStatusNone;
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载视频结果错误：url为空 , %@", self.displayDescription]];
+                        weakSelf.status == AFPlayerStatusNone;
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载视频结果错误：url为空 , %@", weakSelf.displayDescription]];
                     }
                 }
             }];
             [self attachCoverImage:self.item.coverImage];
         }
+            break;
+            
+        case AFPlayerStatusPrepare:
+            [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]准备状态, %@", self.displayDescription]];
+            [self startLoading];
+            self.playBtn.hidden = YES;
+            self.coverImgView.hidden = NO;
+            if ([self.url containsString:@"file://"]) {
+                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]正在Prepare, %@", self.displayDescription]];
+            }
+            break;
+            
+        case AFPlayerStatusReadToPlay:
+        case AFPlayerStatusPlay:
+            [self startPlay];
             break;
             
         default:
@@ -685,7 +792,7 @@ static int playerCount = 0;
 - (void)prepareDone {
 //    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"prepareDone数据准备完成, %@", self.displayDescription]];
     self.status = AFPlayerStatusPrepareDone;
-    [self stopLoading];
+//    [self stopLoading];
     if (self.url.length) {
         if (!self.isActive) return;
 //        [self.player replaceCurrentItemWithPlayerItem:[AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.url]]];
@@ -693,7 +800,6 @@ static int playerCount = 0;
 //        self.progress = self.duration > 0 ? self.item.currentTime / self.duration : 0;
         [self seekToTime:self.item.currentTime];
         [self updateProgressWithCurrentTime:self.item.currentTime durationTime:self.duration animated:YES];
-//        [self updateProgressWithCurrentTime:0 durationTime:self.duration];
         if (self.playWhenPrepareDone) {
             // 准备完成，直接播放
             [self play];
@@ -723,6 +829,7 @@ static int playerCount = 0;
             
         // 准备完成或暂停，直接进行播放
         case AFPlayerStatusPrepareDone:
+        case AFPlayerStatusReadToPlay:
         case AFPlayerStatusPause:
             if (self.progress >= 1) {
                 [self seekToTime:0.f];
@@ -778,19 +885,63 @@ static int playerCount = 0;
         [self pause];
         return;
     }
+//    if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay || (self.player.currentItem.status == AVPlayerItemStatusUnknown && self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo)) {
+    if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay) {
+        if (self.playerLayer.isReadyForDisplay) {
+            [self realPlay];
+        } else {
+            [self readyToPlay];
+            /// 为了避免一直在等待中，这里执行两次检查
+            dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                if (self.playerLayer.isReadyForDisplay) {
+                    if (self.isPlay) {
+                        [self realPlay];
+                    }
+                } else {
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                        if (self.playerLayer.isReadyForDisplay) {
+                            if (self.isPlay) {
+                                [self realPlay];
+                            }
+                        }
+                    });
+                }
+            });
+            NSLog(@"-------------------------- 播放器还没准备好 111--------------------------");
+        }
+//        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[startPlay]隐藏图片, %@", self.displayDescription]];
+    } else {
+        [self readyToPlay];
+        NSLog(@"-------------------------- 播放器还没准备好 222--------------------------");
+    }
+}
+
+
+- (void)realPlay {
     self.status = AFPlayerStatusPlay;
     [self.player play];
     if ([self.configuration.delegate respondsToSelector:@selector(browser:willPlayVideoItem:)]) {
         [self.configuration.delegate browser:[self.browserDelegate performSelector:@selector(delegate)] willPlayVideoItem:self.item];
     }
-    if (self.player.currentItem.status == AVPlayerItemStatusReadyToPlay || (self.player.currentItem.status == AVPlayerItemStatusUnknown && self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo)) {
-        if (self.item.showVideoControl) {
-            self.bottomBar.playBtn.selected = YES;
-        }
-        self.coverImgView.hidden = YES;
-        self.playBtn.hidden = YES;
-//        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[startPlay]隐藏图片, %@", self.displayDescription]];
+    if (_showVideoControl) {
+        self.bottomBar.playBtn.selected = YES;
     }
+    if (!self.playerLayer.superlayer) {
+        [self.layer addSublayer:self.playerLayer];
+    }
+    [self onFirstFrame];
+//    NSLog(@"-------------------------- 开始播放，隐藏图片 111:%@ --------------------------", self.item.content);
+}
+
+
+- (BOOL)isReadyToPlay {
+    return _playerLayer.isReadyForDisplay;
+}
+
+- (void)readyToPlay {
+    [self startLoading];
+    self.coverImgView.hidden = NO;
+    self.playBtn.hidden = YES;
 }
 
 /// 点击播放/暂停按钮
@@ -833,13 +984,16 @@ static int playerCount = 0;
 /// 暂停
 - (void)pausePlay {
 //    NSLog(@"-------------------------- pausePlay --------------------------");
-    if (self.item.showVideoControl) {
+    if (_showVideoControl) {
         self.bottomBar.playBtn.selected = NO;
     }
-    self.item.currentTime = self.progress * self.duration;
-    self.status = AFPlayerStatusPause;
-    self.playBtn.hidden = NO;
     [self.player pause];
+    if (self.player.currentItem && self.url.length) {
+        self.item.currentTime = self.progress * self.duration;
+        self.status = AFPlayerStatusPause;
+        self.playBtn.hidden = NO;
+        [self stopLoading];
+    }
     self.coverImgView.hidden = self.isActive ? self.progress < 1 : NO;
 }
 
@@ -875,11 +1029,12 @@ static int playerCount = 0;
 
 /// 停止播放
 - (void)stopPlay {
-    if (self.item.showVideoControl) {
+    if (_showVideoControl) {
         self.bottomBar.playBtn.selected = NO;
     }
     self.status = AFPlayerStatusStop;
     self.playBtn.hidden = NO;
+    [self stopLoading];
     [self.player pause];
     self.coverImgView.hidden = NO;
     [self seekToTime:0.f];
@@ -889,11 +1044,12 @@ static int playerCount = 0;
 #pragma mark - 播放结束
 - (void)finishedPlay {
     [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[finishedPlay]播放结束 , %@", self.displayDescription]];
-    if (self.item.showVideoControl) {
+    if (_showVideoControl) {
         self.bottomBar.playBtn.selected = NO;
     }
     self.status = AFPlayerStatusFinished;
     self.playBtn.hidden = NO;
+    [self stopLoading];
     [self.player pause];
     [self seekToTime:0.f];
     self.item.currentTime = 0;
@@ -1020,7 +1176,8 @@ static int playerCount = 0;
 }
 
 - (void)resumeAllPlayerNotification {
-    if (self.status == AFPlayerStatusPlay) {
+
+    if (self.isPlay) {
         [self startPlay];
         if (!self.player.isMuted) {
             NSLog(@"-------------------------- 恢复播放：%@ --------------------------", self);
@@ -1073,8 +1230,10 @@ static int playerCount = 0;
 
 #pragma mark - Target被释放的通知
 - (void)playerControllerProxyDeallocNotification:(NSNotification *)notification {
+    NSLog(@"-------------------------- 收到Proxy释放通知：%@ --------------------------", notification.object);
     [self destroy];
 }
+
 
 @end
 
