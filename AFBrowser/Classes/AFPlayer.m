@@ -1178,11 +1178,21 @@ static int playerCount = 0;
 - (void)resumeAllPlayerNotification {
 
     if (self.isPlay) {
-        [self startPlay];
-        if (!self.player.isMuted) {
-            NSLog(@"-------------------------- 恢复播放：%@ --------------------------", self);
+        if (self.shouldResume) {
+            [self startPlay];
+            if (!self.player.isMuted) {
+                NSLog(@"-------------------------- 恢复播放：%@ --------------------------", self);
+            }
+            self.resumeOption = AFPlayerResumeOptionNone;
         }
     }
+}
+
+
+- (BOOL)shouldResume {
+    if (self.resumeOption != AFPlayerResumeOptionBrowserAppeared) return YES;
+    if ([AFBrowserConfiguration.currentVc isKindOfClass:NSClassFromString(@"AFBrowserViewController")]) return YES;
+    return NO;
 }
 
 

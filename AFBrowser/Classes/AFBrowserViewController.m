@@ -170,24 +170,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
         AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
         [cell.player browserCancelDismiss];
     }
-}
-
-- (void)pauseCurrentPlayer {
-    if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
-        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
-        [cell.player pause];
-        cell.player.status = AFPlayerStatusPlay;
+    if ([self.configuration.delegate respondsToSelector:@selector(viewDidAppearBrowser:)]) {
+        [self.configuration.delegate viewDidAppearBrowser:self];
     }
-}
-
-- (UIView *)windowBackgroundView {
-    if (!_windowBackgroundView) {
-        _windowBackgroundView = UIView.new;
-        _windowBackgroundView.frame = CGRectMake(-500, -500, 2000, 2000);
-    //    backgroundView.frame = UIScreen.mainScreen.bounds;
-        _windowBackgroundView.backgroundColor = UIColor.blackColor;
-    }
-    return _windowBackgroundView;
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -195,6 +180,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if (_windowBackgroundView) {
         [_windowBackgroundView removeFromSuperview];
         _windowBackgroundView = nil;
+    }
+    if ([self.configuration.delegate respondsToSelector:@selector(viewDidDisappearBrowser:)]) {
+        [self.configuration.delegate viewDidDisappearBrowser:self];
     }
     if ([UIDevice.currentDevice respondsToSelector:@selector(setOrientation:)]) {
         SEL selector = NSSelectorFromString(@"setOrientation:");
@@ -235,6 +223,25 @@ static const CGFloat lineSpacing = 0.f; //间隔
 //    self.configuration.isOtherAudioPlaying = AVAudioSession.sharedInstance.isOtherAudioPlaying;
 }
 
+
+- (void)pauseCurrentPlayer {
+    if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
+        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
+        [cell.player pause];
+        cell.player.status = AFPlayerStatusPlay;
+        cell.player.resumeOption = AFPlayerResumeOptionBrowserAppeared;
+    }
+}
+
+- (UIView *)windowBackgroundView {
+    if (!_windowBackgroundView) {
+        _windowBackgroundView = UIView.new;
+        _windowBackgroundView.frame = CGRectMake(-500, -500, 2000, 2000);
+    //    backgroundView.frame = UIScreen.mainScreen.bounds;
+        _windowBackgroundView.backgroundColor = UIColor.blackColor;
+    }
+    return _windowBackgroundView;
+}
 
 #pragma mark - 链式调用
 - (AFBrowserViewController *(^)(AFBrowserConfiguration *))makeConfiguration {

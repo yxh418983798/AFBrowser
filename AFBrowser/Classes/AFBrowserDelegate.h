@@ -76,33 +76,6 @@
 
 
 /**
- * @brief 自定义浏览器Cell的UI
- *
- * @warning 这个方法应只用来添加cell的subView，不要对原有视图进行变更或移除
- * @param cell 展示的容器，将想要自定义的UI添加到cell
- * @note  该方法会在每次cell出现时都调用一次，内部会自动删除添加过的视图
- * @note  如果自定义的视图，有涉及到Browser的内部事件操作，可以使用selectorForAction来添加事件，例如：
- *        [btn addTarget:browser action:[browser selectorForAction:AFBrowserActionDelete] forControlEvents:(UIControlEventTouchUpInside)];
-          [cell addSubview:btn];
- */
-- (void)browser:(AFBrowserViewController *)browser willDisplayCell:(UICollectionViewCell *)cell forItemAtIndex:(NSInteger)index;
-
-
-/**
- * @brief 自定义浏览器的UI
- */
-- (void)viewDidLoadBrowser:(AFBrowserViewController *)browser;
-
-
-/**
- * @brief dismiss控制器的回调
- *
- * @note  如果频的类型，应该返回视频播放器的容器View
- */
-- (void)didDismissBrowser:(AFBrowserViewController *)browser;
-
-
-/**
  * @brief 分页加载数据的实现，每次浏览到第一个或最后一个Item时，自动调用该方法获取数据
  *
  * @param direction  翻页方向
@@ -147,6 +120,46 @@
  * @brief 点击查看原图，下载完成的回调
  */
 - (void)browser:(AFBrowserViewController *)browser didCompletedDownloadOriginalImageItem:(AFBrowserItem *)item error:(NSError *)error;
+
+
+/**
+ * @brief 自定义浏览器Cell的UI
+ *
+ * @warning 这个方法应只用来添加cell的subView，不要对原有视图进行变更或移除
+ * @param cell 展示的容器，将想要自定义的UI添加到cell
+ * @note  该方法会在每次cell出现时都调用一次，内部会自动删除添加过的视图
+ * @note  如果自定义的视图，有涉及到Browser的内部事件操作，可以使用selectorForAction来添加事件，例如：
+ *        [btn addTarget:browser action:[browser selectorForAction:AFBrowserActionDelete] forControlEvents:(UIControlEventTouchUpInside)];
+          [cell addSubview:btn];
+ */
+- (void)browser:(AFBrowserViewController *)browser willDisplayCell:(UICollectionViewCell *)cell forItemAtIndex:(NSInteger)index;
+
+
+/**
+ * @brief 浏览器加载完成，可以在这里自定义浏览器的UI
+ */
+- (void)viewDidLoadBrowser:(AFBrowserViewController *)browser;
+
+
+/**
+ * @brief 浏览器出现
+ */
+- (void)viewDidAppearBrowser:(AFBrowserViewController *)browser;
+
+
+/**
+ * @brief 浏览器消失
+ */
+- (void)viewDidDisappearBrowser:(AFBrowserViewController *)browser;
+
+/**
+ * @brief dismiss控制器的回调
+ *
+ * @note  如果频的类型，应该返回视频播放器的容器View
+ */
+- (void)didDismissBrowser:(AFBrowserViewController *)browser;
+
+
 
 @end
 

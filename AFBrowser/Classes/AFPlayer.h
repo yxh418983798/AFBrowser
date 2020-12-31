@@ -22,6 +22,14 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
     AFPlayerStatusFinished,     /// 播放结束
 };
 
+/// 播放器恢复
+typedef NS_ENUM(NSUInteger, AFPlayerResumeOption) {
+    AFPlayerResumeOptionNone,         /// 不恢复
+    AFPlayerResumeOptionAppBecomeActive,      /// APP活跃
+    AFPlayerResumeOptionBrowserAppeared,  /// 浏览器出现
+    AFPlayerResumeOptionOnNotification,
+};
+
 
 @class AFPlayer, AFBrowserItem, AFBrowserConfiguration;
 
@@ -80,6 +88,11 @@ typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
 
 /** 是否活跃，默认YES */
 @property (nonatomic, assign) BOOL          isActive;
+
+
+@property (nonatomic, assign) AFPlayerResumeOption          resumeOption;
+
+
 
 - (BOOL)isReadyToPlay;
 /**
