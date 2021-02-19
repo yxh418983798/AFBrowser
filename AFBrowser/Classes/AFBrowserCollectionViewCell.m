@@ -59,7 +59,7 @@
 @end
 
 
-static CGFloat MinScaleDistance = 0.4;
+static CGFloat MinScaleDistance = 0.41;
 static CGFloat MaxScaleDistance = 3.f;
 
 @implementation AFBrowserCollectionViewCell
