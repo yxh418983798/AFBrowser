@@ -55,23 +55,6 @@ static NSArray *array;
 {
     [super viewDidLoad];
     self.data = NSMutableArray.new;
-
-    NSString *path = [[NSBundle mainBundle] pathForResource:@"timeline" ofType:@"txt"];
-    NSData *data = [NSData dataWithContentsOfFile:path];
-    NSArray *array = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:NULL];
-
-    for (NSDictionary *dic in array) {
-        [self.data addObjectsFromArray:[dic valueForKey:@"images"]];
-    }
-//    for (int i = 0; i < 10; i++) {
-//        [self.data addObject:[AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0]];
-//    }
-//    self.obj1 = NSObject.new;
-//    arr = [NSPointerArray pointerArrayWithOptions:NSPointerFunctionsWeakMemory];
-//    [arr addPointer:(__bridge void *)(self.obj1)];
-    
-//    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
-    
     self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"push" style:(UIBarButtonItemStylePlain) target:self action:@selector(action)];
     
     _tableView = [[UITableView alloc] initWithFrame:(CGRectMake(0, 40, self.view.frame.size.width, self.view.frame.size.height)) style:(UITableViewStylePlain)];
@@ -82,6 +65,22 @@ static NSArray *array;
 }
 
 
+#pragma mark - 数据
+/// 本地数据
+- (void)getLocalData {
+    for (int i = 0; i < 10; i++) {
+        [self.data addObject:[AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0 size:100]];
+    }
+}
+
+- (void)getTimeline {
+    NSString *path = [[NSBundle mainBundle] pathForResource:@"timeline" ofType:@"txt"];
+    NSData *data = [NSData dataWithContentsOfFile:path];
+    NSArray *array = [NSJSONSerialization JSONObjectWithData:data options:kNilOptions error:NULL];
+    for (NSDictionary *dic in array) {
+        [self.data addObjectsFromArray:[dic valueForKey:@"images"]];
+    }
+}
 
 #pragma mark -- 旋转控制
 - (BOOL)shouldAutorotate{
@@ -113,25 +112,8 @@ static NSArray *array;
             make.width.height.offset(100);
             make.centerY.offset(0);
         }];
-//    http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4
-//        AFPlayer *player = [AFBrowserViewController productPlayer];
-//        player.frame = CGRectMake(15, 10, 100, 100);
-//        player.tag = 100;
-//        [cell addSubview:player];
     }
-//    AFPlayer *player = [cell viewWithTag:100];
-//    player.frame = CGRectMake(15, 10, 100, 100);
-//    player.item = [AFBrowserItem itemWithVideo:@"http://alicfc1.mowang.online/vid/9E9BE3FCEBB93BBDC1956E666506E493.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
-//    player.item.infiniteLoop = YES;
-//    player.item.useCustomPlayer = YES;
-//    [player prepare];
-//    [player play];
-//    cell.imageView.image = [UIImage imageNamed:@"image"];
-    
-//    [cell.imageView sd_setImageWithURL:[NSURL URLWithString:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg"]];
-    
     [cell.imageView sd_setImageWithURL:[NSURL URLWithString:[self.data[indexPath.row] valueForKeyPath:@"url"]]];
-
     cell.textLabel.text = [NSString stringWithFormat:@"第%lu个Cell", indexPath.row];
     return cell;
 }
@@ -179,7 +161,7 @@ static NSArray *array;
 }
 
 - (void)browser:(AFBrowserViewController *)browser longPressActionAtIndex:(NSInteger)index {
-    NSLog(@"-------------------------- 来了老弟：%ld --------------------------", (long)index);
+//    NSLog(@"-------------------------- 来了老弟：%ld --------------------------", (long)index);
 }
 
 

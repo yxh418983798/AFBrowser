@@ -12,13 +12,19 @@
 #import "AFBrowserLoaderProxy.h"
 
 @interface AFBrowserCollectionView : UICollectionView
+/** delegate */
+@property (nonatomic, weak) id <AFBrowserDelegate> gestureRecognizerDelegate;
+/** 浏览器 */
+@property (nonatomic, weak) UIViewController            *browserVc;
 @end
 @implementation AFBrowserCollectionView
-//- (UIView *)hitTest:(CGPoint)point withEvent:(UIEvent *)event {
-//    UIView *view = [super hitTest:point withEvent:event];
-//    self.scrollEnabled = ![view isKindOfClass:UISlider.class];
-//    return view;
-//}
+
+- (BOOL)gestureRecognizerShouldBegin:(UIPanGestureRecognizer *)pan {
+    if ([self.gestureRecognizerDelegate respondsToSelector:@selector(browser:gestureRecognizerShouldBegin:)]) {
+        return [self.gestureRecognizerDelegate browser:self.browserVc gestureRecognizerShouldBegin:pan];
+    }
+    return YES;
+}
 @end
 
 
@@ -43,7 +49,7 @@
 @property (nonatomic, strong) UILabel                   *pageLabel;
 
 /** collectionView */
-@property (strong, nonatomic) UICollectionView          *collectionView;
+@property (strong, nonatomic) AFBrowserCollectionView   *collectionView;
 
 /** 转场 */
 @property (strong, nonatomic) AFBrowserTransformer      *transformer;
@@ -119,7 +125,10 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (void)viewDidLayoutSubviews {
 //    if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground) {
 //        return;
-//    }0x283dd7ba0
+//    }
+    if ([self itemAtIndex:self.configuration.selectedIndex].type != AFBrowserItemTypeVideo) {
+        return;
+    }
     self.isLayoutView = YES;
 //    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
@@ -213,7 +222,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 - (void)dealloc {
-    NSLog(@"-------------------------- 浏览器释放了 --------------------------");
+//    NSLog(@"-------------------------- 浏览器释放了 --------------------------");
     if ([self.configuration.delegate respondsToSelector:@selector(didDismissBrowser:)]) {
         [self.configuration.delegate didDismissBrowser:self];
     }
@@ -264,6 +273,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
     layout.scrollDirection = UICollectionViewScrollDirectionHorizontal;
 
     self.collectionView = [[AFBrowserCollectionView alloc] initWithFrame:(CGRectMake(0, 0, layout.itemSize.width, layout.itemSize.height)) collectionViewLayout:layout];
+    self.collectionView.browserVc = self;
+    self.collectionView.gestureRecognizerDelegate = self.configuration.delegate;
     self.collectionView.backgroundColor = UIColor.blackColor;
     [self.collectionView registerClass:[AFBrowserCollectionViewCell class] forCellWithReuseIdentifier:@"AFBrowserCollectionViewCell"];
     self.collectionView.bounces = NO;
@@ -571,16 +582,19 @@ static const CGFloat lineSpacing = 0.f; //间隔
                 [cell.player pause];
             }
         }
+        if ([self.configuration.delegate respondsToSelector:@selector(browser:didScroll:atIndex:)]) {
+            [self.configuration.delegate browser:self didScroll:scrollView atIndex:currentPageNum];
+        }
     }
 }
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
-    NSLog(@"-------------------------- 手指离开decelerate:%d  tracking:%d --------------------------", decelerate, scrollView.tracking);
+//    NSLog(@"-------------------------- 手指离开decelerate:%d  tracking:%d --------------------------", decelerate, scrollView.tracking);
     if (!decelerate) [self endScroll];
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
-    NSLog(@"-------------------------- 结束惯性decelerate:%d  tracking:%d --------------------------", scrollView.isDecelerating, scrollView.tracking);
+//    NSLog(@"-------------------------- 结束惯性decelerate:%d  tracking:%d --------------------------", scrollView.isDecelerating, scrollView.tracking);
     [self endScroll];
 }
 
@@ -745,15 +759,21 @@ static const CGFloat lineSpacing = 0.f; //间隔
     [self.collectionView layoutIfNeeded];
     AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
     AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
-    if (item.type == AFBrowserItemTypeImage) {
-        return cell.imageView;
+    switch (item.type) {
+        case AFBrowserItemTypeImage:
+            return cell.imageView;
+
+        case AFBrowserItemTypeVideo:
+            if (!cell) {
+                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场cell是空的, %@", self.description]];
+            } else if (!cell.player) {
+                [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场的player是空的, %@", self.description]];
+            }
+            return cell.player;
+            
+        default:
+            return nil;
     }
-    if (!cell) {
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场cell是空的, %@", self.description]];
-    } else if (!cell.player) {
-        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"转场的player是空的, %@", self.description]];
-    }
-    return cell.player;
 }
 
 - (UIImage *)transitionImageForSourceController {
@@ -813,8 +833,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if (currentVc) {
         
         UINavigationController *navigationController;
-        if (AFBrowserLoaderProxy.navigationControllerClassForBrowser) {
-            navigationController = [[AFBrowserLoaderProxy.navigationControllerClassForBrowser alloc] initWithRootViewController:self];
+        if ([self.configuration.delegate respondsToSelector:@selector(navigationControllerForBrowser:)]) {
+            navigationController = [self.configuration.delegate navigationControllerForBrowser:self];
         } else {
             navigationController = [[UINavigationController alloc] initWithRootViewController:self];
             navigationController.navigationBar.barTintColor = [UIColor whiteColor];

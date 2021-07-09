@@ -215,7 +215,21 @@ static CGFloat MaxScaleDistance = 3.f;
         }
     } else {
         // 缩略图也没有，先展示占位图
-        self.imageView.image = AFBrowserLoaderProxy.placeholderImageForBrowser;
+        if ([self.configuration.delegate respondsToSelector:@selector(browser:imageForPlaceholderAtIndex:)]) {
+            self.imageView.image = [self.configuration.delegate browser:self.configuration.browserVc imageForPlaceholderAtIndex:self.indexPath.item];
+        } else {
+            static UIImage *image;
+            if (!image) {
+                CGRect rect = CGRectMake(0.0f, 0.0f, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height - 200);
+                UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0);
+                CGContextRef context = UIGraphicsGetCurrentContext();
+                CGContextSetFillColorWithColor(context, UIColor.whiteColor.CGColor);
+                CGContextFillRect(context, rect);
+                image = UIGraphicsGetImageFromCurrentImageContext();
+                UIGraphicsEndImageContext();
+            }
+            self.imageView.image = image;
+        }
         if (item.coverImage) {
             if ([item.coverImage isKindOfClass:NSString.class]) {
                 [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image, NSError *error) {
@@ -475,11 +489,11 @@ static CGFloat MaxScaleDistance = 3.f;
 #pragma mark - 绑定数据
 - (void)attachItem:(AFBrowserItem *)item configuration:(AFBrowserConfiguration *)configuration atIndexPath:(NSIndexPath *)indexPath {
 
+    [self.customView removeFromSuperview];
     self.configuration = configuration;
     self.item = item;
     self.indexPath = indexPath;
     self.loadImageStatus = AFLoadImageStatusNone;
-//http://dl2.weshineapp.com/gif/20201104/8bfa369267398b699c4b4b474b638f1b.jpg?v=5fa2d00190770&f=mowang
     switch (item.type) {
         case AFBrowserItemTypeImage: {
             [self displayImageItem:item];
@@ -495,7 +509,23 @@ static CGFloat MaxScaleDistance = 3.f;
             [self resizeSubviewSize];
         }
             break;
+            
+        default:
+            [self displayCustomItem];
+            break;
     }
+}
+
+/// 自定义Item
+- (void)displayCustomItem {
+    if (_player) {
+        [_player removeFromSuperview];
+        _player = nil;
+    }
+    _scrollView.hidden = YES;
+    AFBrowserCustomItem *item = (AFBrowserCustomItem *)self.item;
+    self.customView = item.view;
+    [self addSubview:item.view];
 }
 
 
@@ -549,7 +579,7 @@ static CGFloat MaxScaleDistance = 3.f;
 /// 重置下自定义视图
 - (void)removeCustomView {
     for (UIView *subView in self.subviews) {
-        if (subView == _scrollView || subView == _player) continue;
+        if (subView == _scrollView || subView == _player || subView == _customView) continue;
         [subView removeFromSuperview];
     }
 }
@@ -573,6 +603,9 @@ static CGFloat MaxScaleDistance = 3.f;
 
 #pragma mark - 单击手势
 - (void)singleTap:(UITapGestureRecognizer *)tap {
+    if (self.item.type == AFBrowserItemTypeCustomView) {
+        return;
+    }
     if ([self.delegate respondsToSelector:@selector(singleTapAction)]) {
         [self.delegate singleTapAction];
     }

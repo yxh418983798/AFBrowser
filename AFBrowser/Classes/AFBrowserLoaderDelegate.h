@@ -54,12 +54,6 @@
 
 
 /**
- * @brief 占位图
- */
-+ (UIImage *)placeholderImageForBrowser;
-
-
-/**
  * @brief 浏览器导航控制器的类，默认UINavigationController
  */
 + (Class)navigationControllerClassForBrowser;

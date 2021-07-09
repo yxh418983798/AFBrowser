@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 #import "AFBrowserEnum.h"
 
 @interface AFBrowserItem : NSObject
@@ -110,7 +111,19 @@
 + (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height;
 
 
+/**
+ * @brief 构造自定义视图
+ */
++ (instancetype)itemWithCustomView:(UIView *)view;
 
 @end
 
 
+
+@interface AFBrowserCustomItem : AFBrowserItem
+
+/** view */
+@property (nonatomic, strong) UIView            *view;
+
+
+@end

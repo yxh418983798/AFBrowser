@@ -46,6 +46,9 @@
 /** 播放器 */
 @property (strong, nonatomic) AFPlayer      *player;
 
+/** 自定义视图 */
+@property (nonatomic, weak) UIView        *customView;
+
 /// 绑定数据
 - (void)attachItem:(AFBrowserItem *)item configuration:(AFBrowserConfiguration *)configuration atIndexPath:(NSIndexPath *)indexPath;
 

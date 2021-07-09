@@ -19,36 +19,46 @@
 
 @implementation AFBrowserItem
 
-#pragma mark - 返回已下载的视频或图片的本地地址
+#pragma mark - 构造
+/// 构造图片
++ (instancetype)itemWithImage:(id)image coverImage:(id)coverImage width:(CGFloat)width height:(CGFloat)height size:(CGFloat)size {
+    AFBrowserItem *item = [AFBrowserItem new];
+    item.content = image;
+    item.coverImage = coverImage;
+    item.width = width;
+    item.height = height;
+    item.size = size;
+    item.type = AFBrowserItemTypeImage;
+    return item;
+}
+
+/// 构造视频
++ (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height{
+    AFBrowserItem *item = [AFBrowserItem new];
+    item.content = video;
+    item.coverImage = coverImage;
+    item.type = AFBrowserItemTypeVideo;
+    item.duration = duration;
+    item.width = width;
+    item.height = height;
+    return item;
+}
+
+/// 构造自定义视图
++ (instancetype)itemWithCustomView:(UIView *)view {
+    AFBrowserCustomItem *item = AFBrowserCustomItem.new;
+    item.type = AFBrowserItemTypeCustomView;
+    item.view = view;
+    return item;
+}
+
+
+#pragma mark - Getter
+/// 返回已下载的视频或图片的本地地址
 - (NSString *)filePath {
     NSString *url = [self.content isKindOfClass:NSString.class] ? self.content : [(NSURL *)self.content absoluteString];
     return [AFDownloader filePathWithUrl:url];
 }
-
-
-+ (instancetype)itemWithImage:(id)image coverImage:(id)coverImage width:(CGFloat)width height:(CGFloat)height size:(CGFloat)size {
-    AFBrowserItem *browser = [AFBrowserItem new];
-    browser.content = image;
-    browser.coverImage = coverImage;
-    browser.width = width;
-    browser.height = height;
-    browser.size = size;
-    browser.type = AFBrowserItemTypeImage;
-    return browser;
-}
-
-
-+ (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height{
-    AFBrowserItem *browser = [AFBrowserItem new];
-    browser.content = video;
-    browser.coverImage = coverImage;
-    browser.type = AFBrowserItemTypeVideo;
-    browser.duration = duration;
-    browser.width = width;
-    browser.height = height;
-    return browser;
-}
-
 
 
 - (BOOL)validContent {
@@ -62,7 +72,6 @@
     return YES;
 }
 
-
 - (BOOL)validRemoteUrl {
     if ([self.content isKindOfClass:NSString.class]) {
         return [self.content hasPrefix:@"http"];
@@ -72,9 +81,17 @@
     return NO;
 }
 
-
 - (BOOL)isEqual:(AFBrowserItem *)item {
     return [self.content isEqual:item.content] && [self.coverImage isEqual:item.coverImage];
 }
 
 @end
+
+
+@implementation AFBrowserCustomItem
+
+
+
+
+@end
+

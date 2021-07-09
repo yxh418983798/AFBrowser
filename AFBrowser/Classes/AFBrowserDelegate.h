@@ -12,12 +12,10 @@
 
 @protocol AFBrowserDelegate <NSObject>
 
-
 /**
  * @brief 必须实现， 返回item的数量
  */
 - (NSInteger)numberOfItemsInBrowser:(AFBrowserViewController *)browser;
-
 
 /**
  * @brief 构造item数据源
@@ -26,8 +24,12 @@
  */
 - (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index;
 
-
 @optional;
+
+/**
+ * @brief 构造浏览器的导航控制器
+ */
+- (UINavigationController *)navigationControllerForBrowser:(AFBrowserViewController *)browser;
 
 /**
  * @brief 返回转场的View
@@ -37,7 +39,6 @@
  */
 - (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index;
 
-
 /**
  * @brief 返回转场的图片
  *
@@ -46,6 +47,10 @@
  */
 - (UIImage *)browser:(AFBrowserViewController *)browser imageForTransitionAtIndex:(NSInteger)index;
 
+/**
+ * @brief 返回图片加载中的占位图
+ */
+- (UIImage *)browser:(AFBrowserViewController *)browser imageForPlaceholderAtIndex:(NSInteger)index;
 
 /**
  * @brief 返回是否自动下载原图，该方法优先级高于 AFBrowserConfiguration的autoLoadOriginalImage
@@ -56,14 +61,12 @@
  */
 - (BOOL)browser:(AFBrowserViewController *)browser shouldAutoLoadOriginalImageForItemAtIndex:(NSInteger)index;
 
-
 /**
  * @brief 长按cell事件
  *
  * @param index 触发长按的index
  */
 - (void)browser:(AFBrowserViewController *)browser longPressActionAtIndex:(NSInteger)index;
-
 
 /**
  * @brief 删除事件
@@ -73,7 +76,6 @@
  * @note  该方法在用户点击删除按钮时调用，开发者可以在这里进行事件的预处理
  * 比如更新数据、弹窗提示用户是否确认删除等，当用户确认删除时，需要调用completionDelete()的block来通知browser删除数据并更新UI */
 - (void)browser:(AFBrowserViewController *)browser deleteActionAtIndex:(NSInteger)index completionDelete:(void (^)(void))completionDelete;
-
 
 /**
  * @brief 分页加载数据的实现，每次浏览到第一个或最后一个Item时，自动调用该方法获取数据
@@ -85,42 +87,35 @@
  */
 - (void)browser:(AFBrowserViewController *)browser loadDataWithDirection:(AFBrowserDirection)direction completionReload:(void (^)(BOOL success))completionReload;
 
-
 /**
  * @brief 自定义加载图片
  */
 - (void)browser:(AFBrowserViewController *)browser loadImage:(NSString *)image;
-
 
 /**
  * @brief 自定义加载图片
  */
 - (void)browser:(AFBrowserViewController *)browser loadVideo:(NSString *)video;
 
-
 /**
  * @brief 查询图片缓存，如果没有实现，会从AFBrowserLoaderDelegate方法中查询
  */
 - (UIImage *)browser:(AFBrowserViewController *)browser hasImageCacheWithKey:(NSString *)key atIndex:(NSInteger)index;
-
 
 /**
  * @brief 查询视频缓存的本地路径，如果没有实现，会从AFBrowserLoaderDelegate方法中查询
  */
 - (NSString *)browser:(AFBrowserViewController *)browser videoPathForItem:(AFBrowserItem *)item;
 
-
 /**
  * @brief 开始播放视频的回调
  */
 - (void)browser:(AFBrowserViewController *)browser willPlayVideoItem:(AFBrowserItem *)item;
 
-
 /**
  * @brief 点击查看原图，下载完成的回调
  */
 - (void)browser:(AFBrowserViewController *)browser didCompletedDownloadOriginalImageItem:(AFBrowserItem *)item error:(NSError *)error;
-
 
 /**
  * @brief 自定义浏览器Cell的UI
@@ -134,18 +129,15 @@
  */
 - (void)browser:(AFBrowserViewController *)browser willDisplayCell:(UICollectionViewCell *)cell forItemAtIndex:(NSInteger)index;
 
-
 /**
  * @brief 浏览器加载完成，可以在这里自定义浏览器的UI
  */
 - (void)viewDidLoadBrowser:(AFBrowserViewController *)browser;
 
-
 /**
  * @brief 浏览器出现
  */
 - (void)viewDidAppearBrowser:(AFBrowserViewController *)browser;
-
 
 /**
  * @brief 浏览器消失
@@ -159,6 +151,15 @@
  */
 - (void)didDismissBrowser:(AFBrowserViewController *)browser;
 
+/**
+ * @brief 监听滚动回调
+ */
+- (void)browser:(AFBrowserViewController *)browser didScroll:(UIScrollView *)scrollView atIndex:(NSInteger)index;
+
+/**
+ * @brief 控制浏览器的左右滑动手势
+ */
+- (BOOL)browser:(AFBrowserViewController *)browser gestureRecognizerShouldBegin:(UIPanGestureRecognizer *)pan;
 
 
 @end

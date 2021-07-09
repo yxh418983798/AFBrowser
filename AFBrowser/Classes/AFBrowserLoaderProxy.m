@@ -140,15 +140,6 @@
 }
 
 
-#pragma mark - 占位图
-+ (UIImage *)placeholderImageForBrowser {
-    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(placeholderImageForBrowser)]) {
-        return AFBrowserViewController.loaderProxy.placeholderImageForBrowser;
-    }
-    return [UIImage new];
-}
-
-
 + (Class)navigationControllerClassForBrowser {
     if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(navigationControllerClassForBrowser)]) {
         return AFBrowserViewController.loaderProxy.navigationControllerClassForBrowser;

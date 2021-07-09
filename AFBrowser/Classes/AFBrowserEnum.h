@@ -24,8 +24,9 @@ typedef NS_ENUM(NSUInteger, AFPageControlType){
 
 /// 数据类型
 typedef NS_ENUM(NSUInteger, AFBrowserItemType) {
-    AFBrowserItemTypeImage,  /// 图片
-    AFBrowserItemTypeVideo,  /// 视频
+    AFBrowserItemTypeImage,      /// 图片
+    AFBrowserItemTypeVideo,      /// 视频
+    AFBrowserItemTypeCustomView, /// 自定义视图
 };
 
 /// 播放器的播放方式

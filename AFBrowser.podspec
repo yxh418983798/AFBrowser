@@ -8,8 +8,14 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.4.8'
+  s.version          = '1.5.0'
   s.summary          = '图片/视频浏览器'
+  s.description      = <<-DESC
+  1、新增自定义类型的BrowserItem
+  2、新增监听滚动回调
+  3、新增图片加载占位图设置
+  4、修复部分bug
+                       DESC
   s.homepage         = 'https://github.com/yxh418983798/AFBrowser'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'Alfie' => '418983798@qq.com' }
