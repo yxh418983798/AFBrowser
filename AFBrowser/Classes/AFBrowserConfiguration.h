@@ -18,7 +18,7 @@
 /** 代理 */
 @property (weak, nonatomic) id <AFBrowserDelegate>     delegate;
 
-/** 资源未加载成功是否跳转到浏览器，默认NO */
+/** 资源未加载成功是否跳转到浏览器，默认YES */
 @property (assign, nonatomic) BOOL                     shouldBrowseWhenNoCache;
 
 /** 是否自动加载原图，默认YES */

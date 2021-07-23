@@ -64,6 +64,20 @@ static CGFloat MaxScaleDistance = 3.f;
 
 @implementation AFBrowserCollectionViewCell
 
+static UIImage * DefaultPlaceholderImage() {
+    static UIImage *image;
+    if (!image) {
+        CGRect rect = CGRectMake(0.0f, 0.0f, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height - 200);
+        UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0);
+        CGContextRef context = UIGraphicsGetCurrentContext();
+        CGContextSetFillColorWithColor(context, UIColor.whiteColor.CGColor);
+        CGContextFillRect(context, rect);
+        image = UIGraphicsGetImageFromCurrentImageContext();
+        UIGraphicsEndImageContext();
+    }
+    return image;
+}
+
 #pragma mark - 生命周期
 - (instancetype)initWithFrame:(CGRect)frame {
     self = [super initWithFrame:frame];
@@ -192,7 +206,7 @@ static CGFloat MaxScaleDistance = 3.f;
         _player = nil;
     }
     [_scrollView setZoomScale:1.0];
-    
+
     // 获取原图缓存
     UIImage *originalImage = [self.delegate browserCell:self hasImageCache:item.content atIndex:self.indexPath.row];
     if (originalImage) {
@@ -217,19 +231,13 @@ static CGFloat MaxScaleDistance = 3.f;
         // 缩略图也没有，先展示占位图
         if ([self.configuration.delegate respondsToSelector:@selector(browser:imageForPlaceholderAtIndex:)]) {
             self.imageView.image = [self.configuration.delegate browser:self.configuration.browserVc imageForPlaceholderAtIndex:self.indexPath.item];
-        } else {
-            static UIImage *image;
-            if (!image) {
-                CGRect rect = CGRectMake(0.0f, 0.0f, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height - 200);
-                UIGraphicsBeginImageContextWithOptions(rect.size, NO, 0);
-                CGContextRef context = UIGraphicsGetCurrentContext();
-                CGContextSetFillColorWithColor(context, UIColor.whiteColor.CGColor);
-                CGContextFillRect(context, rect);
-                image = UIGraphicsGetImageFromCurrentImageContext();
-                UIGraphicsEndImageContext();
-            }
-            self.imageView.image = image;
+            [self resizeSubviewSize];
         }
+        if (!self.imageView.image.size.width || !self.imageView.image.size.height) {
+            self.imageView.image = DefaultPlaceholderImage();
+            [self resizeSubviewSize];
+        }
+     
         if (item.coverImage) {
             if ([item.coverImage isKindOfClass:NSString.class]) {
                 [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:item.coverImage] completion:^(UIImage *image, NSError *error) {
@@ -286,9 +294,13 @@ static CGFloat MaxScaleDistance = 3.f;
             }];
         } else if ([item.content isKindOfClass:NSURL.class]) {
             [AFBrowserLoaderProxy loadImage:item.content completion:^(UIImage *image, NSError *error) {
-                self.imageView.image = image;
-                self.loadImageStatus = AFLoadImageStatusOriginal;
-                [self resizeSubviewSize];
+                if (image) {
+                    self.imageView.image = image;
+                    self.loadImageStatus = AFLoadImageStatusOriginal;
+                    [self resizeSubviewSize];
+                } else {
+                    [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"AFBrowser加载原图URL错误！，item.content:%@ \n self.item.content:%@", item.content, self.item.content]];
+                }
             }];
         } else if ([item.content isKindOfClass:UIImage.class])  {
             self.loadImageStatus = AFLoadImageStatusOriginal;
@@ -298,7 +310,7 @@ static CGFloat MaxScaleDistance = 3.f;
             //    self.scrollView.maximumZoomScale = HScreen_Height/(HScreen_Width * image.size.height/image.size.width);
         } else {
             self.loadImageStatus = AFLoadImageStatusOriginal;
-            self.imageView.image = [UIImage new];
+            self.imageView.image = DefaultPlaceholderImage();
             [self resizeSubviewSize];
         }
     }
@@ -666,6 +678,7 @@ static CGFloat MaxScaleDistance = 3.f;
         }
         if(!error){
             self.imageView.image = image;
+            [self resizeSubviewSize];
         }
 //        [self.loadOriginalImgBtn setTitle:@"下载失败，重新下载" forState:(UIControlStateNormal)];
 //        self.loadOriginalImgBtn.userInteractionEnabled = YES;

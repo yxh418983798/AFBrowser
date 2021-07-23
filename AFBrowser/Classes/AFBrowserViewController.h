@@ -5,6 +5,7 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
+//  Version：1.5.1
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"

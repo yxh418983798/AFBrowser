@@ -31,6 +31,7 @@ static UIDeviceOrientation *_lastOrientation;
         self.selectedIndex = 0;
         self.autoLoadOriginalImage = YES;
         self.videoGravity = AVLayerVideoGravityResizeAspectFill;
+        self.shouldBrowseWhenNoCache = YES;
     }
     return self;
 }

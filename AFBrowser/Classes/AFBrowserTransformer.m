@@ -774,7 +774,7 @@ static CGRect beginFrame;
             CGFloat original_Y;
             CGFloat distance_W = (beginFrame.size.width - sourceFrame.size.width) * progress;
             CGFloat current_W = beginFrame.size.width - distance_W;
-            CGFloat scale = current_W / beginFrame.size.width;
+            CGFloat scale = beginFrame.size.width > 0 ? current_W / beginFrame.size.width : 0;
             if (self.isDirectionDown) {
                 if (self.imgView_H > UIScreen.mainScreen.bounds.size.height) {
                     original_Y = 0;
@@ -812,6 +812,7 @@ static CGRect beginFrame;
                     if (self.transitionView.frame.size.height > UIScreen.mainScreen.bounds.size.height) {
                         CGRect frame = self.transitionView.frame;
                         frame.size.height = UIScreen.mainScreen.bounds.size.height;
+                        if (isnan(frame.origin.y)) frame.origin.y = 0;
                         self.transitionView.frame = frame;
                     }
                     [UIView animateWithDuration:UINavigationControllerHideShowBarDuration delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseIn animations:^{
