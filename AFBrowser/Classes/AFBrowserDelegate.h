@@ -27,6 +27,11 @@
 @optional;
 
 /**
+ * @brief 返回item的总数量（当使用分页加载数据时，通过实现该方法，页码可展示总数量）
+ */
+- (NSInteger)totalNumberOfItemsInBrowser:(AFBrowserViewController *)browser;
+
+/**
  * @brief 构造浏览器的导航控制器
  */
 - (UINavigationController *)navigationControllerForBrowser:(AFBrowserViewController *)browser;
@@ -86,6 +91,11 @@
  * @note  success 表示数据是否成功加载完毕，如果传了NO，是不会刷新数据的
  */
 - (void)browser:(AFBrowserViewController *)browser loadDataWithDirection:(AFBrowserDirection)direction completionReload:(void (^)(BOOL success))completionReload;
+
+/**
+ * @brief 配置浏览器的CollectionView，可用于配置分页加载
+ */
+- (void)browser:(AFBrowserViewController *)browser configCollectionView:(UICollectionView *)collectionView;
 
 /**
  * @brief 自定义加载图片

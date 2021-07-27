@@ -43,11 +43,15 @@
 
 
 /**
- * @brief 刷新数据
- *
- * @note  先更新外部的数据源，再刷新
+ * @brief 刷新
  */
 - (void)reloadData;
+
+
+/**
+ * @brief 停止滚动时再刷新
+ */
+- (void)reloadDataWhenEndScroll;
 
 
 /**

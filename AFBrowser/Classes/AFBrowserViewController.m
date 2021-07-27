@@ -78,6 +78,11 @@
 /** 黑色背景，避免横竖屏切换时，有白边出现 */
 @property (nonatomic, strong) UIView          *windowBackgroundView;
 
+/** 停止滚动时刷新 */
+@property (nonatomic, assign) BOOL            reloadWhenEndScroll;
+
+/** 记录之前的状态栏状态 */
+@property (nonatomic, assign) UIStatusBarStyle       lastStatusBarStyle;
 @end
 
 
@@ -107,6 +112,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (void)viewDidLoad {
     [super viewDidLoad];
+    self.lastStatusBarStyle = UIApplication.sharedApplication.statusBarStyle;
     self.originalPortrait = AFBrowserConfiguration.isPortrait;
     self.automaticallyAdjustsScrollViewInsets = NO;
     self.view.backgroundColor = UIColor.blackColor;
@@ -154,7 +160,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
-    [UIApplication sharedApplication].statusBarStyle = UIStatusBarStyleDefault;
+    UIApplication.sharedApplication.statusBarStyle = UIStatusBarStyleLightContent;
     [self.navigationController setNavigationBarHidden:YES animated:YES];
     self.navigationController.view.frame = UIScreen.mainScreen.bounds;
 }
@@ -223,6 +229,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (void)dealloc {
 //    NSLog(@"-------------------------- 浏览器释放了 --------------------------");
+    UIApplication.sharedApplication.statusBarStyle = self.lastStatusBarStyle;
     if ([self.configuration.delegate respondsToSelector:@selector(didDismissBrowser:)]) {
         [self.configuration.delegate didDismissBrowser:self];
     }
@@ -283,6 +290,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.collectionView.showsVerticalScrollIndicator   = NO;
     self.collectionView.delegate = self;
     self.collectionView.dataSource = self;
+    if ([self.configuration.delegate respondsToSelector:@selector(browser:configCollectionView:)]) {
+        [self.configuration.delegate browser:self configCollectionView:self.collectionView];
+    }
     [self.view addSubview:self.collectionView];
 }
 
@@ -332,7 +342,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if (!_pageControl) {
         _pageControl = [[UIPageControl alloc] initWithFrame:(CGRectMake(0, [[UIScreen mainScreen] bounds].size.height - ([UIApplication sharedApplication].statusBarFrame.size.height == 20 ? 30 : 45), [[UIScreen mainScreen] bounds].size.width, 20))];
         _pageControl.userInteractionEnabled = NO;
-        _pageControl.numberOfPages = self.numberOfItems;
+        _pageControl.numberOfPages = self.totalNumberOfItems;
         _pageControl.currentPage = (NSInteger)self.configuration.selectedIndex;
         [self.view addSubview:_pageControl];
     }
@@ -345,7 +355,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         _pageLabel.font = [UIFont fontWithName:@"PingFangSC-Semibold" size:16];
         _pageLabel.textColor = UIColor.whiteColor;
         _pageLabel.textAlignment = NSTextAlignmentCenter;
-        _pageLabel.text = [NSString stringWithFormat:@"%zd/%zd", self.configuration.selectedIndex + 1, self.numberOfItems];
+        _pageLabel.text = [NSString stringWithFormat:@"%zd/%zd", self.configuration.selectedIndex + 1, self.totalNumberOfItems];
         [self.toolBar addSubview:_pageLabel];
     }
     return _pageLabel;
@@ -482,6 +492,12 @@ static const CGFloat lineSpacing = 0.f; //间隔
     return _numberOfItems;
 }
 
+- (NSInteger)totalNumberOfItems {
+    if ([self.configuration.delegate respondsToSelector:@selector(totalNumberOfItemsInBrowser:)]) {
+        return [self.configuration.delegate totalNumberOfItemsInBrowser:self];
+    }
+    return self.numberOfItems;
+}
 
 #pragma mark - 触发加载分页数据
 - (void)loadItems {
@@ -510,6 +526,17 @@ static const CGFloat lineSpacing = 0.f; //间隔
     [self.collectionView reloadData];
 }
 
+- (void)reloadDataWhenEndScroll {
+    [self.items removeAllObjects];
+    [self scrollViewDidScroll:self.collectionView];
+    [self.collectionView reloadData];
+    return;
+    if (self.collectionView.isTracking || self.self.collectionView.isDecelerating) {
+        self.reloadWhenEndScroll = YES;
+    } else {
+        [self.collectionView reloadData];
+    }
+}
 
 #pragma mark UICollectionViewDataSource
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
@@ -554,7 +581,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
     [[(AFBrowserCollectionViewCell *)cell scrollView] setZoomScale:1.0];
 }
 
-
 #pragma mark - 监听滚动
 - (void)scrollViewDidScroll:(UIScrollView *)scrollView {
     if (scrollView == self.collectionView) {
@@ -568,7 +594,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
                 break;
                 
             case AFPageControlTypeText:
-                self.pageLabel.text = [NSString stringWithFormat:@"%d/%zd", currentPageNum + 1, self.numberOfItems];
+                self.pageLabel.text = [NSString stringWithFormat:@"%d/%zd", currentPageNum + 1, self.totalNumberOfItems];
                 break;
                 
             default:
@@ -590,12 +616,22 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 - (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
 //    NSLog(@"-------------------------- 手指离开decelerate:%d  tracking:%d --------------------------", decelerate, scrollView.tracking);
-    if (!decelerate) [self endScroll];
+    if (!decelerate) {
+        [self endScroll];
+        if (self.reloadWhenEndScroll) {
+            self.reloadWhenEndScroll = NO;
+            [self.collectionView reloadData];
+        }
+    }
 }
 
 - (void)scrollViewDidEndDecelerating:(UIScrollView *)scrollView {
 //    NSLog(@"-------------------------- 结束惯性decelerate:%d  tracking:%d --------------------------", scrollView.isDecelerating, scrollView.tracking);
     [self endScroll];
+    if (self.reloadWhenEndScroll) {
+        self.reloadWhenEndScroll = NO;
+        [self.collectionView reloadData];
+    }
 }
 
 /// 结束滚动
@@ -899,6 +935,19 @@ static Class _loaderProxy;
 //    NSLog(@"-------------------------- viewWillTransitionToSize:%@ --------------------------", NSStringFromCGSize(size));
 }
 
+//
+//- (BOOL)modalPresentationCapturesStatusBarAppearance {
+//    
+//}
+- (UIStatusBarStyle)preferredStatusBarStyle {
+    NSLog(@"-------------------------- 来了11111 --------------------------");
+    return UIStatusBarStyleLightContent;
+}
+
+- (UIViewController *)childViewControllerForStatusBarStyle {
+    NSLog(@"-------------------------- 来了2222 --------------------------");
+    return self.navigationController.topViewController;
+}
 
 @end
 
