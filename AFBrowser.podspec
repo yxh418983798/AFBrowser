@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.5.2'
+  s.version          = '1.5.3'
   s.summary          = '图片/视频浏览器'
   s.description      = <<-DESC
   1、修复分页加载问题

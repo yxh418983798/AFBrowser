@@ -114,13 +114,13 @@
 
 
 + (void)addLogString:(NSString *)log {
-#ifdef DEBUG
+//#ifdef DEBUG
 //    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(addLogString:)]) {
 //        [AFBrowserViewController.loaderProxy addLogString:log];
 //    } else {
 //        NSLog(@"%@", log);
 //    }
-#endif
+//#endif
 }
 
 - (void)dealloc {
