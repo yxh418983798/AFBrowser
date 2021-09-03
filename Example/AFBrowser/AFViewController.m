@@ -44,9 +44,6 @@ static NSArray *array;
     if ([arr.allObjects containsObject:self.obj1]) {
         [arr removePointerAtIndex:0];
     }
-//    self.obj1 = nil;
-//    [arr removePointerAtIndex:0];
-//    NSLog(@"-------------------------- 打：%@--------------------------", arr.allObjects);
     [self.navigationController pushViewController:AFViewController.new animated:YES];
 }
 
@@ -62,6 +59,8 @@ static NSArray *array;
     _tableView.dataSource = self;
     [self.view addSubview:_tableView];
     [self.tableView reloadData];
+    
+    [self getLocalData];
 }
 
 
@@ -69,7 +68,9 @@ static NSArray *array;
 /// 本地数据
 - (void)getLocalData {
     for (int i = 0; i < 10; i++) {
-        [self.data addObject:[AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0 size:100]];
+        [self.data addObject:[AFBrowserItem itemWithImage:[UIImage imageNamed:@"image"] coverImage:[UIImage imageNamed:@"image"] width:0 height:0 size:100]];
+
+//        [self.data addObject:[AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0 size:100]];
     }
 }
 
@@ -113,7 +114,9 @@ static NSArray *array;
             make.centerY.offset(0);
         }];
     }
-    [cell.imageView sd_setImageWithURL:[NSURL URLWithString:[self.data[indexPath.row] valueForKeyPath:@"url"]]];
+//    [cell.imageView sd_setImageWithURL:[NSURL URLWithString:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg"]];
+//    [cell.imageView sd_setImageWithURL:[NSURL URLWithString:[self.data[indexPath.row] valueForKeyPath:@"url"]]];
+    cell.imageView.image = [UIImage imageNamed:@"image"] ;
     cell.textLabel.text = [NSString stringWithFormat:@"第%lu个Cell", indexPath.row];
     return cell;
 }
@@ -124,29 +127,31 @@ static NSArray *array;
 }
 
 
-//- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
-////    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
-////    AFPlayer *player = [cell viewWithTag:100];
-////    [player play];
-//    [AFBrowserViewController.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeUseCustomPlayer(NO).makeSelectedIndex(indexPath.row) browse];
-//}
-//
-//
-//- (NSInteger)numberOfItemsInBrowser:(AFBrowserViewController *)browser {
-//    return self.data.count;
-//}
-//
-//- (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index {
-//    
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+//    UITableViewCell *cell = [self.tableView cellForRowAtIndexPath:indexPath];
+//    AFPlayer *player = [cell viewWithTag:100];
+//    [player play];
+    AFBrowserConfiguration *configuration = AFBrowserConfiguration.new.makeDelegate(self).makeBrowserType(AFBrowserTypeDefault).makePageControlType(AFPageControlTypeNone).makeInfiniteLoop(YES).makeSelectedIndex(indexPath.row);
+    [AFBrowserViewController.new.makeConfiguration(configuration) browse];
+}
+
+
+- (NSInteger)numberOfItemsInBrowser:(AFBrowserViewController *)browser {
+    return self.data.count;
+}
+
+- (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index {
+    
+//    return self.data[index];
+    return [AFBrowserItem itemWithImage:[UIImage imageNamed:@"image"] coverImage:nil width:0 height:0 size:0];
 //    return [AFBrowserItem itemWithImage:[self.data[index] valueForKeyPath:@"url"] coverImage:[self.data[index] valueForKeyPath:@"url"] width:0 height:0];
-//
 //    return self.data[index];
 //            return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
 //    if (index > 2) {
 //        return [AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0];
 //    }
 //    return [AFBrowserItem itemWithVideo:@"http://alicvid8.mowang.online/vid/C0501F6EA330D2D04F85FF6EA6537349.mp4" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" duration:2 width:0 height:0];
-//}
+}
 
 /// 返回转场的View
 - (UIView *)browser:(AFBrowserViewController *)browser viewForTransitionAtIndex:(NSInteger)index {
@@ -160,10 +165,6 @@ static NSArray *array;
     return [cell viewWithTag:100];
 }
 
-- (void)browser:(AFBrowserViewController *)browser longPressActionAtIndex:(NSInteger)index {
-//    NSLog(@"-------------------------- 来了老弟：%ld --------------------------", (long)index);
-}
-
 
 - (void)browser:(AFBrowserViewController *)browser willDisplayCell:(UICollectionViewCell *)cell forItemAtIndex:(NSInteger)index {
     
@@ -175,10 +176,38 @@ static NSArray *array;
     [cell addSubview:btn];
 }
 
+
 - (void)browser:(AFBrowserViewController *)browser deleteActionAtIndex:(NSInteger)index completionDelete:(void (^)(void))completionDelete {
     [self.data removeObjectAtIndex:index];
     [self.tableView reloadData];
     completionDelete();
 }
+
+
+
+/**
+ * @brief 自定义浏览器图片容器的UI
+ */
+- (void)browser:(AFBrowserViewController *)browser willDisplayImageContainView:(UIView *)containView forItemAtIndex:(NSInteger)index {
+    
+    
+    UIButton *btn = UIButton.new;
+    [btn setTitle:@"图片" forState:(UIControlStateNormal)];
+    [btn setTitleColor:UIColor.whiteColor forState:(UIControlStateNormal)];
+    [btn addTarget:self action:@selector(haha) forControlEvents:(UIControlEventTouchUpInside)];
+    
+    btn.frame = containView.bounds;
+    btn.backgroundColor = [UIColor.redColor colorWithAlphaComponent:0.5];
+    [containView addSubview:btn];
+    [btn mas_makeConstraints:^(MASConstraintMaker *make) {
+
+        make.edges.offset(0);
+    }];
+}
+
+- (void)haha {
+    NSLog(@"-------------------------- 点击了图片自定义按钮 --------------------------");
+}
+
 
 @end

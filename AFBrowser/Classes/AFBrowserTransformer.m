@@ -153,7 +153,7 @@
 
 #pragma mark - 转场时间
 - (NSTimeInterval)transitionDuration:(id<UIViewControllerContextTransitioning>)transitionContext {
-//    return 0.4;
+//    return 4;
     return UINavigationControllerHideShowBarDuration;
 }
 
@@ -306,6 +306,10 @@
                 resultFrame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
             }
         }
+        if ([self.configuration.delegate respondsToSelector:@selector(browser:willDisplayImageContainView:forItemAtIndex:)]) {
+            // 如果外部有实现自定义子视图代理方法，这里需要将子视图一起将入到转场
+            [self.configuration.delegate browser:self.configuration.browserVc willDisplayImageContainView:self.transitionView forItemAtIndex:self.configuration.selectedIndex];
+        }
         [containerView addSubview:self.transitionView];
         transitionView.hidden = YES;
     }
@@ -314,6 +318,7 @@
     [UIView animateWithDuration:[self transitionDuration:transitionContext] delay:0 options:UIViewAnimationOptionCurveEaseIn animations:^{
 
         self.transitionView.frame = resultFrame;
+        [self.transitionView layoutIfNeeded];
         self.backGroundView.alpha = 1;
         
     } completion:^(BOOL finished) {
@@ -406,6 +411,10 @@
         CGFloat height = UIScreen.mainScreen.bounds.size.width * fmax(transitionView.image.size.height, 1) / fmax(transitionView.image.size.width, 1);
         self.transitionView.frame = CGRectMake(0, fmax((UIScreen.mainScreen.bounds.size.height - height)/2, 0), UIScreen.mainScreen.bounds.size.width, height);
     }
+    if ([self.configuration.delegate respondsToSelector:@selector(browser:willDisplayImageContainView:forItemAtIndex:)]) {
+        // 如果外部有实现自定义子视图代理方法，这里需要将子视图一起将入到转场
+        [self.configuration.delegate browser:self.configuration.browserVc willDisplayImageContainView:self.transitionView forItemAtIndex:self.configuration.selectedIndex];
+    }
     self.presentedTrasitionViewFrame = self.transitionView.frame;
     if (!self.isInteractive) {
         // 处理长图收回去的不自然的效果，需要重新设置最大高度为屏幕高度
@@ -430,6 +439,7 @@
             } else {
                 // 使用位移的动画效果
                 self.transitionView.frame = sourceFrame;
+                [self.transitionView layoutIfNeeded];
             }
         }
 
@@ -814,7 +824,7 @@ static CGRect beginFrame;
                         if (isnan(frame.origin.y)) frame.origin.y = 0;
                         self.transitionView.frame = frame;
                     }
-                    [UIView animateWithDuration:UINavigationControllerHideShowBarDuration delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseIn animations:^{
+                    [UIView animateWithDuration:[self transitionDuration:nil] delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseIn animations:^{
                         self.backGroundView.alpha = 0;
                         if ((CGRectEqualToRect(sourceFrame, CGRectZero) || ![self.delegate transitionViewForSourceController] && !self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo)) {
                             // 如果获取到的转场视图为空，则使用淡入淡出的动画效果
@@ -822,6 +832,7 @@ static CGRect beginFrame;
                         } else {
                             // 使用位移的动画效果
                             self.transitionView.frame = sourceFrame;
+                            [self.transitionView layoutIfNeeded];
                         }
                     } completion:^(BOOL finished) {
 //                        NSLog(@"-------------------------- AFBrowser 图片手势结束，自动完成转场 --------------------------");
@@ -885,7 +896,7 @@ static CGRect beginFrame;
     self.backGroundView.alpha = 1;
     self.presentedTrasitionViewFrame = beginFrame;
     CGRect resultFrame = beginFrame; /// 避免beginFrame在下次的手势中被修改，这里要拷贝一个新的frame
-    [UIView animateWithDuration:UINavigationControllerHideShowBarDuration delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseIn animations:^{
+    [UIView animateWithDuration:[self transitionDuration:nil] delay:0 usingSpringWithDamping:1 initialSpringVelocity:1 options:UIViewAnimationOptionCurveEaseIn animations:^{
         self.transitionView.frame = resultFrame;
     } completion:^(BOOL finished) {
         [self.percentTransition cancelInteractiveTransition];
@@ -971,7 +982,7 @@ static CGFloat ScaleDistance = 0.4;
 
 - (void)timerAction {
     
-    CGFloat number = UINavigationControllerHideShowBarDuration * 60; // 0.25 * 60
+    CGFloat number = [self transitionDuration:nil] * 60; // 0.25 * 60
     static CGFloat distance;
     static CGFloat x;
     static CGFloat y;

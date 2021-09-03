@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.5.3
-//  修复了手势转场过程中 APP活跃状态变更导致的动画卡住的问题
+//  Version：1.6.0
+//  新增功能，可自定义图片UI
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"

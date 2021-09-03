@@ -509,6 +509,13 @@ static UIImage * DefaultPlaceholderImage() {
     switch (item.type) {
         case AFBrowserItemTypeImage: {
             [self displayImageItem:item];
+            if ([self.configuration.delegate respondsToSelector:@selector(browser:willDisplayImageContainView:forItemAtIndex:)]) {
+                for (UIView *subView in self.imageContainerView.subviews) {
+                    if (subView == self.imageView) continue;
+                    [subView removeFromSuperview];
+                }
+                [self.configuration.delegate browser:self.configuration.browserVc willDisplayImageContainView:self.imageContainerView forItemAtIndex:indexPath.item];
+            }
         }
             break;
             
