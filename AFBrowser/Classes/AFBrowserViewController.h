@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.6.1
-//  修复iOS10 系统 图片手势返回的bug
+//  Version：1.6.2
+//  修复iOS12 系统 状态栏设置的Bug
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"

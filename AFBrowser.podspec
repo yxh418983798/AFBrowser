@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.6.1'
+  s.version          = '1.6.2'
   s.summary          = '图片/视频浏览器'
   s.description      = <<-DESC
   1、新增功能，可自定义图片UI

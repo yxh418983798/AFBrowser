@@ -939,14 +939,14 @@ static Class _loaderProxy;
 //- (BOOL)modalPresentationCapturesStatusBarAppearance {
 //    
 //}
+
 - (UIStatusBarStyle)preferredStatusBarStyle {
-    NSLog(@"-------------------------- 来了11111 --------------------------");
     return UIStatusBarStyleLightContent;
 }
 
 - (UIViewController *)childViewControllerForStatusBarStyle {
-    NSLog(@"-------------------------- 来了2222 --------------------------");
-    return self.navigationController.topViewController;
+    UIViewController *childVc = self.navigationController.topViewController;
+    return childVc == self ? nil : childVc;
 }
 
 @end
