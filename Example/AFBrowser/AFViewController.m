@@ -192,8 +192,6 @@ static NSArray *array;
     
     
     UIButton *btn = UIButton.new;
-    [btn setTitle:@"图片" forState:(UIControlStateNormal)];
-    [btn setTitleColor:UIColor.whiteColor forState:(UIControlStateNormal)];
     [btn addTarget:self action:@selector(haha) forControlEvents:(UIControlEventTouchUpInside)];
     
     btn.frame = containView.bounds;
@@ -204,6 +202,7 @@ static NSArray *array;
         make.edges.offset(0);
     }];
 }
+
 
 - (void)haha {
     NSLog(@"-------------------------- 点击了图片自定义按钮 --------------------------");

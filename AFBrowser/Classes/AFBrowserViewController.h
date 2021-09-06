@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.6.0
-//  新增功能，可自定义图片UI
+//  Version：1.6.1
+//  修复iOS10 系统 图片手势返回的bug
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"

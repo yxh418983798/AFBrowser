@@ -817,7 +817,7 @@ static CGRect beginFrame;
                 return;
             }
             if(progress > 0.15){
-                if (item.type == AFBrowserItemTypeImage && ([[[UIDevice currentDevice]systemVersion]floatValue] >= 11.0)) {
+                if (item.type == AFBrowserItemTypeImage && (UIDevice.currentDevice.systemVersion.floatValue >= 11.0)) {
                     if (self.transitionView.frame.size.height > UIScreen.mainScreen.bounds.size.height) {
                         CGRect frame = self.transitionView.frame;
                         frame.size.height = UIScreen.mainScreen.bounds.size.height;
@@ -841,13 +841,15 @@ static CGRect beginFrame;
                         self.percentTransition = nil;
                     }];
                 } else {
-                    AFPlayer *player = (AFPlayer *)self.transitionView;
-                    if (item.width > 0 && sourceFrame.size.width > 0 && item.height/item.width != sourceFrame.size.height/sourceFrame.size.width) {
-                        player.videoGravity = AVLayerVideoGravityResize;
-                        CGRect frame = self.playerFrame;
-                        frame.origin.y = player.frame.origin.y + fabs((player.frame.size.height - frame.size.height)/2);
-                        frame.origin.x = player.frame.origin.x;
-                        player.frame = frame;
+                    if ([self.transitionView isKindOfClass:AFPlayer.class]) {
+                        AFPlayer *player = (AFPlayer *)self.transitionView;
+                        if (item.width > 0 && sourceFrame.size.width > 0 && item.height/item.width != sourceFrame.size.height/sourceFrame.size.width) {
+                            player.videoGravity = AVLayerVideoGravityResize;
+                            CGRect frame = self.playerFrame;
+                            frame.origin.y = player.frame.origin.y + fabs((player.frame.size.height - frame.size.height)/2);
+                            frame.origin.x = player.frame.origin.x;
+                            player.frame = frame;
+                        }
                     }
                     [self.displayLink addToRunLoop:NSRunLoop.currentRunLoop forMode:NSRunLoopCommonModes];
                 }
