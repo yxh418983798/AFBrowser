@@ -25,6 +25,7 @@
  */
 - (AFBrowserItem *)browser:(AFBrowserViewController *)browser itemForBrowserAtIndex:(NSInteger)index;
 
+
 @optional;
 
 /**
@@ -142,6 +143,11 @@
 
 
 #pragma mark - 交互相关
+
+/**
+ * @brief 返回是否允许缩放操作
+ */
+- (BOOL)browser:(AFBrowserViewController *)browser shouldZoomItemAtIndex:(NSInteger)index;
 
 /**
  * @brief 长按cell事件

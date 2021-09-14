@@ -551,6 +551,9 @@ static UIImage * DefaultPlaceholderImage() {
 #pragma mark - UIScrollViewDelegate
 //返回一个允许缩放的视图
 - (UIView *)viewForZoomingInScrollView:(UIScrollView *)scrollView {
+    if ([self.configuration.delegate respondsToSelector:@selector(browser:shouldZoomItemAtIndex:)]) {
+        return [self.configuration.delegate browser:self.configuration.browserVc shouldZoomItemAtIndex:self.indexPath.item] ? _imageContainerView : nil;
+    }
     return _imageContainerView;
 }
 

@@ -8,10 +8,10 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.6.2'
+  s.version          = '1.7.0'
   s.summary          = '图片/视频浏览器'
   s.description      = <<-DESC
-  1、新增功能，可自定义图片UI
+  1、新增功能，控制Item是否允许缩放操作
                        DESC
   s.homepage         = 'https://github.com/yxh418983798/AFBrowser'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }

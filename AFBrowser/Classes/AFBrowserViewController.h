@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.6.2
-//  修复iOS12 系统 状态栏设置的Bug
+//  Version：1.7.0
+//  新增：控制Item是否允许缩放操作
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"

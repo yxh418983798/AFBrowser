@@ -184,6 +184,9 @@ static NSArray *array;
 }
 
 
+- (BOOL)browser:(AFBrowserViewController *)browser shouldZoomItemAtIndex:(NSInteger)index {
+    return YES;
+}
 
 /**
  * @brief 自定义浏览器图片容器的UI
