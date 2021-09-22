@@ -68,7 +68,7 @@ static NSArray *array;
 /// 本地数据
 - (void)getLocalData {
     for (int i = 0; i < 10; i++) {
-        [self.data addObject:[AFBrowserItem itemWithImage:[UIImage imageNamed:@"image"] coverImage:[UIImage imageNamed:@"image"] width:0 height:0 size:100]];
+        [self.data addObject:[AFBrowserItem itemWithImage:[UIImage imageNamed:@"icon"] coverImage:[UIImage imageNamed:@"image"] width:0 height:0 size:100]];
 
 //        [self.data addObject:[AFBrowserItem itemWithImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" coverImage:@"http://alicimg8.mowang.online/snapshot/3C5FAE3A970995D8D5F12C6B8862977C.jpg" width:0 height:0 size:100]];
     }
@@ -184,27 +184,27 @@ static NSArray *array;
 }
 
 
-- (BOOL)browser:(AFBrowserViewController *)browser shouldZoomItemAtIndex:(NSInteger)index {
-    return YES;
-}
+//- (BOOL)browser:(AFBrowserViewController *)browser shouldZoomItemAtIndex:(NSInteger)index {
+//    return index > 2;
+//}
 
 /**
  * @brief 自定义浏览器图片容器的UI
  */
-- (void)browser:(AFBrowserViewController *)browser willDisplayImageContainView:(UIView *)containView forItemAtIndex:(NSInteger)index {
-    
-    
-    UIButton *btn = UIButton.new;
-    [btn addTarget:self action:@selector(haha) forControlEvents:(UIControlEventTouchUpInside)];
-    
-    btn.frame = containView.bounds;
-    btn.backgroundColor = [UIColor.redColor colorWithAlphaComponent:0.5];
-    [containView addSubview:btn];
-    [btn mas_makeConstraints:^(MASConstraintMaker *make) {
-
-        make.edges.offset(0);
-    }];
-}
+//- (void)browser:(AFBrowserViewController *)browser willDisplayImageContainView:(UIView *)containView forItemAtIndex:(NSInteger)index {
+//
+//
+//    UIButton *btn = UIButton.new;
+//    [btn addTarget:self action:@selector(haha) forControlEvents:(UIControlEventTouchUpInside)];
+//
+//    btn.frame = containView.bounds;
+//    btn.backgroundColor = [UIColor.redColor colorWithAlphaComponent:0.5];
+//    [containView addSubview:btn];
+//    [btn mas_makeConstraints:^(MASConstraintMaker *make) {
+//
+//        make.edges.offset(0);
+//    }];
+//}
 
 
 - (void)haha {

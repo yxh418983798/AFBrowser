@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.7.0
-//  新增：控制Item是否允许缩放操作
+//  Version：1.7.1
+//  修复Bug：图片下载完成显示时的缩放比例错乱问题
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"

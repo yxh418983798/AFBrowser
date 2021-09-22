@@ -205,7 +205,6 @@ static UIImage * DefaultPlaceholderImage() {
         [_player removeFromSuperview];
         _player = nil;
     }
-    [_scrollView setZoomScale:1.0];
 
     // 获取原图缓存
     UIImage *originalImage = [self.delegate browserCell:self hasImageCache:item.content atIndex:self.indexPath.row];
@@ -330,6 +329,8 @@ static UIImage * DefaultPlaceholderImage() {
     
     //图片
     else {
+        // 解决 1.7.1 bug：每次布局都需要重置缩放比，否则切换到原图时会导致比例错乱
+        [_scrollView setZoomScale:1.0];
         if (_player) {
             [_player removeFromSuperview];
             _player = nil;
