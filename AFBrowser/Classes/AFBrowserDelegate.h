@@ -150,6 +150,12 @@
 - (BOOL)browser:(AFBrowserViewController *)browser shouldZoomItemAtIndex:(NSInteger)index;
 
 /**
+ * @brief  单击cell事件
+ * @return 返回一个BOOL值，是否继续执行Browser默认的点击事件
+ */
+- (BOOL)browser:(AFBrowserViewController *)browser tapActionAtIndex:(NSInteger)index;
+
+/**
  * @brief 长按cell事件
  */
 - (void)browser:(AFBrowserViewController *)browser longPressActionAtIndex:(NSInteger)index;

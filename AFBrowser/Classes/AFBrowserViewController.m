@@ -680,6 +680,10 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 单击图片 AFBrowserCollectionViewCellDelegate
 - (void)singleTapAction {
+    
+    if ([self.configuration.delegate respondsToSelector:@selector(browser:tapActionAtIndex:)]) {
+        if (![self.configuration.delegate browser:self tapActionAtIndex:self.configuration.selectedIndex])  return;
+    }
     AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     if (_toolBar.superview) {
         //隐藏
