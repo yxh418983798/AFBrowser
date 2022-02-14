@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.7.3
-//  1、修改视频的icon图片
+//  Version：1.7.4
+//  1、修复视频暂停时没有显示icon的bug
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"

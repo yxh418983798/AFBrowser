@@ -8,10 +8,10 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.7.3'
+  s.version          = '1.7.4'
   s.summary          = '图片/视频浏览器'
   s.description      = <<-DESC
-  1、修改视频的icon图片
+  1、修复视频暂停时没有显示icon的bug
                        DESC
   s.homepage         = 'https://github.com/yxh418983798/AFBrowser'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
