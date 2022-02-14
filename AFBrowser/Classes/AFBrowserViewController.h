@@ -5,9 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.7.2
+//  Version：1.7.3
 //  1、修改视频的icon图片
-//  2、新增自定义单击事件
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"
