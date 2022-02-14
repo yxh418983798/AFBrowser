@@ -8,10 +8,11 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.7.1'
+  s.version          = '1.7.2'
   s.summary          = '图片/视频浏览器'
   s.description      = <<-DESC
-  1、修复Bug：图片下载完成显示时的缩放比例错乱问题
+  1、修改视频的icon图片
+  2、新增自定义单击事件
                        DESC
   s.homepage         = 'https://github.com/yxh418983798/AFBrowser'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
