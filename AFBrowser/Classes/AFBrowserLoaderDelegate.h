@@ -7,6 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
+@class AFBrowserItem;
 
 @protocol AFBrowserLoaderDelegate <NSObject>
 @optional;
@@ -57,6 +58,13 @@
  * @brief 浏览器导航控制器的类，默认UINavigationController
  */
 + (Class)navigationControllerClassForBrowser;
+
+
+/**
+ * @brief 统一在视频即将播放前进行拦截，控制是否播放，如果视频本身是不播放的，则无效
+ */
++ (BOOL)shouldPlayVideo:(AFBrowserItem *)item;
+
 
 @end
 

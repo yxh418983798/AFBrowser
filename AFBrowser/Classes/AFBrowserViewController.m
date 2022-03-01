@@ -782,7 +782,21 @@ static const CGFloat lineSpacing = 0.f; //间隔
         return;
     }
     [self deleteItemAtIndex:self.configuration.selectedIndex];
-    _pageControl.numberOfPages --;
+//    int currentPageNum = round(scrollView.contentOffset.x / (scrollView.frame.size.width + lineSpacing));
+//    switch (self.configuration.pageControlType) {
+//
+//        case AFPageControlTypeCircle:
+//            _pageControl.numberOfPages --;
+//            self.pageControl.currentPage = currentPageNum;
+//            break;
+//
+//        case AFPageControlTypeText:
+//            self.pageLabel.text = [NSString stringWithFormat:@"%d/%zd", currentPageNum + 1, self.totalNumberOfItems];
+//            break;
+//
+//        default:
+//            break;
+//    }
     [self.collectionView deleteItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:self.configuration.selectedIndex inSection:0]]];
     [self scrollViewDidScroll:self.collectionView];
 }

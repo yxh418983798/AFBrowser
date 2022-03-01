@@ -7,6 +7,7 @@
 
 #import "AFPlayer.h"
 #import <AVFoundation/AVFoundation.h>
+#import "AFBrowserViewController.h"
 #import "AFBrowserLoaderProxy.h"
 #import "AFBrowserItem.h"
 #import "AFBrowserConfiguration.h"
@@ -918,6 +919,12 @@ static int playerCount = 0;
 
 
 - (void)realPlay {
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(shouldPlayVideo:)]) {
+        if (![AFBrowserViewController.loaderProxy shouldPlayVideo:self.item]) {
+            [self pause];
+            return;
+        }
+    }
     self.status = AFPlayerStatusPlay;
     [self.player play];
     if ([self.configuration.delegate respondsToSelector:@selector(browser:willPlayVideoItem:)]) {

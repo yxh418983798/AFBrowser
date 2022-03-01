@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.7.4
-//  1、修复视频暂停时没有显示icon的bug
+//  Version：1.7.5
+//  1、新增代理 控制视频是否播放
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"
