@@ -749,15 +749,18 @@ static int playerCount = 0;
                 if (error) {
                     weakSelf.status == AFPlayerStatusNone;
                     [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载错误：%@，描述：%@", error, weakSelf.displayDescription]];
+                    if ([self.configuration.delegate respondsToSelector:@selector(browser:loadVideoFailed:error:)]) {
+                        [self.configuration.delegate browser:self.configuration.browserVc loadVideoFailed:self.item error:error];
+                    }
                 } else {
-
+                    NSString *path = [url hasPrefix:@"file://"] ? url : [NSString stringWithFormat:@"file://%@", url];
                     if (![weakSelf.configuration isEqualUrl:url toUrl:[AFDownloader filePathWithUrl:weakSelf.item.content]]) {
                         weakSelf.status == AFPlayerStatusNone;
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，URL已切换：%@，描述：%@", url, weakSelf.displayDescription]];
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，URL已切换：%@，描述：%@", path, weakSelf.displayDescription]];
                     } else if (url.length) {
-                        weakSelf.url = url;
+                        weakSelf.url = path;
                         [weakSelf prepareDone];
-                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，视频下载完成：%@，描述：%@", url, weakSelf.displayDescription]];
+                        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，视频下载完成：%@，描述：%@", path, weakSelf.displayDescription]];
                     } else {
                         weakSelf.status == AFPlayerStatusNone;
                         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[prepare]无状态，下载视频结果错误：url为空 , %@", weakSelf.displayDescription]];
@@ -913,6 +916,13 @@ static int playerCount = 0;
 //        [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[startPlay]隐藏图片, %@", self.displayDescription]];
     } else {
         [self readyToPlay];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            if (self.playerLayer.isReadyForDisplay) {
+                if (self.isPlay) {
+                    [self realPlay];
+                }
+            }
+        });
         NSLog(@"-------------------------- 播放器还没准备好 222--------------------------");
     }
 }

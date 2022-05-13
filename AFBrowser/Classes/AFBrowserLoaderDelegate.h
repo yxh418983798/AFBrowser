@@ -23,6 +23,9 @@
  */
 + (UIImage *)imageFromCacheForKey:(NSString *)key;
 
+/// 获取自定义下载视频的路径
++ (NSString *)filePathWithVideoUrl:(NSString *)url;
+
 /**
  * @brief 自定义加载图片
  *

@@ -7,6 +7,7 @@
 
 #import "AFDownloader.h"
 #include <CommonCrypto/CommonCrypto.h>
+#import "AFBrowserViewController.h"
 
 @interface AFDownloader () <NSURLSessionTaskDelegate, NSURLSessionDataDelegate>
 
@@ -88,6 +89,10 @@
 
 /// 完成下载的路径
 + (NSString *)filePathWithUrl:(NSString *)url {
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(filePathWithVideoUrl:)]) {
+        NSString *path = [AFBrowserViewController.loaderProxy filePathWithVideoUrl:url];
+        if (path.length) return path;
+    }
     NSString *cachesPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
     NSString *filePath = [NSString stringWithFormat:@"%@/af-download/video", cachesPath];
     if (![NSFileManager.defaultManager fileExistsAtPath:filePath]) {

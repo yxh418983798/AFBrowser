@@ -59,6 +59,11 @@
  */
 - (NSString *)browser:(AFBrowserViewController *)browser videoPathForItem:(AFBrowserItem *)item;
 
+/**
+ * @brief 视频下载失败
+ */
+- (void)browser:(AFBrowserViewController *)browser loadVideoFailed:(AFBrowserItem *)item error:(NSError *)error;
+
 
 #pragma mark - 转场相关
 

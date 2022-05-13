@@ -82,7 +82,7 @@
 
 #pragma mark - 加载视频
 + (void)loadVideo:(NSString *)videoUrl progress:(void (^)(NSProgress *))progress completion:(void (^)(NSString *, NSError *))completion {
-    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(loadVideo:completion:)]) {
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(loadVideo:progress:completion:)]) {
         [AFBrowserViewController.loaderProxy loadVideo:videoUrl progress:progress completion:completion];
     } else {
         if ([videoUrl containsString:@"https://"] || [videoUrl containsString:@"http://"]) {
