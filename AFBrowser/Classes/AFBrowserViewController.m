@@ -132,11 +132,15 @@ static const CGFloat lineSpacing = 0.f; //间隔
 //    if ([UIApplication sharedApplication].applicationState == UIApplicationStateBackground) {
 //        return;
 //    }
+    if (self.didViewAppear) {
+        [super viewDidLayoutSubviews];
+        return;
+    }
     if ([self itemAtIndex:self.configuration.selectedIndex].type != AFBrowserItemTypeVideo) {
         return;
     }
     self.isLayoutView = YES;
-//    NSLog(@"-------------------------- viewDidLayoutSubviews --------------------------");
+//    NSLog(@"-------------------------- viewDidLayoutSubviews:%@ --------------------------", self.collectionView);
     UICollectionViewFlowLayout *layout = (UICollectionViewFlowLayout *)self.collectionView.collectionViewLayout;
     layout.itemSize = CGSizeMake(UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);
     self.collectionView.frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width+lineSpacing, UIScreen.mainScreen.bounds.size.height);

@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：1.7.6
-//  1、视频自定义下载和缓存Bug
+//  Version：1.7.7
+//  1、视频播放ViewDidLayoutSubView重复调用问题
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"

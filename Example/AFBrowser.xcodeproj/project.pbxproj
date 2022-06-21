@@ -512,7 +512,7 @@
 				GCC_PREFIX_HEADER = "AFBrowser/AFBrowser-Prefix.pch";
 				INFOPLIST_FILE = "AFBrowser/AFBrowser-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
-				MARKETING_VERSION = 1.7.5;
+				MARKETING_VERSION = 1.7.7;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mostone.qiye;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -531,7 +531,7 @@
 				GCC_PREFIX_HEADER = "AFBrowser/AFBrowser-Prefix.pch";
 				INFOPLIST_FILE = "AFBrowser/AFBrowser-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
-				MARKETING_VERSION = 1.7.5;
+				MARKETING_VERSION = 1.7.7;
 				MODULE_NAME = ExampleApp;
 				PRODUCT_BUNDLE_IDENTIFIER = com.mostone.qiye;
 				PRODUCT_NAME = "$(TARGET_NAME)";
