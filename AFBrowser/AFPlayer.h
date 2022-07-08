@@ -10,6 +10,26 @@
 #import "AFPlayerBottomBar.h"
 #import "AFBrowserEnum.h"
 
+/// 播放器状态
+typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
+    AFPlayerStatusNone,         /// 初始状态
+    AFPlayerStatusPrepare,      /// 准备播放
+    AFPlayerStatusPrepareDone,  /// 准备完成
+    AFPlayerStatusReadToPlay,   /// 已经可以播放，此时隐藏封面
+    AFPlayerStatusPlay,         /// 播放中
+    AFPlayerStatusPause,        /// 暂停
+    AFPlayerStatusStop,         /// 停止
+    AFPlayerStatusFinished,     /// 播放结束
+};
+
+/// 播放器恢复
+typedef NS_ENUM(NSUInteger, AFPlayerResumeOption) {
+    AFPlayerResumeOptionNone,         /// 不恢复
+    AFPlayerResumeOptionAppBecomeActive, /// APP活跃
+    AFPlayerResumeOptionBrowserAppeared, /// 浏览器出现
+    AFPlayerResumeOptionOnNotification,
+};
+
 
 @class AFPlayer, AFBrowserVideoItem, AFBrowserConfiguration;
 
@@ -31,6 +51,8 @@
 - (void)tapActionInDisablePlayer:(AFPlayer *)player;
 
 @end
+
+
 
 
 
@@ -64,6 +86,9 @@
 
 @property (class) int          maxPlayer;
 
+/** 是否活跃，默认YES */
+@property (nonatomic, assign) BOOL          isActive;
+
 
 @property (nonatomic, assign) AFPlayerResumeOption          resumeOption;
 
@@ -90,6 +115,15 @@
  */
 + (AFPlayer *)playerWithItem:(AFBrowserVideoItem *)item configuration:(AFBrowserConfiguration *)configuration;
 
+
+
+
+- (BOOL)isReadyToPlay;
+
+/**
+ * @brief 准备播放
+ */
+//- (void)showCover;
 
 /**
  * @brief 准备播放
@@ -120,6 +154,8 @@
 
 - (BOOL)isSliderTouch;
 
+/// 释放播放器
+//- (void)releasePlayer;
 
 /// 返回转场动画使用的size
 - (CGSize)transitionSize;

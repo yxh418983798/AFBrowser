@@ -34,7 +34,7 @@
 
 /// 构造视频
 + (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height{
-    AFBrowserItem *item = [AFBrowserItem new];
+    AFBrowserVideoItem *item = [AFBrowserVideoItem new];
     item.content = video;
     item.coverImage = coverImage;
     item.type = AFBrowserItemTypeVideo;
@@ -84,6 +84,40 @@
 - (BOOL)isEqual:(AFBrowserItem *)item {
     return [self.content isEqual:item.content] && [self.coverImage isEqual:item.coverImage];
 }
+
+@end
+
+
+
+@implementation AFBrowserVideoItem
+
+//- (id)playerItem {
+//    return [AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.content];
+//}
+
+/// 更新状态
+- (void)updatePlayerStatus:(id)status{
+//    if (self.status == status) return;
+//    self.status = status;
+}
+
+- (void)updateItemStatus:(AFBrowserVideoItemStatus)itemStatus {
+    if (self.itemStatus == itemStatus) return;
+
+    switch (itemStatus) {
+        case AFBrowserVideoItemStatusLoaded: {
+            if (self.itemStatus < AFBrowserVideoItemStatusLoaded) {
+                self.itemStatus = AFBrowserVideoItemStatusLoaded;
+            }
+        }
+            break;
+            
+        default:
+            self.itemStatus = itemStatus;
+            break;
+    }
+}
+
 
 @end
 

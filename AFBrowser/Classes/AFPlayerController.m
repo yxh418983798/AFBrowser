@@ -109,7 +109,7 @@ static int playerCount = 0;
             AFPlayer *player = proxy.player;
 //            id controller = objc_getAssociatedObject(player, "AFPlayerController");
 //            if (player && controller) {
-                player.isActive = active;
+//                player.isActive = active;
 //            } else {
 //                NSLog(@"-------------------------- 发现错误！！ --------------------------");
 //            }

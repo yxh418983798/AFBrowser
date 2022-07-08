@@ -1,40 +1,24 @@
 //
-//  AFPlayer.h
-//  AFModule
+//  AFPlayerView.h
+//  AFBrowser
 //
-//  Created by alfie on 2020/3/9.
+//  Created by alfie on 2022/7/8.
 //
 //  视频播放器，基于AVPlayer封装
 
+#import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
 #import "AFPlayerBottomBar.h"
 #import "AFBrowserEnum.h"
+#import "AFPlayer.h"
+
+@class AFPlayerView, AFBrowserVideoItem, AFBrowserConfiguration;
 
 
-@class AFPlayer, AFBrowserVideoItem, AFBrowserConfiguration;
+@interface AFPlayerView : UIView
 
-@protocol AFPlayerDelegate <NSObject>
-
-/// 播放器准备完成，进入可播放状态，建议在这里进行play
-- (void)prepareDoneWithPlayer:(AFPlayer *)player;
-
-/// 播放结束，区别于Stop
-- (void)finishWithPlayer:(AFPlayer *)player;
-
-/// 点击Player的回调
-- (void)tapActionInPlayer:(AFPlayer *)player;
-
-/// dismissPlayer的回调
-- (void)dismissActionInPlayer:(AFPlayer *)player;
-
-/// 当player不可播放时，点击的回调，一般用于外部的提示
-- (void)tapActionInDisablePlayer:(AFPlayer *)player;
-
-@end
-
-
-
-@interface AFPlayer : UIView
+/** 播放器，默认使用单例，如果想支持多个视频同时播放，则需要重新构造AFPlayer，playerView.player = AFPlayer.new */
+@property (nonatomic, strong) AFPlayer            *player;
 
 /** 视频数据源 */
 @property (nonatomic, strong) AFBrowserVideoItem  *item;

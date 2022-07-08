@@ -10,6 +10,8 @@
 #import <UIKit/UIKit.h>
 #import "AFBrowserEnum.h"
 
+@class AVPlayerItem;
+
 @interface AFBrowserItem : NSObject
 
 /** 类型 */
@@ -29,18 +31,6 @@
 
 /** 空间大小 */
 @property (nonatomic, assign) CGFloat           size;
-
-/** 视频时长 */
-@property (assign, nonatomic) float             duration;
-
-/** 是否自动播放视频，默认NO */
-@property (assign, nonatomic) BOOL              autoPlay;
-
-/** 播放视频时，是否显示控制条，默认不显示 */
-@property (assign, nonatomic) BOOL              showVideoControl;
-
-/** 当前视频播放进度时间 */
-@property (nonatomic, assign) NSTimeInterval    currentTime;
 
 /** userInfo，自定义参数 */
 @property (strong, nonatomic) id                userInfo;
@@ -68,6 +58,18 @@
 
 /** 记录tag */
 @property (nonatomic, assign) NSInteger       originalTag;
+
+/** 视频时长 */
+@property (assign, nonatomic) float             duration;
+
+/** 是否自动播放视频，默认NO */
+@property (assign, nonatomic) BOOL              autoPlay;
+
+/** 播放视频时，是否显示控制条，默认不显示 */
+@property (assign, nonatomic) BOOL              showVideoControl;
+
+/** 当前视频播放进度时间 */
+@property (nonatomic, assign) NSTimeInterval    currentTime;
 
 
 - (BOOL)isEqualToItem:(AFBrowserItem *)item;
@@ -119,7 +121,33 @@
 @end
 
 
+#pragma mark - 视频Item
+@interface AFBrowserVideoItem : AFBrowserItem
 
+/** 是否循环播放，默认NO */
+@property (nonatomic, assign) BOOL            loop;
+
+/** localPath */
+@property (nonatomic, copy) NSString            *localPath;
+
+/** 数据状态 */
+@property (nonatomic, assign) AFBrowserVideoItemStatus  itemStatus;
+
+/** 数据状态 */
+@property (nonatomic, assign) AFPlayerStatus            playerStatus;
+
+/// 构造playerItem
+- (AVPlayerItem *)playerItem;
+
+/// 更新状态
+- (void)updatePlayerStatus:(AFPlayerStatus)status;
+- (void)updateItemStatus:(AFBrowserVideoItemStatus)itemStatus;
+
+
+@end
+
+
+#pragma mark - 自定义Item
 @interface AFBrowserCustomItem : AFBrowserItem
 
 /** view */

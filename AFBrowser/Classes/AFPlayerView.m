@@ -1,11 +1,11 @@
 //
-//  AFPlayer.m
-//  AFModule
+//  AFPlayerView.m
+//  AFBrowser
 //
-//  Created by alfie on 2020/3/9.
+//  Created by alfie on 2022/7/8.
 //
 
-#import "AFPlayer.h"
+#import "AFPlayerView.h"
 #import <AVFoundation/AVFoundation.h>
 #import "AFBrowserViewController.h"
 #import "AFBrowserLoaderProxy.h"
@@ -15,7 +15,7 @@
 
 static int const AFDownloadBlockCode = 6666;
 
-@interface AFPlayer ()
+@interface AFPlayerView ()
 
 /** contentView */
 @property (nonatomic, strong) UIView                  *contentView;
@@ -79,7 +79,7 @@ static NSString * const AFPlayerNotificationResumeAllPlayer = @"AFPlayerNotifica
 static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
 static int playerCount = 0;
 
-@implementation AFPlayer
+@implementation AFPlayerView
 
 #pragma mark - 构造方法
 /// 单例

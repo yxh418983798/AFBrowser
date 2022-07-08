@@ -99,6 +99,33 @@ typedef NS_ENUM(NSUInteger, AFTransitionStatus) {
     AFTransitionStatusPresented,    /// 全屏
 };
 
+/// 视频Item数据状态
+typedef NS_ENUM(NSUInteger, AFBrowserVideoItemStatus) {
+    AFBrowserVideoItemStatusDefault, ///< 初始状态
+    AFBrowserVideoItemStatusPreloading, ///< 预加载状态，以低优先级插入队列并下载音频/视频，完成后保存到本地，属于用户无感知的下载状态（不展示Loading）
+    AFBrowserVideoItemStatusLoading, ///< 主动触发的加载状态，以高优先级插入队列并下载音频/视频，完成后保存到本地，属于用户能感知的下载状态（展示Loading）
+    AFBrowserVideoItemStatusFailed, ///< 下载失败或解码失败
+    AFBrowserVideoItemStatusLoaded, ///< 下载完成
+    AFBrowserVideoItemStatusPrepare, ///< 数据准备状态（解码中）
+    AFBrowserVideoItemStatusPrepareDone, ///< 数据准备完成
+};
+
+/// 播放器状态
+typedef NS_ENUM(NSUInteger, AFPlayerStatus) {
+    AFPlayerStatusNormal,         /// 初始状态
+    AFPlayerStatusLoading,         /// 加载中
+    AFPlayerStatusPlay,         /// 播放中
+    AFPlayerStatusBlock,         /// 黑名单
+    AFPlayerStatusFailed,         /// 播放失败
+};
+
+/// 播放器恢复
+typedef NS_ENUM(NSUInteger, AFPlayerResumeOption) {
+    AFPlayerResumeOptionNone,         /// 不恢复
+    AFPlayerResumeOptionAppBecomeActive, /// APP活跃
+    AFPlayerResumeOptionBrowserAppeared, /// 浏览器出现
+    AFPlayerResumeOptionOnNotification,
+};
 
 
 #endif /* AFBrowserEnum_h */
