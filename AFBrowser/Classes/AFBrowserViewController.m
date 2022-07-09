@@ -248,7 +248,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
         AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
         [cell.player pause];
-        cell.player.status = AFPlayerStatusPlay;
         cell.player.resumeOption = AFPlayerResumeOptionBrowserAppeared;
     }
 }
@@ -853,7 +852,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         [self.collectionView layoutIfNeeded];
         cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
     }
-    cell.player = (AFPlayer *)transitionView;
+    cell.player = (AFPlayerView *)transitionView;
     return cell;
 }
 

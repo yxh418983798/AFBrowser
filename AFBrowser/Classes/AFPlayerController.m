@@ -11,7 +11,7 @@
 
 @interface AFPlayerControllerProxy : NSObject
 /** 播放器 */
-@property (nonatomic, weak) AFPlayer            *player;
+@property (nonatomic, weak) AFPlayerView            *player;
 /** 是否target的代理 */
 @property (nonatomic, assign) BOOL            isTargetProxy;
 @end
@@ -29,7 +29,7 @@
 @property (nonatomic, weak) AFPlayerControllerProxy            *af_controllerProxy;
 
 /** 播放器 */
-@property (nonatomic, strong) AFPlayer            *player;
+@property (nonatomic, strong) AFPlayerView            *player;
 
 @end
 
@@ -92,9 +92,9 @@ static int playerCount = 0;
 
 
 #pragma mark - UI
-- (AFPlayer *)player {
+- (AFPlayerView *)player {
     if (!_player) {
-        _player = [[AFPlayer alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
+        _player = [[AFPlayerView alloc] initWithFrame:(CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width, UIScreen.mainScreen.bounds.size.height))];
 //        objc_setAssociatedObject(_player, "AFPlayerController", self, OBJC_ASSOCIATION_ASSIGN);
     }
     return _player;
@@ -106,7 +106,7 @@ static int playerCount = 0;
     if (target) {
         NSMutableArray *proxyArray = objc_getAssociatedObject(target, "AFPlayerControllerProxyArray");
         for (AFPlayerControllerProxy *proxy in proxyArray) {
-            AFPlayer *player = proxy.player;
+            AFPlayerView *player = proxy.player;
 //            id controller = objc_getAssociatedObject(player, "AFPlayerController");
 //            if (player && controller) {
 //                player.isActive = active;
@@ -116,9 +116,9 @@ static int playerCount = 0;
         }
     } else {
         if (active) {
-            [AFPlayer resumeAllPlayer];
+            [AFPlayerView resumeAllPlayer];
         } else {
-            [AFPlayer pauseAllPlayer];
+            [AFPlayerView pauseAllPlayer];
         }
     }
 }

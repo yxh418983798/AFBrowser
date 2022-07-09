@@ -15,6 +15,12 @@
 
 @protocol AFPlayerDelegate <NSObject>
 
+/// 更新状态
+- (void)player:(AFPlayer *)player updatePlayerStatus:(AFPlayerStatus)status;
+
+/// 更新播放进度
+- (void)player:(AFPlayer *)player updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime animated:(BOOL)animated;
+
 /// 播放器准备完成，进入可播放状态，建议在这里进行play
 - (void)prepareDoneWithPlayer:(AFPlayer *)player;
 
@@ -34,13 +40,13 @@
 
 
 
-@interface AFPlayer : UIView
+@interface AFPlayer : NSObject
+
+/** 控制所有播放器，设置为false则会暂停所有播放器，必须设置回true，否则调用play也不会播放 */
+@property (class) BOOL  enable;
 
 /** 视频数据源 */
 @property (nonatomic, strong) AFBrowserVideoItem  *item;
-
-/** 播放器状态 */
-@property (nonatomic, assign) AFPlayerStatus      status;
 
 /** 代理 */
 @property (weak, nonatomic) id <AFPlayerDelegate> delegate;
@@ -71,6 +77,9 @@
 /// 单例
 + (instancetype)sharePlayer;
 
+/// 播放器layer
+- (AVPlayerLayer *)playerLayer;
+
 /*!
  * @brief 播放视频
  *
@@ -81,45 +90,38 @@
  * 如果item未下载完成，AFPlayer会自动加入下载任务并优先下载当前的item
  * 下载期间如果用户未切换或暂停、停止播放item，则AFPlayer在下载完成后会自动播放
  */
-- (void)playVideoItem:(AFBrowserVideoItem *)item completion:(void(^)(NSError *error))completion;
+- (void)playVideoItem:(AFBrowserVideoItem *)item superview:(UIView *)superview completion:(void(^)(NSError *error))completion;
 
-
-
-/**
- * @brief 构造播放器
- */
-+ (AFPlayer *)playerWithItem:(AFBrowserVideoItem *)item configuration:(AFBrowserConfiguration *)configuration;
-
-
-/**
- * @brief 准备播放
- */
-- (void)prepare;
-
-/**
- * @brief 播放视频
- */
-- (void)play;
-
-/**
+/*!
  * @brief 暂停视频
  */
 - (void)pause;
 
-/**
+/*!
  * @brief 停止视频
  */
 - (void)stop;
 
-/**
- * @brief 跳转进度
- */
+/// 跳转进度
 - (void)seekToTime:(NSTimeInterval)time;
 
+/// 更新布局
+- (void)layout;
+
+/// 播放器是否已准备完成
+- (BOOL)isReadyForDisplay;
+
+/// 时长
+- (float)duration;
+
+/// 开始下载
+- (void)downloadItem:(AFBrowserVideoItem *)item;
+
+/// 销毁播放器
 - (void)destroy;
 
+/// 是否在拖拽进度
 - (BOOL)isSliderTouch;
-
 
 /// 返回转场动画使用的size
 - (CGSize)transitionSize;

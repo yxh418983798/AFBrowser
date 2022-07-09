@@ -7,7 +7,7 @@
 //  管理播放器的类
 
 #import <Foundation/Foundation.h>
-#import "AFPlayer.h"
+#import "AFPlayerView.h"
 
 ///// 播放器活跃属性
 //typedef NS_ENUM(NSUInteger, AFPlayerActiveOption) {
@@ -23,7 +23,7 @@
 @property (nonatomic, weak) id            target;
 
 /** 播放器 */
-- (AFPlayer *)player;
+- (AFPlayerView *)player;
 
 
 /**

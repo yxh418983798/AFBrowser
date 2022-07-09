@@ -10,15 +10,36 @@
 #import <AVFoundation/AVFoundation.h>
 #import "AFPlayerBottomBar.h"
 #import "AFBrowserEnum.h"
-#import "AFPlayer.h"
 
 @class AFPlayerView, AFBrowserVideoItem, AFBrowserConfiguration;
+
+@protocol AFPlayerViewDelegate <NSObject>
+
+/// 更新状态
+- (void)playerView:(AFPlayerView *)playerView updatePlayerStatus:(AFPlayerStatus)status;
+
+/// 更新播放进度
+- (void)playerView:(AFPlayerView *)playerView updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime animated:(BOOL)animated;
+
+/// 播放结束，区别于Stop
+- (void)playFinishOnPlayerView:(AFPlayerView *)playerView;
+
+/// 点击Player的回调
+- (void)tapActionOnPlayerView:(AFPlayerView *)playerView;
+
+/// dismissPlayer的回调
+- (void)dismissActionOnPlayerView:(AFPlayerView *)playerView;
+
+/// 当player不可播放时，点击的回调，一般用于外部的提示
+- (void)tapActionOnDisablePlayerView:(AFPlayerView *)playerView;
+
+@end
 
 
 @interface AFPlayerView : UIView
 
-/** 播放器，默认使用单例，如果想支持多个视频同时播放，则需要重新构造AFPlayer，playerView.player = AFPlayer.new */
-@property (nonatomic, strong) AFPlayer            *player;
+/** 控制所有播放器，设置为false则会暂停所有播放器，必须设置回true，否则调用play也不会播放 */
+@property (class) BOOL  enable;
 
 /** 视频数据源 */
 @property (nonatomic, strong) AFBrowserVideoItem  *item;
@@ -27,10 +48,10 @@
 @property (nonatomic, assign) AFPlayerStatus      status;
 
 /** 代理 */
-@property (weak, nonatomic) id <AFPlayerDelegate> delegate;
+@property (weak, nonatomic) id <AFPlayerViewDelegate> delegate;
 
 /** 代理 */
-@property (weak, nonatomic) id <AFPlayerDelegate> browserDelegate;
+@property (weak, nonatomic) id <AFPlayerViewDelegate> browserDelegate;
 
 /** 底部工具栏 */
 @property (strong, nonatomic) AFPlayerBottomBar   *bottomBar;
@@ -44,16 +65,15 @@
 /** AFBrowserConfiguration */
 @property (nonatomic, weak) AFBrowserConfiguration *configuration;
 
-@property(copy) AVLayerVideoGravity videoGravity;
-
-@property (class) int          maxPlayer;
+/** 填充模式 */
+@property (nonatomic, strong) AVLayerVideoGravity  videoGravity;
 
 
 @property (nonatomic, assign) AFPlayerResumeOption          resumeOption;
 
 
-/// 单例
-+ (instancetype)sharePlayer;
+/// 构造方法，share：是否使用单例播放器，默认true
++ (instancetype)playerViewWithSharePlayer:(BOOL)share;
 
 /*!
  * @brief 播放视频
@@ -67,23 +87,20 @@
  */
 - (void)playVideoItem:(AFBrowserVideoItem *)item completion:(void(^)(NSError *error))completion;
 
-
-
 /**
  * @brief 构造播放器
  */
-+ (AFPlayer *)playerWithItem:(AFBrowserVideoItem *)item configuration:(AFBrowserConfiguration *)configuration;
-
++ (AFPlayerView *)playerWithItem:(AFBrowserVideoItem *)item configuration:(AFBrowserConfiguration *)configuration;
 
 /**
  * @brief 准备播放
+ *
+ * @discussion
+ * 会触发预下载
+ * 下载完成后如果播放器不是单例，则会触发视频解码
+ * 如果播放器是单例，只会解码当前播放器的视频数据
  */
 - (void)prepare;
-
-/**
- * @brief 播放视频
- */
-- (void)play;
 
 /**
  * @brief 暂停视频
@@ -123,7 +140,7 @@
 /// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer;
 
-+ (AFPlayer *)cachePlayerWithItem:(AFBrowserVideoItem *)item;
++ (AFPlayerView *)cachePlayerWithItem:(AFBrowserVideoItem *)item;
 
 @end
 

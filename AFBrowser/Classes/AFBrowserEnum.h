@@ -127,5 +127,11 @@ typedef NS_ENUM(NSUInteger, AFPlayerResumeOption) {
     AFPlayerResumeOptionOnNotification,
 };
 
+/// 播放器暂停原因
+typedef NS_ENUM(NSUInteger, AFPlayerPauseReason) {
+    AFPlayerPauseReasonDefault,    ///< 默认
+    AFPlayerPauseReasonByPauseAll, ///< 调用了暂停所有播放器
+};
+
 
 #endif /* AFBrowserEnum_h */

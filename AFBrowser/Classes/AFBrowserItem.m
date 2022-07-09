@@ -8,6 +8,7 @@
 
 #import "AFBrowserItem.h"
 #import "AFDownloader.h"
+#import <AVFoundation/AVFoundation.h>
 
 @interface AFBrowserItem ()
 
@@ -91,19 +92,47 @@
 
 @implementation AFBrowserVideoItem
 
-//- (id)playerItem {
-//    return [AVPlayerItem playerItemWithURL:[NSURL URLWithString:self.content];
-//}
+- (AVPlayerItem *)playerItem {
+    if (!_playerItem && self.localPath) {
+        NSString *url;
+        if ([self.localPath hasPrefix:@"file://"]) {
+            url = self.localPath;
+        } else if ([self.localPath hasPrefix:@"/var/mobile/"]) {
+            url = [NSString stringWithFormat:@"file://%@", self.localPath];
+        }
+        _playerItem = [AVPlayerItem playerItemWithURL:[NSURL URLWithString:url]];
+    }
+    return _playerItem;
+}
+
+/// 获取下载完成后的本地路径
+- (NSString *)localPath {
+    NSString *url;
+    if ([self.content isKindOfClass:NSString.class]) {
+        url = self.content;
+    } else if ([self.content isKindOfClass:NSURL.class]) {
+        url = [(NSURL *)self.content absoluteString];
+    }
+    if (!_localPath && url.length) {
+        if ([url containsString:NSHomeDirectory()]) {
+            _localPath = url;
+        } else if (![NSURL URLWithString:url].scheme) {
+            _localPath = [NSString stringWithFormat:@"%@%@", NSHomeDirectory(), url];
+        } else {
+            _localPath = [AFDownloader filePathWithUrl:url];
+        }
+    }
+    return _localPath;
+}
 
 /// 更新状态
-- (void)updatePlayerStatus:(id)status{
-//    if (self.status == status) return;
-//    self.status = status;
+- (void)updatePlayerStatus:(AFPlayerStatus)status {
+    if (self.playerStatus == status) return;
+    self.playerStatus = status;
 }
 
 - (void)updateItemStatus:(AFBrowserVideoItemStatus)itemStatus {
     if (self.itemStatus == itemStatus) return;
-
     switch (itemStatus) {
         case AFBrowserVideoItemStatusLoaded: {
             if (self.itemStatus < AFBrowserVideoItemStatusLoaded) {
@@ -111,7 +140,6 @@
             }
         }
             break;
-            
         default:
             self.itemStatus = itemStatus;
             break;

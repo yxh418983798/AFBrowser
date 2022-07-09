@@ -33,7 +33,7 @@
 @end
 
 
-@interface AFBrowserCollectionViewCell () <UIScrollViewDelegate, UIGestureRecognizerDelegate, AFPlayerDelegate>
+@interface AFBrowserCollectionViewCell () <UIScrollViewDelegate, UIGestureRecognizerDelegate, AFPlayerViewDelegate>
 
 /** 图片容器 */
 @property (nonatomic, strong) UIView                 *imageContainerView;
@@ -129,20 +129,17 @@ static UIImage * DefaultPlaceholderImage() {
 
 
 #pragma mark - UI
-- (AFPlayer *)player {
+- (AFPlayerView *)player {
     if (!_player) {
         if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
             if ([self.configuration.delegate respondsToSelector:@selector(browser:viewForTransitionAtIndex:)]) {
                 _player = [self.configuration.delegate browser:self.delegate viewForTransitionAtIndex:self.indexPath.row];
             }
-            if (![_player isKindOfClass:AFPlayer.class]) {
-                _player = [AFPlayer playerWithItem:self.item configuration:self.configuration];
+            if (![_player isKindOfClass:AFPlayerView.class]) {
+                _player = [AFPlayerView playerViewWithSharePlayer:YES];
             }
         } else {
-            AFPlayerController *controller = [AFPlayerController controllerWithTarget:self.delegate];
-            _player = controller.player;
-            _player.configuration = self.configuration;
-            _player.item = self.item;
+            _player = [AFPlayerView playerViewWithSharePlayer:YES];
         }
         for (UIGestureRecognizer *gestureRecognizer in _player.gestureRecognizers) {
             if ([gestureRecognizer isKindOfClass:UILongPressGestureRecognizer.class]) {
@@ -525,7 +522,7 @@ static UIImage * DefaultPlaceholderImage() {
             self.player.item = item;
 //            self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
             self.player.browserDelegate = self;
-            [self.player prepare];
+            [self.player prepare]; 
             [self resizeSubviewSize];
         }
             break;
@@ -577,7 +574,7 @@ static UIImage * DefaultPlaceholderImage() {
     if ([@(self.indexPath.item) isEqualToNumber:notification.object]) {
         if (self.item.autoPlay) {
             NSLog(@"-------------------------- 播放:%@ --------------------------", self.player);
-            [self.player play];
+            [self.player playVideoItem:self.item completion:nil];
             if (self.configuration.playOption == AFBrowserPlayOptionNeverAutoPlay) {
                 self.item.autoPlay = NO;
             }
@@ -610,14 +607,14 @@ static UIImage * DefaultPlaceholderImage() {
 
 #pragma mark - AFPlayerDelegate
 /// 点击cell
-- (void)tapActionInPlayer:(AFPlayer *)player {
+- (void)tapActionOnPlayerView:(AFPlayerView *)playerView {
     if ([self.delegate respondsToSelector:@selector(singleTapAction)]) {
         [self.delegate singleTapAction];
     }
 }
 
 /// dismissPlayer的回调
-- (void)dismissActionInPlayer:(AFPlayer *)player {
+- (void)dismissActionOnPlayerView:(AFPlayerView *)playerView {
     if ([self.delegate respondsToSelector:@selector(dismissActionAtCollectionViewCell:)]) {
         [self.delegate dismissActionAtCollectionViewCell:self];
     }

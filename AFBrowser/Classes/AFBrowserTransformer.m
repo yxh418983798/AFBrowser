@@ -8,7 +8,7 @@
 
 #import "AFBrowserTransformer.h"
 #import "AFBrowserItem.h"
-#import "AFPlayer.h"
+#import "AFPlayerView.h"
 #import "AFBrowserLoaderProxy.h"
 
 @interface AFBrowserTransformer () <UIGestureRecognizerDelegate>
@@ -71,7 +71,7 @@
 @property (nonatomic, strong) UIPercentDrivenInteractiveTransition *percentTransition;
 
 /** player */
-@property (nonatomic, weak) AFPlayer            *player;
+@property (nonatomic, weak) AFPlayerView      *player;
 
 /** 异常情况下，重置下view */
 @property (nonatomic, assign) BOOL            shouldReset;
@@ -142,10 +142,10 @@
         }
         return transitionView;
     } else {
-        AFPlayer *player = [self.delegate transitionViewForPresentedController];
+        AFPlayerView *player = [self.delegate transitionViewForPresentedController];
         return player;
 //        if (self.configuration.transitionStyle == AFBrowserTransitionStyleContinuousVideo) {
-//            return [AFPlayer playerWithItem:item configuration:self.configuration];
+//            return [AFPlayerView playerWithItem:item configuration:self.configuration];
 //        }
     }
 }
@@ -260,7 +260,7 @@
         transitionView.frame = transitionFrame;
         self.trasitionViewOriginalFrame = transitionFrame;
         [containerView addSubview:transitionView];
-        imageSize = [(AFPlayer *)transitionView transitionSize];
+        imageSize = [(AFPlayerView *)transitionView transitionSize];
         // 全屏自适应填充模式
         CGFloat height = UIScreen.mainScreen.bounds.size.height;
         resultFrame = UIScreen.mainScreen.bounds;
@@ -536,7 +536,7 @@
     fromView.hidden = YES;
     /// 当视频比例和外部的容器比例不一致的时候，计算出正确的最终的frame
     CGRect resultFrame = sourceFrame;
-    self.player = (AFPlayer *)self.transitionView;
+    self.player = (AFPlayerView *)self.transitionView;
     self.player.showVideoControl = NO;
     AVLayerVideoGravity gravity = self.player.videoGravity;
     if (!self.isInteractive && item.width > 0 && sourceFrame.size.width > 0 && item.height/item.width != sourceFrame.size.height/sourceFrame.size.width) {
@@ -841,8 +841,8 @@ static CGRect beginFrame;
                         self.percentTransition = nil;
                     }];
                 } else {
-                    if ([self.transitionView isKindOfClass:AFPlayer.class]) {
-                        AFPlayer *player = (AFPlayer *)self.transitionView;
+                    if ([self.transitionView isKindOfClass:AFPlayerView.class]) {
+                        AFPlayerView *player = (AFPlayerView *)self.transitionView;
                         if (item.width > 0 && sourceFrame.size.width > 0 && item.height/item.width != sourceFrame.size.height/sourceFrame.size.width) {
                             player.videoGravity = AVLayerVideoGravityResize;
                             CGRect frame = self.playerFrame;

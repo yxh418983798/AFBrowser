@@ -7,7 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
-#import "AFPlayer.h"
+#import "AFPlayerView.h"
 
 @class AFBrowserCollectionViewCell, AFBrowserItem, AFBrowserConfiguration;
 
@@ -44,7 +44,7 @@
 @property (nonatomic, strong) UIImageView   *imageView;
 
 /** 播放器 */
-@property (strong, nonatomic) AFPlayer      *player;
+@property (strong, nonatomic) AFPlayerView  *player;
 
 /** 自定义视图 */
 @property (nonatomic, weak) UIView        *customView;

@@ -136,8 +136,12 @@
 /** 数据状态 */
 @property (nonatomic, assign) AFPlayerStatus            playerStatus;
 
-/// 构造playerItem
-- (AVPlayerItem *)playerItem;
+/** 暂停原因 */
+@property (nonatomic, assign) AFPlayerPauseReason    pauseReason;
+
+/** playerItem */
+@property (nonatomic, strong) AVPlayerItem            *playerItem;
+
 
 /// 更新状态
 - (void)updatePlayerStatus:(AFPlayerStatus)status;
