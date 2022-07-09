@@ -18,6 +18,9 @@ static int const AFDownloadBlockCode = 6666;
 
 @interface AFPlayerView () <AFPlayerDelegate>
 
+/** 视频数据源 */
+@property (nonatomic, strong) AFBrowserVideoItem      *item;
+
 /** 播放器 */
 @property (nonatomic, strong) AFPlayer                *player;
 
@@ -280,7 +283,7 @@ static int const AFDownloadBlockCode = 6666;
     if (!_playBtn) {
         _playBtn = [UIButton new];
         NSBundle *bundle = [NSBundle bundleWithURL:[[NSBundle bundleForClass:self.class] URLForResource:@"AFBrowser" withExtension:@"bundle"]];
-        [_playBtn setBackgroundImage:[UIImage imageNamed:@"browser_player_icon" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
+        [_playBtn setImage:[UIImage imageNamed:@"browser_player_icon" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
         [_playBtn addTarget:self action:@selector(playBtnAction:) forControlEvents:(UIControlEventTouchUpInside)];
     }
     return _playBtn;
@@ -351,8 +354,11 @@ static int const AFDownloadBlockCode = 6666;
 
 #pragma mark - 预加载
 /// 准备播放
-- (void)prepare {
-    
+- (void)prepareVideoItem:(AFBrowserVideoItem *)item {
+    if (self.item != item) {
+        self.item = item;
+        [self attachCoverImage:item.coverImage];
+    }
 }
 
 
@@ -393,6 +399,7 @@ static int const AFDownloadBlockCode = 6666;
     }
     // 更新封面图
     if (self.item != item) {
+        self.item = item;
         [self attachCoverImage:item.coverImage];
     }
     [self.player playVideoItem:item superview:self completion:completion];
@@ -524,6 +531,7 @@ static int const AFDownloadBlockCode = 6666;
     switch (status) {
             // 加载中
         case AFPlayerStatusLoading: {
+            NSLog(@"-------------------------- 加载中 --------------------------");
             [self.activityView startAnimating];
             self.coverImgView.hidden = NO;
             self.playBtn.hidden = YES;
@@ -532,6 +540,7 @@ static int const AFDownloadBlockCode = 6666;
             
             // 播放中
         case AFPlayerStatusPlay: {
+            NSLog(@"-------------------------- 播放中 --------------------------");
             [self.activityView stopAnimating];
             self.coverImgView.hidden = YES;
             self.playBtn.hidden = YES;
@@ -540,6 +549,7 @@ static int const AFDownloadBlockCode = 6666;
 
             // 初始状态/暂停
         default: {
+            NSLog(@"-------------------------- 停止播放 --------------------------");
             if (_showVideoControl) {
                 self.bottomBar.playBtn.selected = NO;
             }

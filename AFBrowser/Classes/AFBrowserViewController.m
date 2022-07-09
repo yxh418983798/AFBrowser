@@ -8,6 +8,7 @@
 
 #import "AFBrowserViewController.h"
 #import "AFBrowserCollectionViewCell.h"
+#import "AFPlayer.h"
 #import "AFBrowserTransformer.h"
 #import "AFBrowserLoaderProxy.h"
 
@@ -234,6 +235,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
 - (void)dealloc {
 //    NSLog(@"-------------------------- 浏览器释放了 --------------------------");
     UIApplication.sharedApplication.statusBarStyle = self.lastStatusBarStyle;
+    if (self.currentItem == AFPlayer.sharePlayer.item) {
+        [AFPlayer.sharePlayer stop];
+    }
     if ([self.configuration.delegate respondsToSelector:@selector(didDismissBrowser:)]) {
         [self.configuration.delegate didDismissBrowser:self];
     }
@@ -608,7 +612,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
             AFBrowserItem *item = [self itemAtIndex:currentPageNum];
             if (item.type == AFBrowserItemTypeVideo) {
                 AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
-                [cell.player pause];
+                [cell.player stop];
             }
         }
         if ([self.configuration.delegate respondsToSelector:@selector(browser:didScroll:atIndex:)]) {

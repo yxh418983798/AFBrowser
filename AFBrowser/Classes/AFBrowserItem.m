@@ -119,7 +119,7 @@
         } else if (![NSURL URLWithString:url].scheme) {
             _localPath = [NSString stringWithFormat:@"%@%@", NSHomeDirectory(), url];
         } else {
-            _localPath = [AFDownloader filePathWithUrl:url];
+            _localPath = [AFDownloader videoPathWithUrl:url];
         }
     }
     return _localPath;

@@ -27,9 +27,6 @@
 /** 播放视频时，是否显示控制条，默认NO */
 @property (assign, nonatomic) BOOL                     showVideoControl;
 
-/** 播放视频时，是否无限循环播放，默认NO */
-@property (assign, nonatomic) BOOL                     infiniteLoop;
-
 /** 转场时，是否隐藏源视图，默认NO */
 @property (assign, nonatomic) BOOL                     hideSourceViewWhenTransition;
 
@@ -113,9 +110,6 @@
 
 /// 播放视频时，是否显示控制条，默认不显示
 - (AFBrowserConfiguration * (^)(BOOL))makeShowVideoControl;
-
-/// 播放视频时，是否无限循环播放，默认NO
-- (AFBrowserConfiguration * (^)(BOOL))makeInfiniteLoop;
 
 /// 转场时，是否隐藏源视图，默认YES
 - (AFBrowserConfiguration * (^)(BOOL))makeHideSourceViewWhenTransition;

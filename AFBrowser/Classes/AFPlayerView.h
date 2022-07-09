@@ -41,9 +41,6 @@
 /** 控制所有播放器，设置为false则会暂停所有播放器，必须设置回true，否则调用play也不会播放 */
 @property (class) BOOL  enable;
 
-/** 视频数据源 */
-@property (nonatomic, strong) AFBrowserVideoItem  *item;
-
 /** 播放器状态 */
 @property (nonatomic, assign) AFPlayerStatus      status;
 
@@ -71,9 +68,21 @@
 
 @property (nonatomic, assign) AFPlayerResumeOption          resumeOption;
 
+/// 当前视频Item
+- (AFBrowserVideoItem *)item;
 
 /// 构造方法，share：是否使用单例播放器，默认true
 + (instancetype)playerViewWithSharePlayer:(BOOL)share;
+
+/**
+ * @brief 准备播放
+ *
+ * @discussion
+ * 会触发预下载
+ * 下载完成后如果播放器不是单例，则会触发视频解码
+ * 如果播放器是单例，只会解码当前播放器的视频数据
+ */
+- (void)prepareVideoItem:(AFBrowserVideoItem *)item;
 
 /*!
  * @brief 播放视频
@@ -86,21 +95,6 @@
  * 下载期间如果用户未切换或暂停、停止播放item，则AFPlayer在下载完成后会自动播放
  */
 - (void)playVideoItem:(AFBrowserVideoItem *)item completion:(void(^)(NSError *error))completion;
-
-/**
- * @brief 构造播放器
- */
-+ (AFPlayerView *)playerWithItem:(AFBrowserVideoItem *)item configuration:(AFBrowserConfiguration *)configuration;
-
-/**
- * @brief 准备播放
- *
- * @discussion
- * 会触发预下载
- * 下载完成后如果播放器不是单例，则会触发视频解码
- * 如果播放器是单例，只会解码当前播放器的视频数据
- */
-- (void)prepare;
 
 /**
  * @brief 暂停视频
@@ -140,7 +134,6 @@
 /// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer;
 
-+ (AFPlayerView *)cachePlayerWithItem:(AFBrowserVideoItem *)item;
 
 @end
 

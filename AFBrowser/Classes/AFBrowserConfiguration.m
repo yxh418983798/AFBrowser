@@ -112,13 +112,6 @@ static UIDeviceOrientation *_lastOrientation;
     };
 }
 
-- (AFBrowserConfiguration * (^)(BOOL))makeInfiniteLoop {
-    return ^id(BOOL infiniteLoop) {
-        self.infiniteLoop = infiniteLoop;
-        return self;
-    };
-}
-
 - (AFBrowserConfiguration * (^)(BOOL))makeHideSourceViewWhenTransition {
     return ^id(BOOL hideSourceViewWhenTransition) {
         self.hideSourceViewWhenTransition = hideSourceViewWhenTransition;

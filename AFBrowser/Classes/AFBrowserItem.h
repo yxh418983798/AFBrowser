@@ -110,13 +110,13 @@
  * @param width       视频宽度，可空
  * @param height      视频高度，可空
  */
-+ (instancetype)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height;
++ (__kindof AFBrowserItem *)itemWithVideo:(id)video coverImage:(id)coverImage duration:(CGFloat)duration width:(CGFloat)width height:(CGFloat)height;
 
 
 /**
  * @brief 构造自定义视图
  */
-+ (instancetype)itemWithCustomView:(UIView *)view;
++ (__kindof AFBrowserItem *)itemWithCustomView:(UIView *)view;
 
 @end
 

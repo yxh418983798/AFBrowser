@@ -79,7 +79,7 @@ static int playerCount = 0;
 - (void)applicationDidReceiveMemoryWarningNotification {
     NSLog(@"-------------------------- 收到内存警告:%@ --------------------------", self.item);
 }
-
+ 
 - (void)layout {
     [CATransaction begin];
     [CATransaction setAnimationDuration:0];
@@ -252,6 +252,7 @@ static int playerCount = 0;
 #pragma mark - 更新UI
 /// 根据状态，更新UI
 - (void)updatePlayerStatus:(AFPlayerStatus)status {
+    [self.item updatePlayerStatus:status];
     if ([self.delegate respondsToSelector:@selector(player:updatePlayerStatus:)]) {
         [self.delegate player:self updatePlayerStatus:status];
     }
@@ -292,38 +293,27 @@ static int playerCount = 0;
     }
 }
 
-- (void)checkFirstFrame {
-    if (!self.didFirstFrame) {
-        if (self.playerLayer.isReadyForDisplay) {
-            self.didFirstFrame = YES;
-            [self updatePlayerStatus:(AFPlayerStatusPlay)];
+- (void)onFirstFrame {
+    if (self.item.playerStatus == AFPlayerStatusPlay) return;
+    // 播放结束的时候也会走进onFirstFrame，此时需要过滤结束的状态，通过rate==0来判断
+    if (self.player.rate == 0) return;
+    if (self.playerLayer.isReadyForDisplay) {
+        if (self.player.currentItem.status != AVPlayerItemStatusReadyToPlay) {
+            NSLog(@"-------------------------- 错误:%f --------------------------", self.player.rate);
         }
+        NSLog(@"-------------------------- 首帧回调成功:%f --------------------------", self.player.rate);
+        [self updatePlayerStatus:(AFPlayerStatusPlay)];
+    } else {
+        NSLog(@"-------------------------- 首帧回调，播放器未准备好:%f --------------------------", self.player.rate);
     }
 }
 
 
 #pragma mark - 下载
-///// 预加载
-//+ (void)preloadingItem:(MWAudioItem *)item {
-//    [self.sharePlayer preloadingItem:item];
-//}
-//
-///// 预加载音视频数据，下载完成后自动保存到本地，不会播放
-//- (void)preloadingItem:(MWAudioItem *)item {
-//    [MWAudioPlayer safe_performAsyncBlock:^{
-//        if (!item) return;
-//
-//        if (item.localPath.length) {
-//            // 已下载完成，修改状态为已下载
-//            [item updateItemStatus:MWPlayerItemStatusLoaded];
-//        } else {
-//            // 如果已经处于加载中，忽略
-//            if (item.itemStatus == MWPlayerItemStatusPreloading || item.itemStatus == MWPlayerItemStatusLoading) return;
-//            // 开始或继续下载任务
-//            [self downloadItem:item priority:MWDownloadPriorityLow];
-//        }
-//    }];
-//}
+/// 预加载
++ (void)preloadingItem:(AFBrowserVideoItem *)item {
+    [AFBrowserLoaderProxy preloadingVideo:item.content];
+}
 
 /// 开始下载
 - (void)downloadItem:(AFBrowserVideoItem *)item {
@@ -345,12 +335,10 @@ static int playerCount = 0;
     [loadingItem updateItemStatus:AFBrowserVideoItemStatusFailed];
     if (loadingItem == self.item) {
         AFPlayerStatus status = block ? AFPlayerStatusBlock : AFPlayerStatusFailed;
-        [loadingItem updatePlayerStatus:status];
         [self updatePlayerStatus:status];
         [self completionError:error];
     } else {
         AFPlayerStatus status = block ? AFPlayerStatusBlock : AFPlayerStatusNormal;
-        [loadingItem updatePlayerStatus:status];
         [self updatePlayerStatus:status];
     }
     if ([self.configuration.delegate respondsToSelector:@selector(browser:loadVideoFailed:error:)]) {
@@ -407,7 +395,6 @@ static int playerCount = 0;
         //                NSError *error = [NSError errorWithDomain:path code:80401 userInfo:@{@"msg" : @"解码失败"}];
         NSLog(@"-------------------------- 解码失败：%@ -- %@ --------------------------", error, selectedItem.content);
         [selectedItem updateItemStatus:AFBrowserVideoItemStatusFailed];
-        [selectedItem updatePlayerStatus:AFPlayerStatusFailed];
         [self updatePlayerStatus:AFPlayerStatusFailed];
         [self completionError:error];
         return;
@@ -479,7 +466,7 @@ static int playerCount = 0;
     } else {
         // 未完成下载，开启下载任务并提高下载优先级
         [self.item updateItemStatus:AFBrowserVideoItemStatusLoading];
-        [self.item updatePlayerStatus:AFPlayerStatusLoading];
+        [self updatePlayerStatus:AFPlayerStatusLoading];
         [self downloadItem:self.item];
     }
 }
@@ -501,7 +488,7 @@ static int playerCount = 0;
     // 切换item
     if (self.configuration && self.configuration.transitionStyle != AFBrowserTransitionStyleContinuousVideo && self.configuration.currentItem != self.item) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[play]播放错误，已经切换到其他Item, %@", self.displayDescription]];
-        [self pause];
+        [self stop];
         return;
     }
     // 开关关闭
@@ -548,7 +535,6 @@ static int playerCount = 0;
     [self layout];
     self.item.pauseReason = AFPlayerPauseReasonDefault;
     [self.item updateItemStatus:AFBrowserVideoItemStatusPrepareDone];
-    [self.item updatePlayerStatus:AFPlayerStatusPlay];
     if ([self.configuration.delegate respondsToSelector:@selector(browser:willPlayVideoItem:)]) {
         [self.configuration.delegate browser:[self.browserDelegate performSelector:@selector(delegate)] willPlayVideoItem:self.item];
     }
@@ -559,7 +545,6 @@ static int playerCount = 0;
 //    if (!self.playerLayer.superlayer) {
 //        [self.layer addSublayer:self.playerLayer];
 //    }
-    [self updatePlayerStatus:(AFPlayerStatusPlay)];
 //    NSLog(@"-------------------------- 开始播放 --------------------------", self.item.content);
 }
 
@@ -574,12 +559,11 @@ static int playerCount = 0;
 - (void)pausePlay {
     self.item.pauseReason = AFPlayerPauseReasonDefault;
     self.item.currentTime = self.item.progress * self.duration;
-    [self.item updatePlayerStatus:AFPlayerStatusNormal];
-    if (self.item.itemStatus > AFBrowserVideoItemStatusLoaded) {
-        self.item.itemStatus = AFBrowserVideoItemStatusLoaded;
-    }
-    [self.player pause];
     [self updatePlayerStatus:(AFPlayerStatusNormal)];
+//    if (self.item.itemStatus > AFBrowserVideoItemStatusLoaded) {
+//        self.item.itemStatus = AFBrowserVideoItemStatusLoaded;
+//    }
+    [self.player pause];
 }
 
 
@@ -587,12 +571,11 @@ static int playerCount = 0;
 - (void)stop {
     self.item.progress = 0;
     [self seekToTime:0.f];
-    [self.item updatePlayerStatus:AFPlayerStatusNormal];
+    [self.player pause];
     if (self.item.itemStatus > AFBrowserVideoItemStatusLoaded) {
         self.item.itemStatus = AFBrowserVideoItemStatusLoaded;
     }
-    [self.player pause];
-    [self updatePlayerStatus:(AFPlayerStatusNormal)];
+    [self updatePlayerStatus:AFPlayerStatusNormal];
 }
 
 
@@ -601,12 +584,9 @@ static int playerCount = 0;
     self.item.progress = 0;
     [self seekToTime:0.f];
     if (!self.item.loop) {
-        [self.item updatePlayerStatus:AFPlayerStatusNormal];
-        if (self.item.itemStatus > AFBrowserVideoItemStatusLoaded) {
-            self.item.itemStatus = AFBrowserVideoItemStatusLoaded;
-        }
-        [self.player pause];
-        [self updatePlayerStatus:(AFPlayerStatusNormal)];
+        [self pause];
+    } else {
+        [self startPlay];
     }
 }
 
@@ -630,13 +610,14 @@ static int playerCount = 0;
     if (!self.playerObserver) {
         __weak typeof(self) weakSelf = self;
         self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.05, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-            [weakSelf checkFirstFrame];
             //视频第一次回调
             weakSelf.item.progress = CMTimeGetSeconds(time) / weakSelf.duration;
             if (isnan(weakSelf.item.progress) || weakSelf.item.progress > 1.0) {
                 weakSelf.item.progress = 0.f;
                 weakSelf.item.currentTime = 0;
+                NSLog(@"-------------------------- 进度回调异常:%f --------------------------", self.player.rate);
             } else {
+                [weakSelf onFirstFrame];
                 weakSelf.item.currentTime = CMTimeGetSeconds(time);
             }
             [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration animated:YES];
@@ -701,12 +682,7 @@ static int playerCount = 0;
     if ([self.delegate respondsToSelector:@selector(finishWithPlayer:)]) {
         [self.delegate finishWithPlayer:self];
     }
-    if (self.configuration.infiniteLoop) {
-        [self seekToTime:0.f];
-        [self play:NO];
-    } else {
-        [self finishedPlay];
-    }
+    [self finishedPlay];
 }
 
 /// 收到通知：暂停所有正在播放的播放器

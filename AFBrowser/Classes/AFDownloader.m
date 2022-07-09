@@ -82,6 +82,10 @@
 /// 获取本地视频的地址
 + (NSString *)videoPathWithUrl:(NSString *)url {
     if (!url.length) return nil;
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(filePathWithVideoUrl:)]) {
+        NSString *path = [AFBrowserViewController.loaderProxy filePathWithVideoUrl:url];
+        if (path.length) return path;
+    }
     NSString *cachesPath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) firstObject];
     NSString *filePath = [NSString stringWithFormat:@"%@/af-download/video/%@.mp4", cachesPath, [self md5String:url]];
     return [NSFileManager.defaultManager fileExistsAtPath:filePath] ? filePath : nil;

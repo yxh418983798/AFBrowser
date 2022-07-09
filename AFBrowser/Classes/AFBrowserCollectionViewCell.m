@@ -519,10 +519,9 @@ static UIImage * DefaultPlaceholderImage() {
             
         case AFBrowserItemTypeVideo: {
             [self addSubview:self.player];
-            self.player.item = item;
 //            self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
             self.player.browserDelegate = self;
-            [self.player prepare]; 
+            [self.player prepareVideoItem:self.item];
             [self resizeSubviewSize];
         }
             break;
@@ -585,14 +584,8 @@ static UIImage * DefaultPlaceholderImage() {
     
     // 暂停视频
     else {
-        [self.player pause];
-        [self.player seekToTime:0.f];
+        [self.player stop];
     }
-}
-
-
-- (void)stopPlayer {
-    [_player pause];
 }
 
 

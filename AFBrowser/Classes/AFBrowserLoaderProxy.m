@@ -80,7 +80,20 @@
 }
 
 
+
+
 #pragma mark - 加载视频
+/// 预加载
++ (void)preloadingVideo:(NSString *)videoUrl {
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(preloadingVideo:)]) {
+        [AFBrowserViewController.loaderProxy preloadingVideo:videoUrl];
+    } else {
+        if ([videoUrl containsString:@"https://"] || [videoUrl containsString:@"http://"]) {
+            [AFDownloader downloadVideo:videoUrl progress:nil completion:nil];
+        }
+    }
+}
+
 + (void)loadVideo:(NSString *)videoUrl progress:(void (^)(NSProgress *))progress completion:(void (^)(NSString *, NSError *))completion {
     if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(loadVideo:progress:completion:)]) {
         [AFBrowserViewController.loaderProxy loadVideo:videoUrl progress:progress completion:completion];

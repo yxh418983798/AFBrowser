@@ -114,6 +114,9 @@
 /// 时长
 - (float)duration;
 
+/// 预加载
++ (void)preloadingItem:(AFBrowserVideoItem *)item;
+
 /// 开始下载
 - (void)downloadItem:(AFBrowserVideoItem *)item;
 
@@ -126,22 +129,12 @@
 /// 返回转场动画使用的size
 - (CGSize)transitionSize;
 
-/// 控制器即将Dismiss，做一些转场动画的处理
-- (void)browserWillDismiss;
-
-/// 控制器已经Dismiss，做一些转场动画的处理
-- (void)browserDidDismiss;
-
-/// 控制器取消Dismiss，做一些恢复处理
-- (void)browserCancelDismiss;
-
 /// 暂停所有正在播放的播放器
 + (void)pauseAllPlayer;
 
 /// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer;
 
-+ (AFPlayer *)cachePlayerWithItem:(AFBrowserVideoItem *)item;
 
 @end
 

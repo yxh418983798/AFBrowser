@@ -34,6 +34,12 @@
  */
 + (void)loadImage:(NSURL *)imageUrl completion:(void (^)(UIImage *image, NSError *error))completion;
 
+/**
+ * @brief 自定义预加载视频
+ *
+ * @param videoUrl   视频地址
+ */
++ (void)preloadingVideo:(NSString *)videoUrl;
 
 /**
  * @brief 自定义加载视频
