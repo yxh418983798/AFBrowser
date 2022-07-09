@@ -8,10 +8,10 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '1.7.7'
+  s.version          = '2.0'
   s.summary          = '图片/视频浏览器'
   s.description      = <<-DESC
-  1、视频播放ViewDidLayoutSubView重复调用问题
+  1、视频播放器重构
                        DESC
   s.homepage         = 'https://github.com/yxh418983798/AFBrowser'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
