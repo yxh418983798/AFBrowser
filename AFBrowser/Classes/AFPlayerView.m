@@ -461,12 +461,17 @@ static CGFloat playBtn_W = 50.0;
 #pragma mark - 加载视频
 /// 准备播放，预加载
 - (void)prepareVideoItem:(AFBrowserVideoItem *)item {
-    if (self.item != item) {
-        // 停止当前播放器
-        if (self.player.item == self.item) [self.player stop];
-        self.item = item;
-        [self onUpdateItem];
+    if (self.item == item) return;
+    // 处理复用问题，如果item之前已经被绑定过playerView，需要先将旧的playerView解绑
+    if (item.playerView && item.playerView != self) {
+        NSLog(@"-------------------------- 解绑Item：%@，old:%@, self:%@ --------------------------", item, item.playerView, self);
+        [item.playerView prepareVideoItem:nil];
     }
+    item.playerView = self;
+    // 停止当前播放器
+    if (self.player.item == self.item) [self.player stop];
+    self.item = item;
+    [self onUpdateItem];
 }
 
 /// 开始下载

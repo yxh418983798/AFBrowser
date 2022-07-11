@@ -124,6 +124,9 @@
 #pragma mark - 视频Item
 @interface AFBrowserVideoItem : AFBrowserItem
 
+/** 记录当前绑定的playerView */
+@property (nonatomic, weak) id            playerView;
+
 /** 视频下载完成的本地路径，如果未下载完成，则返回nil */
 @property (nonatomic, copy) NSString            *localPath;
 

@@ -15,7 +15,14 @@
 
 static int const AFDownloadBlockCode = 6666;
 
+@implementation AFPlayerProxy
+
+@end
+
 @interface AFPlayer ()
+
+/** AFPlayerProxy */
+@property (nonatomic, strong) AFPlayerProxy     *proxy;
 
 /** 父视图 */
 @property (nonatomic, strong) UIView            *superView;
@@ -64,6 +71,8 @@ static int playerCount = 0;
 
 - (instancetype)init {
     if (self = [super init]) {
+        self.proxy = AFPlayerProxy.new;
+        self.proxy.player = self;
         playerCount ++;
         NSLog(@"-------------------------- 创建播放器:%d ,%@--------------------------", playerCount, self);
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayerNotification) name:AFPlayerNotificationPauseAllPlayer object:nil];
@@ -409,7 +418,7 @@ static int playerCount = 0;
 #pragma mark - 解码
 /// 播放器准备
 - (void)preparePlayer {
-    NSLog(@"-------------------------- 开始解码 --------------------------");
+    NSLog(@"-------------------------- 开始解码 :%@ --------------------------", self.superView);
     AFBrowserVideoItem *selectedItem = self.item;
     [selectedItem updateItemStatus:AFBrowserVideoItemStatusPrepare];
     [selectedItem updatePlayerStatus:AFPlayerStatusLoading];
@@ -428,11 +437,12 @@ static int playerCount = 0;
 /// 解码
 - (void)prepareItem {
     __weak typeof(self) weakSelf = self;
+    AFBrowserItem *item = self.item;
     [self.player prerollAtRate:1 completionHandler:^(BOOL finished) {
         if (!finished) {
-            NSLog(@"-------------------------- AFPlayer 解码finished：%d -- %@--------------------------", finished, weakSelf.item.content);
+            NSLog(@"-------------------------- AFPlayer 解码finished：%d -- %@--------------------------", finished, item.content);
         }
-        [weakSelf prepareDoneWithError:nil selectedItem:weakSelf.item];
+        [weakSelf prepareDoneWithError:nil selectedItem:item];
     }];
 }
 
@@ -448,13 +458,16 @@ static int playerCount = 0;
         return;
     }
     // 解码成功，开始播放
-    NSLog(@"-------------------------- 解码完成：%@ --------------------------", selectedItem.content);
-    if (selectedItem == self.item && selectedItem.playerStatus == AFPlayerStatusLoading) {
-        [selectedItem updateItemStatus:AFBrowserVideoItemStatusPrepareDone];
-        [self play:NO];
+    if (selectedItem == self.item) {
+        if (selectedItem.playerStatus == AFPlayerStatusLoading) {
+            NSLog(@"-------------------------- 解码完成，准备播放：%@ -- %@ --------------------------", self.superView, selectedItem.content);
+            [selectedItem updateItemStatus:AFBrowserVideoItemStatusPrepareDone];
+            [self play:NO];
+        } else {
+            NSLog(@"-------------------------- 解码完成，但状态不对：%@ -- %@ --------------------------", self.superView, selectedItem.content);
+        }
     } else {
-        [selectedItem updatePlayerStatus:AFPlayerStatusNormal];
-        [selectedItem updateItemStatus:AFBrowserVideoItemStatusLoaded];
+        NSLog(@"-------------------------- 解码完成，但Item已切换：%@ -- %@ --------------------------", self.superView, selectedItem.content);
     }
     if ([self.delegate respondsToSelector:@selector(prepareDoneWithPlayer:)]) {
         [self.delegate prepareDoneWithPlayer:self];
@@ -796,6 +809,24 @@ static int playerCount = 0;
     _AllPlayerSwitch = enable;
 }
     
+
+#pragma mark - 播放器数组管理
+/// 保存当前所有的播放器
++ (NSMutableDictionary <NSString *, AFPlayer *> *)currentPlayers {
+    static NSMutableDictionary *players;
+    if (!players) {
+        players = NSMutableDictionary.dictionary;
+    }
+    return players;
+}
+
+//+ (AFPlayer *)addPlayer:(AFPlayer *)player {
+//
+//}
+
+
+
+
 @end
 
 
