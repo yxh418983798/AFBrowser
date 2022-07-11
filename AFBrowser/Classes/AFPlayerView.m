@@ -89,18 +89,18 @@ static CGFloat playBtn_W = 50.0;
     if (self.isPlay) {
         [self.player layout];
     }
+    [super layoutSubviews];
     _contentView.frame = self.bounds;
     _coverImgView.frame = self.bounds;
     _activityView.frame = CGRectMake((self.frame.size.width - playBtn_W)/2, (self.frame.size.height - playBtn_W)/2, playBtn_W, playBtn_W);
     _dismissBtn.frame = CGRectMake(0, UIApplication.sharedApplication.statusBarFrame.size.height, 50, 44);
     _bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
     _playBtn.frame = CGRectMake((self.frame.size.width - playBtn_W)/2, (self.frame.size.height - playBtn_W)/2, playBtn_W, playBtn_W);
-    [super layoutSubviews];
 }
 
 - (void)dealloc {
     NSLog(@"-------------------------- 播放器释放：%@ --------------------------", self);
-    if (!self.useSharePlayer) [self.player destroy];
+    if (!self.useSharePlayer) [_player destroy];
 }
 
 /// 释放
@@ -183,6 +183,15 @@ static CGFloat playBtn_W = 50.0;
 
 
 #pragma mark - Getter
+/// 保存当前所有的播放器
++ (NSMutableArray <AFPlayerView *> *)currentPlayers {
+    static NSMutableArray *currentPlayers;
+    if (!currentPlayers) {
+        currentPlayers = NSMutableArray.array;
+    }
+    return currentPlayers;
+}
+
 /// 描述
 - (NSString *)displayDescription {
     return @"";
@@ -313,6 +322,24 @@ static CGFloat playBtn_W = 50.0;
 #pragma mark - UI更新
 /// item变化，更新UI
 - (void)onUpdateItem {
+    if (self.item.coverContentMode >= 0) {
+        self.coverImgView.contentMode = self.item.coverContentMode;
+    } else {
+        if (self.item.videoContentScale > 0) {
+            self.coverImgView.contentMode = UIViewContentModeScaleAspectFill;
+        } else {
+            if (self.item.videoGravity == AVLayerVideoGravityResize) {
+                // 变形填满
+                self.coverImgView.contentMode = UIViewContentModeScaleToFill;
+            } else if (self.item.videoGravity == AVLayerVideoGravityResizeAspectFill) {
+                // 不变形填满
+                self.coverImgView.contentMode = UIViewContentModeScaleAspectFill;
+            } else {
+                // 不变形，不填满，完整展示
+                self.coverImgView.contentMode = UIViewContentModeScaleAspectFit;
+            }
+        }
+    }
     [self attachCoverImage:self.item.coverImage];
     if (self.item.videoControlEnable) {
         self.dismissBtn.hidden = NO;
@@ -320,17 +347,6 @@ static CGFloat playBtn_W = 50.0;
     } else {
         _dismissBtn.hidden = YES;
         _bottomBar.hidden = YES;
-    }
-    if (self.item.videoContentScale > 0) {
-        self.coverImgView.contentMode = UIViewContentModeScaleAspectFill;
-    } else {
-        if (self.item.videoGravity == AVLayerVideoGravityResize) {
-            self.coverImgView.contentMode = UIViewContentModeScaleToFill;
-        } else if (self.item.videoGravity == AVLayerVideoGravityResizeAspectFill) {
-            self.coverImgView.contentMode = UIViewContentModeScaleAspectFill;
-        } else {
-            self.coverImgView.contentMode = UIViewContentModeScaleAspectFit;
-        }
     }
 }
 
@@ -398,7 +414,7 @@ static CGFloat playBtn_W = 50.0;
     switch (status) {
             // 加载中
         case AFPlayerStatusLoading: {
-            NSLog(@"-------------------------- 加载中 --------------------------");
+            NSLog(@"-------------------------- 加载中:%@ --------------------------", self);
             [self.activityView startAnimating];
             self.coverImgView.hidden = NO;
             [self showPlayBtn:NO];
@@ -407,7 +423,7 @@ static CGFloat playBtn_W = 50.0;
             
             // 播放中
         case AFPlayerStatusPlay: {
-            NSLog(@"-------------------------- 播放中 --------------------------");
+            NSLog(@"-------------------------- 播放中:%@ --------------------------", self);
             [self.activityView stopAnimating];
             self.coverImgView.hidden = YES;
             [self showPlayBtn:NO];
@@ -416,7 +432,7 @@ static CGFloat playBtn_W = 50.0;
 
             // 初始状态/暂停
         default: {
-            NSLog(@"-------------------------- 停止播放 --------------------------");
+            NSLog(@"-------------------------- 停止播放:%@ --------------------------", self);
             [self showPlayBtn:YES];
             [_activityView stopAnimating];
             if (!_player.isReadyForDisplay) {
@@ -480,11 +496,7 @@ static CGFloat playBtn_W = 50.0;
     if (self.useSharePlayer) {
         self.player.delegate = self;
     }
-    // 更新封面图
-    if (self.item != item) {
-        self.item = item;
-        [self onUpdateItem];
-    }
+    [self prepareVideoItem:item];
     [self.player playVideoItem:item superview:self completion:completion];
 }
 

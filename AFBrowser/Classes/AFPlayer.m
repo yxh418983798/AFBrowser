@@ -238,12 +238,14 @@ static int playerCount = 0;
 /// 获取播放器frame
 - (CGRect)playerFrame {
     if (self.item.videoContentScale > 0) {
-        self.playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
         CGFloat height = fmin(self.superView.frame.size.width/self.item.videoContentScale, self.superView.frame.size.height);
         return CGRectMake(0, (self.superView.frame.size.height - height)/2, self.superView.frame.size.width, height);
     }
-    if (self.playerLayer.videoGravity == AVLayerVideoGravityResizeAspectFill && self.item.width > 0 && self.item.height > 0) {
-        CGFloat height = fmin(self.superView.frame.size.width * self.item.height/self.item.width, self.superView.frame.size.height);
+    CGSize size = self.player.currentItem.presentationSize;
+    if (size.width == 0) size.width = self.item.width;
+    if (size.height == 0) size.height = self.item.height;
+    if (self.playerLayer.videoGravity == AVLayerVideoGravityResizeAspectFill && size.width > 0 && size.height > 0) {
+        CGFloat height = fmin(self.superView.frame.size.width * size.height/size.width, self.superView.frame.size.height);
         return CGRectMake(0, (self.superView.frame.size.height - height)/2, self.superView.frame.size.width, height);
     } else {
         return self.superView.bounds;
@@ -307,18 +309,49 @@ static int playerCount = 0;
     }
 }
 
+/// 首帧回调
 - (void)onFirstFrame {
     if (self.item.playerStatus == AFPlayerStatusPlay) return;
     // 播放结束的时候也会走进onFirstFrame，此时需要过滤结束的状态，通过rate==0来判断
     if (self.player.rate == 0) return;
     if (self.playerLayer.isReadyForDisplay) {
         if (self.player.currentItem.status != AVPlayerItemStatusReadyToPlay) {
-            NSLog(@"-------------------------- 错误:%f --------------------------", self.player.rate);
+            NSLog(@"-------------------------- 首帧回调错误:%f --------------------------", self.player.rate);
         }
         NSLog(@"-------------------------- 首帧回调成功:%f --------------------------", self.player.rate);
         [self updatePlayerStatus:(AFPlayerStatusPlay)];
     } else {
         NSLog(@"-------------------------- 首帧回调，播放器未准备好:%f --------------------------", self.player.rate);
+    }
+}
+
+/// item变化，更新播放器设置
+- (void)onUpdateItem {
+    // 填充模式
+    if (self.item.videoContentScale > 0) {
+        self.playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+    } else {
+        self.playerLayer.videoGravity = self.item.videoGravity;
+    }
+    // 静音设置
+    switch (self.item.muteOption) {
+        case AFPlayerMuteOptionNever:
+            self.player.muted = NO;
+            break;
+            
+        case AFPlayerMuteOptionAlways:
+            self.player.muted = YES;
+            break;
+            
+        case AFPlayerMuteOptionAlwaysButBrowser:
+            if ([AFBrowserConfiguration.currentVc isKindOfClass:NSClassFromString(@"AFBrowserViewController")]) {
+                self.player.muted = NO;
+            } else {
+                self.player.muted = YES;
+            }
+            break;
+        default:
+            break;
     }
 }
 
@@ -438,11 +471,7 @@ static int playerCount = 0;
     if (self.item != item) {
         [self stop];
         self.item = item;
-        if (self.item.videoContentScale > 0) {
-            self.playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
-        } else {
-            self.playerLayer.videoGravity = self.item.videoGravity;
-        }
+        [self onUpdateItem];
     }
     // 父视图为空
     if (!superview) {
@@ -527,6 +556,7 @@ static int playerCount = 0;
     // 状态不对，重新开始播放流程
     if (self.player.currentItem.status != AVPlayerItemStatusReadyToPlay) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[play]播放状态错误, playerItem.status = %d", self.player.currentItem.status]];
+        [self.item updateItemStatus:(AFBrowserVideoItemStatusDefault)];
         [self playVideoItem:self.item superview:self.superView completion:self.completion];
         return;
     }
@@ -632,6 +662,7 @@ static int playerCount = 0;
     if (item.status == AVPlayerItemStatusReadyToPlay) {
         [self statusDidChange];
     }
+    
     self.isObserving = YES;
     if (!self.playerObserver) {
         __weak typeof(self) weakSelf = self;

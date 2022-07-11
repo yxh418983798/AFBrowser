@@ -96,6 +96,7 @@
 - (instancetype)init {
     if (self = [super init]) {
         self.playBtnEnable = YES;
+        _coverContentMode = -1;
     }
     return self;
 }

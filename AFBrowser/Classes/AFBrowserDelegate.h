@@ -223,8 +223,6 @@
 
 /**
  * @brief dismiss控制器的回调
- *
- * @note  如果频的类型，应该返回视频播放器的容器View
  */
 - (void)didDismissBrowser:(AFBrowserViewController *)browser;
 

@@ -136,6 +136,9 @@
 /** 使用固定的比例填充（宽:高），默认为0，使用videoGravity填充，videoContentScale不为0时videoGravity会无效 */
 @property (nonatomic, assign) CGFloat           videoContentScale;
 
+/** 封面图的填充方式，默认自动根据videoGravity来适应 */
+@property (nonatomic, assign)  UIViewContentMode coverContentMode;
+
 /** 是否无限循环播放，默认NO */
 @property (nonatomic, assign) BOOL              loop;
 
