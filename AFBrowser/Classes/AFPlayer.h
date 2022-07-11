@@ -45,14 +45,14 @@
 /** 控制所有播放器，设置为false则会暂停所有播放器，必须设置回true，否则调用play也不会播放 */
 @property (class) BOOL  enable;
 
-/** 视频数据源 */
-@property (nonatomic, strong) AFBrowserVideoItem  *item;
-
 /** 代理 */
 @property (weak, nonatomic) id <AFPlayerDelegate> delegate;
 
 /** 代理 */
 @property (weak, nonatomic) id <AFPlayerDelegate> browserDelegate;
+
+/** 视频数据源 */
+@property (nonatomic, strong) AFBrowserVideoItem  *item;
 
 /** 底部工具栏 */
 @property (strong, nonatomic) AFPlayerBottomBar   *bottomBar;

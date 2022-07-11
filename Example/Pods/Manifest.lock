@@ -1,5 +1,5 @@
 PODS:
-  - AFBrowser (1.4.8):
+  - AFBrowser (2.0.1):
     - SDWebImage
     - YYImage
   - Masonry (1.1.0)
@@ -25,11 +25,11 @@ EXTERNAL SOURCES:
     :path: "../"
 
 SPEC CHECKSUMS:
-  AFBrowser: 96e8fd7a6ff0129edcbdbd6fa4f2862d3db03ead
+  AFBrowser: 2e9655105d5c9267688378eb45db36bc1dbf793a
   Masonry: 678fab65091a9290e40e2832a55e7ab731aad201
   SDWebImage: 62ae4a18473520c67b79e9724c31a63599cc9423
   YYImage: 1e1b62a9997399593e4b9c4ecfbbabbf1d3f3b54
 
 PODFILE CHECKSUM: 11e56c2a5d892bf9650428f59cf82a9e1883c6bc
 
-COCOAPODS: 1.10.0
+COCOAPODS: 1.11.2

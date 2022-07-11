@@ -61,11 +61,17 @@ static int const AFDownloadBlockCode = 6666;
 
 
 @implementation AFPlayerView
+static CGFloat playBtn_W = 50.0;
 
 #pragma mark - 构造方法
 - (instancetype)init {
     if (self = [super init]) {
         self.useSharePlayer = YES;
+        self.clipsToBounds = YES;
+        [self addSubview:self.contentView];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(playPlayerNotification:) name:@"AFPlayerViewNotification_PlayPlayer" object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pausePlayerNotification:) name:@"AFPlayerViewNotification_PausePlayer" object:nil];
+        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(stopPlayerNotification:) name:@"AFPlayerViewNotification_StopPlayer" object:nil];
     }
     return self;
 }
@@ -79,32 +85,16 @@ static int const AFDownloadBlockCode = 6666;
 
 
 #pragma mark - 生命周期
-- (void)didMoveToSuperview {
-    self.clipsToBounds = YES;
-    [self addSubview:self.contentView];
-    [self.contentView addSubview:self.coverImgView];
-    [self.coverImgView addSubview:self.activityView];
-    [self.contentView addSubview:self.playBtn];
-    if (self.item.showVideoControl) {
-        [self.contentView addSubview:self.dismissBtn];
-        [self addSubview:self.bottomBar];
-    }
-}
-
 - (void)layoutSubviews {
     if (self.isPlay) {
         [self.player layout];
     }
-    
-    CGFloat size = 50.f;
-    self.contentView.frame = self.bounds;
-    self.coverImgView.frame = self.bounds;
-    self.playBtn.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
-    self.activityView.frame = CGRectMake((self.frame.size.width - size)/2, (self.frame.size.height - size)/2, size, size);
-    if (self.item.showVideoControl) {
-        self.dismissBtn.frame = CGRectMake(0, UIApplication.sharedApplication.statusBarFrame.size.height, 50, 44);
-        self.bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
-    }
+    _contentView.frame = self.bounds;
+    _coverImgView.frame = self.bounds;
+    _activityView.frame = CGRectMake((self.frame.size.width - playBtn_W)/2, (self.frame.size.height - playBtn_W)/2, playBtn_W, playBtn_W);
+    _dismissBtn.frame = CGRectMake(0, UIApplication.sharedApplication.statusBarFrame.size.height, 50, 44);
+    _bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
+    _playBtn.frame = CGRectMake((self.frame.size.width - playBtn_W)/2, (self.frame.size.height - playBtn_W)/2, playBtn_W, playBtn_W);
     [super layoutSubviews];
 }
 
@@ -186,41 +176,6 @@ static int const AFDownloadBlockCode = 6666;
     self.player.muted = muted;
 }
 
-- (void)attachCoverImage:(id)image {
-    __weak typeof(self) weakSelf = self;
-    if ([self.item.coverImage isKindOfClass:NSString.class]) {
-        UIImage *image = [AFBrowserLoaderProxy imageFromCacheForKey:self.item.coverImage];
-        if (image) {
-            self.coverImgView.image = image;
-            return;
-        }
-        if (!self.coverImgView.image) {
-            self.coverImgView.image = [self imageWithColor:UIColor.whiteColor];
-        }
-        [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:(NSString *)self.item.coverImage] completion:^(UIImage *image, NSError *error) {
-            weakSelf.coverImgView.image = image;
-        }];
-    } else if ([self.item.coverImage isKindOfClass:NSURL.class]) {
-        UIImage *image = [AFBrowserLoaderProxy imageFromCacheForKey:[(NSURL *)self.item.coverImage absoluteString]];
-        if (image) {
-            self.coverImgView.image = image;
-            return;
-        }
-        if (!self.coverImgView.image) {
-            self.coverImgView.image = [self imageWithColor:UIColor.whiteColor];
-        }
-        [AFBrowserLoaderProxy loadImage:(NSURL *)self.item.coverImage completion:^(UIImage *image, NSError *error) {
-            weakSelf.coverImgView.image = image;
-        }];
-    } else if ([self.item.coverImage isKindOfClass:UIImage.class]) {
-        self.coverImgView.image = self.item.coverImage;
-    } else if ([self.item.coverImage isKindOfClass:NSData.class]) {
-        self.coverImgView.image = [UIImage imageWithData:self.item.coverImage];
-    } else {
-        self.coverImgView.image = [self imageWithColor:UIColor.whiteColor];
-    }
-}
-
 - (void)setVideoGravity:(AVLayerVideoGravity)videoGravity {
     _videoGravity = videoGravity;
     self.player.videoGravity = videoGravity;
@@ -263,6 +218,7 @@ static int const AFDownloadBlockCode = 6666;
 - (UIView *)contentView {
     if (!_contentView) {
         _contentView = UIView.new;
+        _contentView.frame = self.bounds;
         _contentView.backgroundColor = UIColor.clearColor;
         [_contentView addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapAction)]];
     }
@@ -273,7 +229,8 @@ static int const AFDownloadBlockCode = 6666;
 - (UIImageView *)coverImgView {
     if (!_coverImgView) {
         _coverImgView = [UIImageView new];
-        _coverImgView.contentMode = UIViewContentModeScaleAspectFit;
+        _coverImgView.frame = self.bounds;
+        [self.contentView insertSubview:_coverImgView atIndex:0];
     }
     return _coverImgView;
 }
@@ -282,9 +239,11 @@ static int const AFDownloadBlockCode = 6666;
 - (UIButton *)playBtn {
     if (!_playBtn) {
         _playBtn = [UIButton new];
+        _playBtn.frame = CGRectMake((self.frame.size.width - playBtn_W)/2, (self.frame.size.height - playBtn_W)/2, playBtn_W, playBtn_W);
         NSBundle *bundle = [NSBundle bundleWithURL:[[NSBundle bundleForClass:self.class] URLForResource:@"AFBrowser" withExtension:@"bundle"]];
         [_playBtn setImage:[UIImage imageNamed:@"browser_player_icon" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
         [_playBtn addTarget:self action:@selector(playBtnAction:) forControlEvents:(UIControlEventTouchUpInside)];
+        [self.contentView addSubview:_playBtn];
     }
     return _playBtn;
 }
@@ -293,10 +252,12 @@ static int const AFDownloadBlockCode = 6666;
 - (UIButton *)dismissBtn {
     if (!_dismissBtn) {
         _dismissBtn = [UIButton new];
+        _dismissBtn.frame = CGRectMake(0, UIApplication.sharedApplication.statusBarFrame.size.height, 50, 44);
         _dismissBtn.alpha = _showVideoControl ? 1 : 0;
         NSBundle *bundle = [NSBundle bundleWithURL:[[NSBundle bundleForClass:self.class] URLForResource:@"AFBrowser" withExtension:@"bundle"]];
         [_dismissBtn setImage:[UIImage imageNamed:@"browser_dismiss" inBundle:bundle compatibleWithTraitCollection:nil] forState:(UIControlStateNormal)];
         [_dismissBtn addTarget:self action:@selector(dismissBtnAction) forControlEvents:(UIControlEventTouchUpInside)];
+        [self.contentView addSubview:_dismissBtn];
     }
     return _dismissBtn;
 }
@@ -305,8 +266,10 @@ static int const AFDownloadBlockCode = 6666;
 - (UIActivityIndicatorView *)activityView {
     if (!_activityView) {
         _activityView = [[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleGray];
+        _activityView.frame = CGRectMake((self.frame.size.width - playBtn_W)/2, (self.frame.size.height - playBtn_W)/2, playBtn_W, playBtn_W);
         _activityView.hidesWhenStopped = YES;
         _activityView.transform = CGAffineTransformMakeScale(2.f, 2.f);
+        [self.coverImgView addSubview:_activityView];
     }
     return _activityView;
 }
@@ -315,6 +278,7 @@ static int const AFDownloadBlockCode = 6666;
 - (AFPlayerBottomBar *)bottomBar {
     if (!_bottomBar) {
         _bottomBar = [AFPlayerBottomBar new];
+        _bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
         _bottomBar.slider.delegate = self;
         _bottomBar.alpha = _showVideoControl ? 1 : 0;
         _bottomBar.playBtn.selected = self.isPlay;
@@ -346,44 +310,148 @@ static int const AFDownloadBlockCode = 6666;
 }
 
 
-#pragma mark - 跳转
-- (void)seekToTime:(NSTimeInterval)time {
-    [self.player seekToTime:time];
+#pragma mark - UI更新
+/// item变化，更新UI
+- (void)onUpdateItem {
+    [self attachCoverImage:self.item.coverImage];
+    if (self.item.videoControlEnable) {
+        self.dismissBtn.hidden = NO;
+        self.bottomBar.hidden = NO;
+    } else {
+        _dismissBtn.hidden = YES;
+        _bottomBar.hidden = YES;
+    }
+    if (self.item.videoContentScale > 0) {
+        self.coverImgView.contentMode = UIViewContentModeScaleAspectFill;
+    } else {
+        if (self.item.videoGravity == AVLayerVideoGravityResize) {
+            self.coverImgView.contentMode = UIViewContentModeScaleToFill;
+        } else if (self.item.videoGravity == AVLayerVideoGravityResizeAspectFill) {
+            self.coverImgView.contentMode = UIViewContentModeScaleAspectFill;
+        } else {
+            self.coverImgView.contentMode = UIViewContentModeScaleAspectFit;
+        }
+    }
 }
 
+/// 更新封面图
+- (void)attachCoverImage:(id)image {
+    __weak typeof(self) weakSelf = self;
+    if ([self.item.coverImage isKindOfClass:NSString.class]) {
+        UIImage *image = [AFBrowserLoaderProxy imageFromCacheForKey:self.item.coverImage];
+        if (image) {
+            self.coverImgView.image = image;
+            return;
+        }
+        if (!self.coverImgView.image) {
+            self.coverImgView.image = [self imageWithColor:UIColor.whiteColor];
+        }
+        [AFBrowserLoaderProxy loadImage:[NSURL URLWithString:(NSString *)self.item.coverImage] completion:^(UIImage *image, NSError *error) {
+            weakSelf.coverImgView.image = image;
+        }];
+    } else if ([self.item.coverImage isKindOfClass:NSURL.class]) {
+        UIImage *image = [AFBrowserLoaderProxy imageFromCacheForKey:[(NSURL *)self.item.coverImage absoluteString]];
+        if (image) {
+            self.coverImgView.image = image;
+            return;
+        }
+        if (!self.coverImgView.image) {
+            self.coverImgView.image = [self imageWithColor:UIColor.whiteColor];
+        }
+        [AFBrowserLoaderProxy loadImage:(NSURL *)self.item.coverImage completion:^(UIImage *image, NSError *error) {
+            weakSelf.coverImgView.image = image;
+        }];
+    } else if ([self.item.coverImage isKindOfClass:UIImage.class]) {
+        self.coverImgView.image = self.item.coverImage;
+    } else if ([self.item.coverImage isKindOfClass:NSData.class]) {
+        self.coverImgView.image = [UIImage imageWithData:self.item.coverImage];
+    } else {
+        self.coverImgView.image = [self imageWithColor:UIColor.whiteColor];
+    }
+}
 
-#pragma mark - 预加载
-/// 准备播放
-- (void)prepareVideoItem:(AFBrowserVideoItem *)item {
-    if (self.item != item) {
-        self.item = item;
-        [self attachCoverImage:item.coverImage];
+/// 播放按钮
+- (void)showPlayBtn:(BOOL)show {
+    if (show) {
+        self.playBtn.hidden = !self.item.playBtnEnable;
+        if (self.item.videoControlEnable) {
+            self.bottomBar.playBtn.hidden = NO;
+            self.bottomBar.playBtn.selected = NO;
+        } else {
+            _bottomBar.hidden = YES;
+        }
+    } else {
+        _playBtn.hidden = YES;
+        if (self.item.videoControlEnable) {
+            self.bottomBar.playBtn.hidden = NO;
+            self.bottomBar.playBtn.selected = YES;
+        } else {
+            _bottomBar.hidden = YES;
+        }
     }
 }
 
 
-#pragma mark - 下载
-///// 预加载
-//+ (void)preloadingItem:(MWAudioItem *)item {
-//    [self.sharePlayer preloadingItem:item];
-//}
-//
-///// 预加载音视频数据，下载完成后自动保存到本地，不会播放
-//- (void)preloadingItem:(MWAudioItem *)item {
-//    [MWAudioPlayer safe_performAsyncBlock:^{
-//        if (!item) return;
-//
-//        if (item.localPath.length) {
-//            // 已下载完成，修改状态为已下载
-//            [item updateItemStatus:MWPlayerItemStatusLoaded];
-//        } else {
-//            // 如果已经处于加载中，忽略
-//            if (item.itemStatus == MWPlayerItemStatusPreloading || item.itemStatus == MWPlayerItemStatusLoading) return;
-//            // 开始或继续下载任务
-//            [self downloadItem:item priority:MWDownloadPriorityLow];
-//        }
-//    }];
-//}
+#pragma mark - AFPlayerDelegate
+/// 更新状态
+- (void)player:(AFPlayer *)player updatePlayerStatus:(AFPlayerStatus)status {
+    switch (status) {
+            // 加载中
+        case AFPlayerStatusLoading: {
+            NSLog(@"-------------------------- 加载中 --------------------------");
+            [self.activityView startAnimating];
+            self.coverImgView.hidden = NO;
+            [self showPlayBtn:NO];
+        }
+            break;
+            
+            // 播放中
+        case AFPlayerStatusPlay: {
+            NSLog(@"-------------------------- 播放中 --------------------------");
+            [self.activityView stopAnimating];
+            self.coverImgView.hidden = YES;
+            [self showPlayBtn:NO];
+        }
+            break;
+
+            // 初始状态/暂停
+        default: {
+            NSLog(@"-------------------------- 停止播放 --------------------------");
+            [self showPlayBtn:YES];
+            [_activityView stopAnimating];
+            if (!_player.isReadyForDisplay) {
+                self.coverImgView.hidden = NO;
+            } else if (self.item.progress == 0 || self.item.progress == 1) {
+                self.coverImgView.hidden = NO;
+            } else {
+                self.coverImgView.hidden = YES;
+            }
+        }
+            break;
+    }
+}
+
+/// 更新播放进度
+- (void)player:(AFPlayer *)player updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime animated:(BOOL)animated {
+    if (self.item.videoControlEnable) {
+        self.bottomBar.hidden = NO;
+        [self.bottomBar updateProgressWithCurrentTime:currentTime durationTime:self.player.duration animated:animated];
+    } else {
+        _bottomBar.hidden = YES;
+    }
+}
+
+
+#pragma mark - 加载视频
+/// 准备播放，预加载
+- (void)prepareVideoItem:(AFBrowserVideoItem *)item {
+    if (self.item != item) {
+        // 停止当前播放器
+        if (self.player.item == self.item) [self.player stop];
+        self.item = item;
+        [self onUpdateItem];
+    }
+}
 
 /// 开始下载
 - (void)downloadItem:(AFBrowserVideoItem *)item {
@@ -391,7 +459,22 @@ static int const AFDownloadBlockCode = 6666;
 }
 
 
-#pragma mark - 播放
+#pragma mark - 播放器控制
+/// 播放器开关
++ (BOOL)enable {
+    return AFPlayer.enable;
+}
+
+/// 设置播放器开关
++ (void)setEnable:(BOOL)enable {
+    AFPlayer.enable = enable;
+}
+
+/// 跳转
+- (void)seekToTime:(NSTimeInterval)time {
+    [self.player seekToTime:time];
+}
+
 /// 播放视频
 - (void)playVideoItem:(AFBrowserVideoItem *)item completion:(void(^)(NSError *error))completion {
     if (self.useSharePlayer) {
@@ -400,27 +483,25 @@ static int const AFDownloadBlockCode = 6666;
     // 更新封面图
     if (self.item != item) {
         self.item = item;
-        [self attachCoverImage:item.coverImage];
+        [self onUpdateItem];
     }
     [self.player playVideoItem:item superview:self completion:completion];
 }
 
+/// 播放，内部调用
 - (void)play {
     [self playVideoItem:self.item completion:self.completion];
 }
 
-#pragma mark - 暂停
 /// 暂停
 - (void)pause {
     [self.player pause];
 }
 
-
-#pragma mark - 停止
+/// 停止
 - (void)stop {
     [self.player stop];
 }
-
 
 
 #pragma mark - 通知
@@ -432,6 +513,49 @@ static int const AFDownloadBlockCode = 6666;
 /// 恢复所有播放器的状态
 + (void)resumeAllPlayer {
     [AFPlayer resumeAllPlayer];
+}
+
+/// 播放指定的播放器
++ (void)playPlayer:(int64_t)playerId {
+    if (!playerId) return;
+    [NSNotificationCenter.defaultCenter postNotificationName:@"AFPlayerViewNotification_PlayPlayer" object:@(playerId)];
+}
+- (void)playPlayerNotification:(NSNotification *)notification {
+    int64_t playerId = [notification.object longLongValue];
+    if (self.playerId != playerId) return;
+    [self play];
+}
+
+/// 暂停指定的播放器
++ (void)pausePlayer:(int64_t)playerId {
+    if (!playerId) return;
+    [NSNotificationCenter.defaultCenter postNotificationName:@"AFPlayerViewNotification_PausePlayer" object:@(playerId)];
+}
+- (void)pausePlayerNotification:(NSNotification *)notification {
+    int64_t playerId = [notification.object longLongValue];
+    if (self.playerId != playerId) return;
+    [self pause];
+}
+
+/// 暂停单例播放器
++ (void)pauseSharePlayer {
+    [AFPlayer.sharePlayer pause];
+}
+
+/// 停止指定的播放器
++ (void)stopPlayer:(int64_t)playerId {
+    if (!playerId) return;
+    [NSNotificationCenter.defaultCenter postNotificationName:@"AFPlayerViewNotification_StopPlayer" object:@(playerId)];
+}
+- (void)stopPlayerNotification:(NSNotification *)notification {
+    int64_t playerId = [notification.object longLongValue];
+    if (self.playerId != playerId) return;
+    [self stop];
+}
+
+/// 停止单例播放器
++ (void)stopSharePlayer {
+    [AFPlayer.sharePlayer stop];
 }
 
 /// 是否恢复
@@ -525,66 +649,7 @@ static int const AFDownloadBlockCode = 6666;
     }
 }
 
-#pragma mark - AFPlayerDelegate
-/// 更新状态
-- (void)player:(AFPlayer *)player updatePlayerStatus:(AFPlayerStatus)status {
-    switch (status) {
-            // 加载中
-        case AFPlayerStatusLoading: {
-            NSLog(@"-------------------------- 加载中 --------------------------");
-            [self.activityView startAnimating];
-            self.coverImgView.hidden = NO;
-            self.playBtn.hidden = YES;
-        }
-            break;
-            
-            // 播放中
-        case AFPlayerStatusPlay: {
-            NSLog(@"-------------------------- 播放中 --------------------------");
-            [self.activityView stopAnimating];
-            self.coverImgView.hidden = YES;
-            self.playBtn.hidden = YES;
-        }
-            break;
 
-            // 初始状态/暂停
-        default: {
-            NSLog(@"-------------------------- 停止播放 --------------------------");
-            if (_showVideoControl) {
-                self.bottomBar.playBtn.selected = NO;
-            }
-            self.playBtn.hidden = NO;
-            [_activityView stopAnimating];
-            if (!_player.isReadyForDisplay) {
-                self.coverImgView.hidden = NO;
-            } else if (self.item.progress == 0 || self.item.progress == 1) {
-                self.coverImgView.hidden = NO;
-            } else {
-                self.coverImgView.hidden = YES;
-            }
-        }
-            break;
-    }
-}
-
-/// 更新播放进度
-- (void)player:(AFPlayer *)player updateProgressWithCurrentTime:(float)currentTime durationTime:(float)durationTime animated:(BOOL)animated {
-    if (self.item.showVideoControl) {
-        [self.bottomBar updateProgressWithCurrentTime:currentTime durationTime:self.player.duration animated:animated];
-    } else {
-        if (_bottomBar.superview) [_bottomBar removeFromSuperview];
-        _bottomBar = nil;
-    }
-}
-
-
-#pragma mark - 播放器开关
-+ (BOOL)enable {
-    return AFPlayer.enable;
-}
-+ (void)setEnable:(BOOL)enable {
-    AFPlayer.enable = enable;
-}
 
 @end
 

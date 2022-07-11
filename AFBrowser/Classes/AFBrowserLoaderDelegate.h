@@ -7,7 +7,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class AFBrowserItem;
+@class AFBrowserItem, AFPlayerView;
 
 @protocol AFBrowserLoaderDelegate <NSObject>
 @optional;
@@ -72,7 +72,7 @@
 /**
  * @brief 统一在视频即将播放前进行拦截，控制是否播放，如果视频本身是不播放的，则无效
  */
-+ (BOOL)shouldPlayVideo:(AFBrowserItem *)item;
++ (BOOL)shouldPlayVideo:(AFBrowserItem *)item playerView:(AFPlayerView *)playerView;
 
 
 @end

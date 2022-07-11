@@ -90,7 +90,15 @@
 
 
 
+
 @implementation AFBrowserVideoItem
+
+- (instancetype)init {
+    if (self = [super init]) {
+        self.playBtnEnable = YES;
+    }
+    return self;
+}
 
 - (AVPlayerItem *)playerItem {
     if (!_playerItem && self.localPath) {

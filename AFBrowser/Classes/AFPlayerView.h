@@ -41,6 +41,9 @@
 /** 控制所有播放器，设置为false则会暂停所有播放器，必须设置回true，否则调用play也不会播放 */
 @property (class) BOOL  enable;
 
+/** 播放器唯一Id，可用于控制播放器 */
+@property (nonatomic, assign) int64_t             playerId;
+
 /** 播放器状态 */
 @property (nonatomic, assign) AFPlayerStatus      status;
 
@@ -127,6 +130,21 @@
 
 /// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss;
+
+/// 播放指定的播放器
++ (void)playPlayer:(int64_t)playerId;
+
+/// 暂停指定的播放器
++ (void)pausePlayer:(int64_t)playerId;
+
+/// 暂停单例播放器
++ (void)pauseSharePlayer;
+
+/// 停止指定的播放器
++ (void)stopPlayer:(int64_t)playerId;
+
+/// 停止单例播放器
++ (void)stopSharePlayer;
 
 /// 暂停所有正在播放的播放器
 + (void)pauseAllPlayer;

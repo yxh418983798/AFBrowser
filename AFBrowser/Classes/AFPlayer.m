@@ -101,7 +101,7 @@ static int playerCount = 0;
 
 /// 释放
 - (void)destroy {
- 
+    NSLog(@"-------------------------- destroyAFplayer --------------------------");
     if (!NSThread.isMainThread) {
         dispatch_async(dispatch_get_main_queue(), ^{
             if (_player) [_player pause];
@@ -190,7 +190,9 @@ static int playerCount = 0;
 
 - (void)setVideoGravity:(AVLayerVideoGravity)videoGravity {
     _videoGravity = videoGravity;
-    _playerLayer.videoGravity = videoGravity;
+    if (self.item.videoContentScale == 0) {
+        _playerLayer.videoGravity = videoGravity;
+    }
 }
 
 
@@ -235,6 +237,11 @@ static int playerCount = 0;
 
 /// 获取播放器frame
 - (CGRect)playerFrame {
+    if (self.item.videoContentScale > 0) {
+        self.playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+        CGFloat height = fmin(self.superView.frame.size.width/self.item.videoContentScale, self.superView.frame.size.height);
+        return CGRectMake(0, (self.superView.frame.size.height - height)/2, self.superView.frame.size.width, height);
+    }
     if (self.playerLayer.videoGravity == AVLayerVideoGravityResizeAspectFill && self.item.width > 0 && self.item.height > 0) {
         CGFloat height = fmin(self.superView.frame.size.width * self.item.height/self.item.width, self.superView.frame.size.height);
         return CGRectMake(0, (self.superView.frame.size.height - height)/2, self.superView.frame.size.width, height);
@@ -276,18 +283,25 @@ static int playerCount = 0;
 /// 切换PlayerItem
 - (void)replacePlayerItem:(AVPlayerItem *)item {
     
-    if (item && item == self.player.currentItem) return;
+    if (item && item == self.player.currentItem) {
+        NSLog(@"-------------------------- 错误！!! --------------------------");
+        return;
+    }
     self.playerItem = item;
     if (self.player.currentItem) {
         [self.player pause];
+//        NSLog(@"-------------------------- 移除111 --------------------------");
         [self removeKVO];
         [self.player replaceCurrentItemWithPlayerItem:nil];
         if (item) {
+//            NSLog(@"-------------------------- 添加KVO 111 --------------------------");
             [self addKVOWithItem:item];
         }
     } else {
         if (item) {
+//            NSLog(@"-------------------------- 移除KVO 222--------------------------");
             [self removeKVO];
+//            NSLog(@"-------------------------- 添加KVO 222--------------------------");
             [self addKVOWithItem:item];
         }
     }
@@ -375,6 +389,7 @@ static int playerCount = 0;
     }
     // 播放器
     [self replacePlayerItem:self.item.playerItem];
+    NSLog(@"-------------------------- 解码状态：%d %d --------------------------", self.player.status, self.player.currentItem.status);
 }
 
 /// 解码
@@ -419,6 +434,16 @@ static int playerCount = 0;
 - (void)playVideoItem:(AFBrowserVideoItem *)item superview:(UIView *)superview completion:(void (^)(NSError *))completion {
     item.pauseReason = AFPlayerPauseReasonDefault;
     self.completion = completion;
+    // 停止当前item
+    if (self.item != item) {
+        [self stop];
+        self.item = item;
+        if (self.item.videoContentScale > 0) {
+            self.playerLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
+        } else {
+            self.playerLayer.videoGravity = self.item.videoGravity;
+        }
+    }
     // 父视图为空
     if (!superview) {
         [self completionError:[NSError errorWithDomain:@"AFPlayer" code:80400 userInfo:@{@"error" : @"播放视频错误：superview为空"}]];
@@ -429,12 +454,6 @@ static int playerCount = 0;
         self.superView = superview;
         [self.superView.layer addSublayer:self.playerLayer];
         [self layout];
-    }
-    // 停止当前item
-    if (self.item != item) {
-        [self replacePlayerItem:nil];
-        [self stop];
-        self.item = item;
     }
     // content为空
     if (!item.content) {
@@ -491,23 +510,25 @@ static int playerCount = 0;
         [self stop];
         return;
     }
-    // 开关关闭
-    if (!_AllPlayerSwitch) {
-        NSLog(@"-------------------------- 播放过滤，关闭全局播放器 --------------------------");
-        return;
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(shouldPlayVideo:playerView:)]) {
+        // 代理控制
+        if (![AFBrowserViewController.loaderProxy shouldPlayVideo:self.item playerView:self.superView]) {
+            [self pause];
+            return;
+        }
+    } else {
+        // 开关控制
+        if (!_AllPlayerSwitch) {
+            [self pause];
+            NSLog(@"-------------------------- 播放过滤，关闭全局播放器 --------------------------");
+            return;
+        }
     }
     // 状态不对，重新开始播放流程
     if (self.player.currentItem.status != AVPlayerItemStatusReadyToPlay) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[play]播放状态错误, playerItem.status = %d", self.player.currentItem.status]];
         [self playVideoItem:self.item superview:self.superView completion:self.completion];
         return;
-    }
-    // 代理控制
-    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(shouldPlayVideo:)]) {
-        if (![AFBrowserViewController.loaderProxy shouldPlayVideo:self.item]) {
-            [self pause];
-            return;
-        }
     }
     // 检查playerLayer状态
     if (!self.playerLayer.isReadyForDisplay) {
@@ -569,6 +590,7 @@ static int playerCount = 0;
 
 #pragma mark - 停止
 - (void)stop {
+    [self replacePlayerItem:nil];
     self.item.progress = 0;
     [self seekToTime:0.f];
     [self.player pause];
@@ -606,22 +628,28 @@ static int playerCount = 0;
 - (void)addKVOWithItem:(AVPlayerItem *)item {
     [item addObserver:self forKeyPath:@"status" options:NSKeyValueObservingOptionNew context:nil];
     [self.player replaceCurrentItemWithPlayerItem:item];
+    // 如果已经是准备完成状态了，这里需要调用statusDidChange
+    if (item.status == AVPlayerItemStatusReadyToPlay) {
+        [self statusDidChange];
+    }
     self.isObserving = YES;
     if (!self.playerObserver) {
         __weak typeof(self) weakSelf = self;
         self.playerObserver = [self.player addPeriodicTimeObserverForInterval:CMTimeMakeWithSeconds(0.05, NSEC_PER_SEC) queue:dispatch_get_main_queue() usingBlock:^(CMTime time) {
-            //视频第一次回调
+            // 视频第一次回调
             weakSelf.item.progress = CMTimeGetSeconds(time) / weakSelf.duration;
             if (isnan(weakSelf.item.progress) || weakSelf.item.progress > 1.0) {
                 weakSelf.item.progress = 0.f;
                 weakSelf.item.currentTime = 0;
-                NSLog(@"-------------------------- 进度回调异常:%f --------------------------", self.player.rate);
+//                NSLog(@"-------------------------- 进度回调异常:%f --------------------------", self.player.rate);
             } else {
                 [weakSelf onFirstFrame];
                 weakSelf.item.currentTime = CMTimeGetSeconds(time);
             }
             [weakSelf updateProgressWithCurrentTime:CMTimeGetSeconds(time) durationTime:weakSelf.duration animated:YES];
         }];
+    } else {
+        NSLog(@"-------------------------- 添加KVO错误 --------------------------");
     }
 }
 
@@ -668,6 +696,7 @@ static int playerCount = 0;
             break;
             
         default:
+            NSLog(@"-------------------------- 无法识别的状态 --------------------------");
             break;
     }
 }

@@ -131,7 +131,7 @@
 //    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(addLogString:)]) {
 //        [AFBrowserViewController.loaderProxy addLogString:log];
 //    } else {
-//        NSLog(@"%@", log);
+        NSLog(@"%@", log);
 //    }
 //#endif
 }

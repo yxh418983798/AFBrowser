@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'AFBrowser'
-  s.version          = '2.0'
+  s.version          = '2.0.1'
   s.summary          = '图片/视频浏览器'
   s.description      = <<-DESC
   1、视频播放器重构

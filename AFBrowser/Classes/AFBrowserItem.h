@@ -6,8 +6,8 @@
 //  Copyright © 2019 MostOne. All rights reserved.
 //
 
-#import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
+#import <AVFoundation/AVFoundation.h>
 #import "AFBrowserEnum.h"
 
 @class AVPlayerItem;
@@ -124,23 +124,39 @@
 #pragma mark - 视频Item
 @interface AFBrowserVideoItem : AFBrowserItem
 
-/** 是否循环播放，默认NO */
-@property (nonatomic, assign) BOOL            loop;
-
-/** localPath */
+/** 视频下载完成的本地路径，如果未下载完成，则返回nil */
 @property (nonatomic, copy) NSString            *localPath;
+
+/** playerItem */
+@property (nonatomic, strong) AVPlayerItem      *playerItem;
+
+/** 播放器的填充方式，默认AVLayerVideoGravityResizeAspectFill完全填充 */
+@property (nonatomic, copy) AVLayerVideoGravity videoGravity;
+
+/** 使用固定的比例填充（宽:高），默认为0，使用videoGravity填充，videoContentScale不为0时videoGravity会无效 */
+@property (nonatomic, assign) CGFloat           videoContentScale;
+
+/** 是否无限循环播放，默认NO */
+@property (nonatomic, assign) BOOL              loop;
+
+/** 静音播放控制 */
+@property (nonatomic, assign) AFPlayerMuteOption        muteOption;
+
+/** 播放视频时，是否显示控制条，默认NO */
+@property (assign, nonatomic) BOOL                      videoControlEnable;
+
+/** 暂停播放视频时，是否显示播放按钮，默认YES */
+@property (assign, nonatomic) BOOL                      playBtnEnable;
 
 /** 数据状态 */
 @property (nonatomic, assign) AFBrowserVideoItemStatus  itemStatus;
 
-/** 数据状态 */
+/** 播放器状态 */
 @property (nonatomic, assign) AFPlayerStatus            playerStatus;
 
 /** 暂停原因 */
-@property (nonatomic, assign) AFPlayerPauseReason    pauseReason;
-
-/** playerItem */
-@property (nonatomic, strong) AVPlayerItem            *playerItem;
+@property (nonatomic, assign) AFPlayerPauseReason       pauseReason;
+  
 
 
 /// 更新状态
