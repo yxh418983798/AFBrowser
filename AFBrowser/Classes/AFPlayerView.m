@@ -151,7 +151,7 @@ static CGFloat playBtn_W = 50.0;
 //        return;
 //    }
     if (showVideoControl) {
-        if (self.configuration.transitionStatus != AFTransitionStatusPresented) {
+        if (self.configuration && self.configuration.transitionStatus != AFTransitionStatusPresented) {
             return;
         }
 //        NSLog(@"-------------------------- 显示控制条 --------------------------");
