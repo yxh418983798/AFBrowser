@@ -521,7 +521,7 @@ static UIImage * DefaultPlaceholderImage() {
             [self addSubview:self.player];
 //            self.player.transitionStatus = AFPlayerTransitionStatusFullScreen;
             self.player.browserDelegate = self;
-            [self.player prepareVideoItem:self.item];
+            [self.player prepareVideoItem:self.item active:NO];
             [self resizeSubviewSize];
         }
             break;

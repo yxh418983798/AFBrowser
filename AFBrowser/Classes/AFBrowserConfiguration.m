@@ -105,13 +105,6 @@ static UIDeviceOrientation *_lastOrientation;
     };
 }
 
-- (AFBrowserConfiguration * (^)(BOOL))makeShowVideoControl {
-    return ^id(BOOL showVideoControl) {
-        self.showVideoControl = showVideoControl;
-        return self;
-    };
-}
-
 - (AFBrowserConfiguration * (^)(BOOL))makeHideSourceViewWhenTransition {
     return ^id(BOOL hideSourceViewWhenTransition) {
         self.hideSourceViewWhenTransition = hideSourceViewWhenTransition;

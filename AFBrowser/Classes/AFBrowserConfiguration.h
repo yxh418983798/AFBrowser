@@ -24,9 +24,6 @@
 /** 是否自动加载原图，默认YES */
 @property (assign, nonatomic) BOOL                     autoLoadOriginalImage;
 
-/** 播放视频时，是否显示控制条，默认NO */
-@property (assign, nonatomic) BOOL                     showVideoControl;
-
 /** 转场时，是否隐藏源视图，默认NO */
 @property (assign, nonatomic) BOOL                     hideSourceViewWhenTransition;
 

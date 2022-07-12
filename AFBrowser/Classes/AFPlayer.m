@@ -72,7 +72,7 @@ static int playerCount = 0;
 - (instancetype)init {
     if (self = [super init]) {
         self.proxy = AFPlayerProxy.new;
-        self.proxy.player = self;
+        self.proxy.target = self;
         playerCount ++;
         NSLog(@"-------------------------- 创建播放器:%d ,%@--------------------------", playerCount, self);
         [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pauseAllPlayerNotification) name:AFPlayerNotificationPauseAllPlayer object:nil];
@@ -253,7 +253,7 @@ static int playerCount = 0;
     CGSize size = self.player.currentItem.presentationSize;
     if (size.width == 0) size.width = self.item.width;
     if (size.height == 0) size.height = self.item.height;
-    if (self.playerLayer.videoGravity == AVLayerVideoGravityResizeAspectFill && size.width > 0 && size.height > 0) {
+    if (self.playerLayer.videoGravity == AVLayerVideoGravityResizeAspect && size.width > 0 && size.height > 0) {
         CGFloat height = fmin(self.superView.frame.size.width * size.height/size.width, self.superView.frame.size.height);
         return CGRectMake(0, (self.superView.frame.size.height - height)/2, self.superView.frame.size.width, height);
     } else {
@@ -482,7 +482,10 @@ static int playerCount = 0;
     self.completion = completion;
     // 停止当前item
     if (self.item != item) {
-        [self stop];
+        NSLog(@"-------------------------- 切换Item，old:%@ -- new:%@ --------------------------", [self.superView performSelector:@selector(displayDescription)], [superview performSelector:@selector(displayDescription)]);
+        if (self.item) {
+            [self stop];
+        }
         self.item = item;
         [self onUpdateItem];
     }
@@ -493,8 +496,14 @@ static int playerCount = 0;
     }
     // 更新父视图
     if (self.superView != superview) {
+        NSLog(@"-------------------------- 切换superview，old:%@ -- new:%@ --------------------------", [self.superView performSelector:@selector(displayDescription)], [superview performSelector:@selector(displayDescription)]);
+        // 可能出现Item复用的情况，此时item不变，但父视图变了，需要在这里再调用一次stop
+        if (self.item.playerStatus != AFPlayerStatusNormal) {
+            [self stop];
+        }
+        self.delegate = superview;
         self.superView = superview;
-        [self.superView.layer addSublayer:self.playerLayer];
+        [self.superView.layer insertSublayer:self.playerLayer atIndex:0];
         [self layout];
     }
     // content为空
@@ -509,6 +518,7 @@ static int playerCount = 0;
         switch (item.itemStatus) {
                 // 解码中，则直接忽略
             case AFBrowserVideoItemStatusPrepare:
+                NSLog(@"-------------------------- 忽略解码中：%@ --------------------------", self.superView);
                 break;
                 
                 // 解码完成，可直接播放
@@ -596,6 +606,7 @@ static int playerCount = 0;
 
 /// 开始播放，更新UI
 - (void)startPlay {
+    NSLog(@"-------------------------- startPlay：%@ --------------------------", self.superView);
     [self layout];
     self.item.pauseReason = AFPlayerPauseReasonDefault;
     [self.item updateItemStatus:AFBrowserVideoItemStatusPrepareDone];
@@ -606,10 +617,6 @@ static int playerCount = 0;
     if (_showVideoControl) {
         self.bottomBar.playBtn.selected = YES;
     }
-//    if (!self.playerLayer.superlayer) {
-//        [self.layer addSublayer:self.playerLayer];
-//    }
-//    NSLog(@"-------------------------- 开始播放 --------------------------", self.item.content);
 }
 
 
@@ -633,10 +640,9 @@ static int playerCount = 0;
 
 #pragma mark - 停止
 - (void)stop {
-    [self replacePlayerItem:nil];
     self.item.progress = 0;
-    [self seekToTime:0.f];
-    [self.player pause];
+    self.item.currentTime = 0;
+    [self replacePlayerItem:nil];
     if (self.item.itemStatus > AFBrowserVideoItemStatusLoaded) {
         self.item.itemStatus = AFBrowserVideoItemStatusLoaded;
     }
@@ -766,6 +772,12 @@ static int playerCount = 0;
 }
 - (void)pauseAllPlayerNotification {
     if (self.isPlay) {
+        // 代理控制
+        if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(shouldPauseVideo:playerView:)]) {
+            if (![AFBrowserViewController.loaderProxy shouldPauseVideo:self.item playerView:self.superView]) {
+                return ;
+            }
+        }
         [self pausePlay];
         self.item.pauseReason = AFPlayerPauseReasonByPauseAll;
     }
@@ -789,6 +801,12 @@ static int playerCount = 0;
 
 /// 是否恢复
 - (BOOL)shouldResume {
+    // 代理控制
+    if ([AFBrowserViewController.loaderProxy respondsToSelector:@selector(shouldResumeVideo:playerView:)]) {
+        if (![AFBrowserViewController.loaderProxy shouldResumeVideo:self.item playerView:self.superView]) {
+            return NO;
+        }
+    }
     if (self.resumeOption != AFPlayerResumeOptionBrowserAppeared) return YES;
     if ([AFBrowserConfiguration.currentVc isKindOfClass:NSClassFromString(@"AFBrowserViewController")]) return YES;
     return NO;
@@ -806,7 +824,11 @@ static int playerCount = 0;
     return _AllPlayerSwitch;
 }
 + (void)setEnable:(BOOL)enable {
-    _AllPlayerSwitch = enable;
+    if (enable) {
+        [self resumeAllPlayer];
+    } else {
+        [self pauseAllPlayer];
+    }
 }
     
 

@@ -153,7 +153,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     self.originalIndex = self.configuration.selectedIndex;
 //    self.transformer.item = [self itemAtIndex:self.configuration.selectedIndex];
     AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
-    cell.player.showVideoControl = [self itemAtIndex:self.configuration.selectedIndex].showVideoControl;
+    cell.player.showVideoControl = [(AFBrowserVideoItem *)[self itemAtIndex:self.configuration.selectedIndex] videoControlEnable];
 
     //设置偏移量
     self.collectionView.contentOffset = CGPointMake(self.configuration.selectedIndex * ([[UIScreen mainScreen] bounds].size.width+lineSpacing), 0);
@@ -464,12 +464,11 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 /// 获取指定index的item
-- (AFBrowserItem *)itemAtIndex:(NSInteger)index {
+- (AFBrowserVideoItem *)itemAtIndex:(NSInteger)index {
     NSString *key = [NSString stringWithFormat:@"AFPageItemIndex_%ld", index];
     AFBrowserItem *item = [self.items valueForKey:key];
     if (!item) {
         item = [self.configuration.delegate browser:self itemForBrowserAtIndex:index];
-        item.showVideoControl = self.configuration.showVideoControl;
         if (self.configuration.playOption == AFBrowserPlayOptionDefault) {
             self.configuration.playOption = AFBrowserPlayOptionNeverAutoPlay;
             if (index == self.configuration.selectedIndex) {
@@ -644,10 +643,10 @@ static const CGFloat lineSpacing = 0.f; //间隔
 /// 结束滚动
 - (void)endScroll {
     [self loadItems];
-    AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
+    AFBrowserVideoItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     if (item.type == AFBrowserItemTypeVideo) {
         AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
-        cell.player.showVideoControl = item.showVideoControl;
+        cell.player.showVideoControl = item.videoControlEnable;
     }
     [[NSNotificationCenter defaultCenter] postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.configuration.selectedIndex)];
 }
@@ -655,7 +654,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
 
 #pragma mark - 刚进入时，播放当前的播放器
 - (void)startCurrentPlayer {
-    AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
+    AFBrowserVideoItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     if (!item) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
             [self startCurrentPlayer];
@@ -676,7 +675,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayback error:nil];
         [AVAudioSession.sharedInstance setActive:YES error:nil];
         if (self.configuration.transitionStatus == AFTransitionStatusPresented && cell.player.frame.size.width == UIScreen.mainScreen.bounds.size.width) {
-            cell.player.showVideoControl = item.showVideoControl;
+            cell.player.showVideoControl = item.videoControlEnable;
         } else {
             NSLog(@"-------------------------- 未完成转场，过滤设置 --------------------------");
         }
@@ -691,7 +690,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if ([self.configuration.delegate respondsToSelector:@selector(browser:tapActionAtIndex:)]) {
         if (![self.configuration.delegate browser:self tapActionAtIndex:self.configuration.selectedIndex])  return;
     }
-    AFBrowserItem *item = [self itemAtIndex:self.configuration.selectedIndex];
+    AFBrowserVideoItem *item = [self itemAtIndex:self.configuration.selectedIndex];
     if (_toolBar.superview) {
         //隐藏
         _showToolBar = !_showToolBar;
@@ -704,9 +703,9 @@ static const CGFloat lineSpacing = 0.f; //间隔
             self.toolBar.alpha = self.showToolBar ? 1 : 0;
             if (self.configuration.pageControlType == AFPageControlTypeCircle) self.pageControl.alpha = self.showToolBar ? 1 : 0;
             if (item.type == AFBrowserItemTypeVideo) {
-                item.showVideoControl = !item.showVideoControl;
+                item.videoControlEnable = !item.videoControlEnable;
                 AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
-                cell.player.showVideoControl = item.showVideoControl;
+                cell.player.showVideoControl = item.videoControlEnable;
             }
         }];
     } else {

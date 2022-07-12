@@ -143,7 +143,7 @@
 @interface AFPlayerProxy : NSObject
 
 /** 播放器 */
-@property (nonatomic, weak) AFPlayer            *player;
+@property (nonatomic, weak) id            target;
 
 @end
 

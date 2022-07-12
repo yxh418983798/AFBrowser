@@ -80,12 +80,15 @@
 /**
  * @brief 准备播放
  *
+ * @param item 视频数据
+ * @param active 是否将当前的播放器设置为活跃状态
+ *
  * @discussion
- * 会触发预下载
- * 下载完成后如果播放器不是单例，则会触发视频解码
- * 如果播放器是单例，只会解码当前播放器的视频数据
+ * 通常情况一个播放器对应一个playerId
+ * 如果出现多个播放器对应一个playerId的情况，则缓存池中只会有一个活跃的播放器
+ * 通过类方法对播放器进行的操作都需要播放器处于活跃状态
  */
-- (void)prepareVideoItem:(AFBrowserVideoItem *)item;
+- (void)prepareVideoItem:(AFBrowserVideoItem *)item active:(BOOL)active;
 
 /*!
  * @brief 播放视频
@@ -94,29 +97,48 @@
  * @param completion 播放结束回调
  *
  * @discussion
+ * 会自动将当前播放器设置为活跃状态
  * 如果item未下载完成，AFPlayer会自动加入下载任务并优先下载当前的item
  * 下载期间如果用户未切换或暂停、停止播放item，则AFPlayer在下载完成后会自动播放
  */
 - (void)playVideoItem:(AFBrowserVideoItem *)item completion:(void(^)(NSError *error))completion;
 
-/**
- * @brief 暂停视频
- */
+/// 暂停播放
 - (void)pause;
 
-/**
- * @brief 停止视频
- */
+/// 停止播放
 - (void)stop;
 
-/**
- * @brief 跳转进度
- */
+/// 跳转到指定进度
 - (void)seekToTime:(NSTimeInterval)time;
 
-- (void)destroy;
+/// 通过playerId获取播放器，返回当前活跃的播放器
++ (AFPlayerView *)getPlayerView:(int64_t)playerId;
 
-- (BOOL)isSliderTouch;
+/// 播放指定playerId的播放器（播放器需要处于活跃状态）
++ (AFPlayerView *)playPlayer:(int64_t)playerId;
+
+/// 暂停指定的播放器（播放器需要处于活跃状态）
++ (AFPlayerView *)pausePlayer:(int64_t)playerId;
+
+/// 停止指定的播放器（播放器需要处于活跃状态）
++ (AFPlayerView *)stopPlayer:(int64_t)playerId;
+
+/// 获取当前是否有播放器在播放
++ (BOOL)isPlaying;
+
+/// 暂停单例播放器
++ (void)pauseSharePlayer;
+
+/// 停止单例播放器
++ (void)stopSharePlayer;
+
+/// 暂停所有正在播放的播放器
++ (void)pauseAllPlayer;
+
+/// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
++ (void)resumeAllPlayer;
+
 
 
 /// 返回转场动画使用的size
@@ -131,26 +153,11 @@
 /// 控制器取消Dismiss，做一些恢复处理
 - (void)browserCancelDismiss;
 
-/// 播放指定的播放器
-+ (void)playPlayer:(int64_t)playerId;
+- (void)destroy;
 
-/// 暂停指定的播放器
-+ (void)pausePlayer:(int64_t)playerId;
+- (BOOL)isSliderTouch;
 
-/// 暂停单例播放器
-+ (void)pauseSharePlayer;
 
-/// 停止指定的播放器
-+ (void)stopPlayer:(int64_t)playerId;
-
-/// 停止单例播放器
-+ (void)stopSharePlayer;
-
-/// 暂停所有正在播放的播放器
-+ (void)pauseAllPlayer;
-
-/// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
-+ (void)resumeAllPlayer;
 
 
 @end

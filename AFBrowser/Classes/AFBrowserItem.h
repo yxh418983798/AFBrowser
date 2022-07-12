@@ -35,6 +35,9 @@
 /** userInfo，自定义参数 */
 @property (strong, nonatomic) id                userInfo;
 
+/** userInfo，弱引用自定义参数 */
+@property (weak, nonatomic) id                  weakUserInfo;
+
 /** presentedTrasitionView的原始frame */
 @property (assign, nonatomic) CGRect          presentedTrasitionViewFrame;
 
@@ -64,9 +67,6 @@
 
 /** 是否自动播放视频，默认NO */
 @property (assign, nonatomic) BOOL              autoPlay;
-
-/** 播放视频时，是否显示控制条，默认不显示 */
-@property (assign, nonatomic) BOOL              showVideoControl;
 
 /** 当前视频播放进度时间 */
 @property (nonatomic, assign) NSTimeInterval    currentTime;
@@ -141,6 +141,9 @@
 
 /** 封面图的填充方式，默认自动根据videoGravity来适应 */
 @property (nonatomic, assign)  UIViewContentMode coverContentMode;
+
+/** 如果视频未完全填充，设置播放器空白部分的背景色 */
+@property (nonatomic, strong) UIColor            *backgroundColor; 
 
 /** 是否无限循环播放，默认NO */
 @property (nonatomic, assign) BOOL              loop;

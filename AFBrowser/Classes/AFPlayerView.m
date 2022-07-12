@@ -18,6 +18,9 @@ static int const AFDownloadBlockCode = 6666;
 
 @interface AFPlayerView () <AFPlayerDelegate>
 
+/** AFPlayerProxy */
+@property (nonatomic, strong) AFPlayerProxy     *proxy;
+
 /** 视频数据源 */
 @property (nonatomic, strong) AFBrowserVideoItem      *item;
 
@@ -42,9 +45,6 @@ static int const AFDownloadBlockCode = 6666;
 /** 加载进度提示 */
 @property (strong, nonatomic) UIActivityIndicatorView *activityView;
 
-/** AFBrowserLoaderProxy */
-@property (nonatomic, strong) AFBrowserLoaderProxy    *proxy;
-
 /** 记录是否在监听 */
 @property (nonatomic, assign) BOOL          isObserving;
 
@@ -67,11 +67,13 @@ static CGFloat playBtn_W = 50.0;
 - (instancetype)init {
     if (self = [super init]) {
         self.useSharePlayer = YES;
+        self.proxy = AFPlayerProxy.new;
+        self.proxy.target = self;
         self.clipsToBounds = YES;
         [self addSubview:self.contentView];
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(playPlayerNotification:) name:@"AFPlayerViewNotification_PlayPlayer" object:nil];
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pausePlayerNotification:) name:@"AFPlayerViewNotification_PausePlayer" object:nil];
-        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(stopPlayerNotification:) name:@"AFPlayerViewNotification_StopPlayer" object:nil];
+//        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(playPlayerNotification:) name:@"AFPlayerViewNotification_PlayPlayer" object:nil];
+//        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(pausePlayerNotification:) name:@"AFPlayerViewNotification_PausePlayer" object:nil];
+//        [NSNotificationCenter.defaultCenter addObserver:self selector:@selector(stopPlayerNotification:) name:@"AFPlayerViewNotification_StopPlayer" object:nil];
     }
     return self;
 }
@@ -83,6 +85,12 @@ static CGFloat playBtn_W = 50.0;
     return playerView;
 }
 
+
+- (void)dealloc {
+    NSLog(@"-------------------------- 播放器释放：%@ --------------------------", self);
+    [self removeFromPlayerViews];
+    if (!self.useSharePlayer) [_player destroy];
+}
 
 #pragma mark - 生命周期
 - (void)layoutSubviews {
@@ -96,11 +104,6 @@ static CGFloat playBtn_W = 50.0;
     _dismissBtn.frame = CGRectMake(0, UIApplication.sharedApplication.statusBarFrame.size.height, 50, 44);
     _bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
     _playBtn.frame = CGRectMake((self.frame.size.width - playBtn_W)/2, (self.frame.size.height - playBtn_W)/2, playBtn_W, playBtn_W);
-}
-
-- (void)dealloc {
-    NSLog(@"-------------------------- 播放器释放：%@ --------------------------", self);
-    if (!self.useSharePlayer) [_player destroy];
 }
 
 /// 释放
@@ -134,7 +137,7 @@ static CGFloat playBtn_W = 50.0;
     if (self.isPlay) {
         [self play];
     }
-//    self.showVideoControl = self.item.showVideoControl;
+    self.showVideoControl = self.item.videoControlEnable;
 //    self.transitionStatus = AFPlayerTransitionStatusFullScreen;
 }
 
@@ -194,7 +197,7 @@ static CGFloat playBtn_W = 50.0;
 
 /// 描述
 - (NSString *)displayDescription {
-    return @"";
+    return [NSString stringWithFormat:@"%@--%@", self.item.weakUserInfo, self];
 //    return [NSString stringWithFormat:@"播放器描述：%p\n url:%@\n item.content:%@, status:%d, hidden:%d\nProgress：%g, \ncover:%@, \nduration:%g, width:%g, height:%g\ncurrentItem:%@\n showVideoControl:%d", self,  self.url, self.item.content, self.status, self.hidden, self.progress, self.item.coverImage, self.duration, self.item.width, self.item.height, _player.currentItem, self.showVideoControl];
 }
 
@@ -289,7 +292,6 @@ static CGFloat playBtn_W = 50.0;
         _bottomBar = [AFPlayerBottomBar new];
         _bottomBar.frame = CGRectMake(0, self.frame.size.height - 80, self.frame.size.width, 50);
         _bottomBar.slider.delegate = self;
-        _bottomBar.alpha = _showVideoControl ? 1 : 0;
         _bottomBar.playBtn.selected = self.isPlay;
         [_bottomBar.playBtn addTarget:self action:@selector(playBtnAction:) forControlEvents:UIControlEventTouchUpInside];
         [_bottomBar.slider addTarget:self action:@selector(sliderTouchDownAction:) forControlEvents:UIControlEventTouchDown];
@@ -318,10 +320,19 @@ static CGFloat playBtn_W = 50.0;
     return self.item.playerStatus == AFPlayerStatusPlay;
 }
 
+/// 是否恢复
+- (BOOL)shouldResume {
+    if (self.resumeOption != AFPlayerResumeOptionBrowserAppeared) return YES;
+    if ([AFBrowserConfiguration.currentVc isKindOfClass:NSClassFromString(@"AFBrowserViewController")]) return YES;
+    return NO;
+}
+
 
 #pragma mark - UI更新
 /// item变化，更新UI
 - (void)onUpdateItem {
+    self.backgroundColor = self.item.backgroundColor;
+    [self player:self.player updatePlayerStatus:self.item.playerStatus];
     if (self.item.coverContentMode >= 0) {
         self.coverImgView.contentMode = self.item.coverContentMode;
     } else {
@@ -414,7 +425,7 @@ static CGFloat playBtn_W = 50.0;
     switch (status) {
             // 加载中
         case AFPlayerStatusLoading: {
-            NSLog(@"-------------------------- 加载中:%@ --------------------------", self);
+            NSLog(@"-------------------------- 加载中:%@ --------------------------", self.displayDescription);
             [self.activityView startAnimating];
             self.coverImgView.hidden = NO;
             [self showPlayBtn:NO];
@@ -423,7 +434,7 @@ static CGFloat playBtn_W = 50.0;
             
             // 播放中
         case AFPlayerStatusPlay: {
-            NSLog(@"-------------------------- 播放中:%@ --------------------------", self);
+            NSLog(@"-------------------------- 播放中:%@ --------------------------", self.displayDescription);
             [self.activityView stopAnimating];
             self.coverImgView.hidden = YES;
             [self showPlayBtn:NO];
@@ -432,7 +443,7 @@ static CGFloat playBtn_W = 50.0;
 
             // 初始状态/暂停
         default: {
-            NSLog(@"-------------------------- 停止播放:%@ --------------------------", self);
+            NSLog(@"-------------------------- 停止播放:%@ --------------------------", self.displayDescription);
             [self showPlayBtn:YES];
             [_activityView stopAnimating];
             if (!_player.isReadyForDisplay) {
@@ -460,13 +471,18 @@ static CGFloat playBtn_W = 50.0;
 
 #pragma mark - 加载视频
 /// 准备播放，预加载
-- (void)prepareVideoItem:(AFBrowserVideoItem *)item {
+- (void)prepareVideoItem:(AFBrowserVideoItem *)item active:(BOOL)active {
+    if (active) [self addToPlayerViews];
     if (self.item == item) return;
     // 处理复用问题，如果item之前已经被绑定过playerView，需要先将旧的playerView解绑
-    if (item.playerView && item.playerView != self) {
-        NSLog(@"-------------------------- 解绑Item：%@，old:%@, self:%@ --------------------------", item, item.playerView, self);
-        [item.playerView prepareVideoItem:nil];
-    }
+//    AFPlayerView *oldPlayer = item.playerView;
+//    if (oldPlayer && oldPlayer != self) {
+//        if (self.playerId != 0 && self.playerId == oldPlayer.playerId) {
+//            oldPlayer.playerId = 0;
+//        }
+////        NSLog(@"-------------------------- 解绑Item：%@，old:%@, self:%@ --------------------------", item, item.playerView, self);
+////        [item.playerView prepareVideoItem:nil];
+//    }
     item.playerView = self;
     // 停止当前播放器
     if (self.player.item == self.item) [self.player stop];
@@ -480,17 +496,7 @@ static CGFloat playBtn_W = 50.0;
 }
 
 
-#pragma mark - 播放器控制
-/// 播放器开关
-+ (BOOL)enable {
-    return AFPlayer.enable;
-}
-
-/// 设置播放器开关
-+ (void)setEnable:(BOOL)enable {
-    AFPlayer.enable = enable;
-}
-
+#pragma mark - 播放器操作
 /// 跳转
 - (void)seekToTime:(NSTimeInterval)time {
     [self.player seekToTime:time];
@@ -498,10 +504,7 @@ static CGFloat playBtn_W = 50.0;
 
 /// 播放视频
 - (void)playVideoItem:(AFBrowserVideoItem *)item completion:(void(^)(NSError *error))completion {
-    if (self.useSharePlayer) {
-        self.player.delegate = self;
-    }
-    [self prepareVideoItem:item];
+    [self prepareVideoItem:item active:YES];
     [self.player playVideoItem:item superview:self completion:completion];
 }
 
@@ -520,8 +523,6 @@ static CGFloat playBtn_W = 50.0;
     [self.player stop];
 }
 
-
-#pragma mark - 通知
 /// 暂停所有正在播放的播放器
 + (void)pauseAllPlayer {
     [AFPlayer pauseAllPlayer];
@@ -533,25 +534,19 @@ static CGFloat playBtn_W = 50.0;
 }
 
 /// 播放指定的播放器
-+ (void)playPlayer:(int64_t)playerId {
-    if (!playerId) return;
-    [NSNotificationCenter.defaultCenter postNotificationName:@"AFPlayerViewNotification_PlayPlayer" object:@(playerId)];
-}
-- (void)playPlayerNotification:(NSNotification *)notification {
-    int64_t playerId = [notification.object longLongValue];
-    if (self.playerId != playerId) return;
-    [self play];
++ (AFPlayerView *)playPlayer:(int64_t)playerId {
+    if (!playerId) return nil;
+    AFPlayerView *playerView = [AFPlayerView getPlayerView:playerId];
+    [playerView play];
+    return playerView;
 }
 
 /// 暂停指定的播放器
-+ (void)pausePlayer:(int64_t)playerId {
-    if (!playerId) return;
-    [NSNotificationCenter.defaultCenter postNotificationName:@"AFPlayerViewNotification_PausePlayer" object:@(playerId)];
-}
-- (void)pausePlayerNotification:(NSNotification *)notification {
-    int64_t playerId = [notification.object longLongValue];
-    if (self.playerId != playerId) return;
-    [self pause];
++ (AFPlayerView *)pausePlayer:(int64_t)playerId {
+    if (!playerId) return nil;
+    AFPlayerView *playerView = [AFPlayerView getPlayerView:playerId];
+    [playerView pause];
+    return playerView;
 }
 
 /// 暂停单例播放器
@@ -560,32 +555,16 @@ static CGFloat playBtn_W = 50.0;
 }
 
 /// 停止指定的播放器
-+ (void)stopPlayer:(int64_t)playerId {
-    if (!playerId) return;
-    [NSNotificationCenter.defaultCenter postNotificationName:@"AFPlayerViewNotification_StopPlayer" object:@(playerId)];
-}
-- (void)stopPlayerNotification:(NSNotification *)notification {
-    int64_t playerId = [notification.object longLongValue];
-    if (self.playerId != playerId) return;
-    [self stop];
++ (AFPlayerView *)stopPlayer:(int64_t)playerId {
+    if (!playerId) return nil;
+    AFPlayerView *playerView = [AFPlayerView getPlayerView:playerId];
+    [playerView stop];
+    return playerView;
 }
 
 /// 停止单例播放器
 + (void)stopSharePlayer {
     [AFPlayer.sharePlayer stop];
-}
-
-/// 是否恢复
-- (BOOL)shouldResume {
-    if (self.resumeOption != AFPlayerResumeOptionBrowserAppeared) return YES;
-    if ([AFBrowserConfiguration.currentVc isKindOfClass:NSClassFromString(@"AFBrowserViewController")]) return YES;
-    return NO;
-}
-
-/// Target被释放的通知
-- (void)playerControllerProxyDeallocNotification:(NSNotification *)notification {
-    NSLog(@"-------------------------- 收到Proxy释放通知：%@ --------------------------", notification.object);
-    [self destroy];
 }
 
 
@@ -666,6 +645,68 @@ static CGFloat playBtn_W = 50.0;
     }
 }
 
+
+#pragma mark - 播放器活跃状态
+/// 存储playerView
++ (NSMutableDictionary *)playerViews {
+    static NSMutableDictionary *players;
+    if (!players) {
+        players = NSMutableDictionary.dictionary;
+    }
+    return players;
+}
+
+/// 获取播放器
++ (AFPlayerView *)getPlayerView:(int64_t)playerId {
+    AFPlayerProxy *proxy = [AFPlayerView.playerViews valueForKey:[NSString stringWithFormat:@"%lld", playerId]];
+    return proxy.target;
+}
+
+/// 添加
+- (void)addToPlayerViews {
+    [AFPlayerView.playerViews setValue:self.proxy forKey:[NSString stringWithFormat:@"%lld", self.playerId]];
+    NSLog(@"-------------------------- 活跃播放器：%@ --------------------------", self.displayDescription);
+}
+
+/// 移除
+- (void)removeFromPlayerViews {
+    NSString *key = [NSString stringWithFormat:@"%lld", self.playerId];
+    id proxy = [AFPlayerView.playerViews valueForKey:key];
+    if (proxy && proxy == self.proxy) {
+        [AFPlayerView.playerViews setValue:nil forKey:key];
+    }
+}
+
+/// 获取当前是否有播放器在播放
++ (BOOL)isPlaying {
+    for (AFPlayerProxy *proxy in self.playerViews.allValues) {
+        AFPlayerView *player = proxy.target;
+        if (player.item.pauseReason == AFPlayerPauseReasonByPauseAll || player.item.playerStatus == AFPlayerStatusPlay || player.item.playerStatus == AFPlayerStatusLoading) {
+            return YES;
+        }
+    }
+    return NO;
+}
+
+///// 设置PlayerId为活跃
+//- (void)setPlayerIdActive:(BOOL)playerIdActive {
+//    _playerIdActive = playerIdActive;
+//    if (playerIdActive) {
+//        [AFPlayerView.playerViews setValue:self.proxy forKey:[NSString stringWithFormat:@"%lld", self.playerId]];
+//    }
+//}
+
+
+#pragma mark - 播放器控制
+/// 播放器开关
++ (BOOL)enable {
+    return AFPlayer.enable;
+}
+
+/// 设置播放器开关
++ (void)setEnable:(BOOL)enable {
+    AFPlayer.enable = enable;
+}
 
 
 @end

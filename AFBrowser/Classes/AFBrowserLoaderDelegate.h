@@ -74,6 +74,17 @@
  */
 + (BOOL)shouldPlayVideo:(AFBrowserItem *)item playerView:(AFPlayerView *)playerView;
 
+/**
+ * @brief 当调用 AFPlayerView.enable = YES 时触发，统一在视频即将恢复播放前进行拦截，控制是否恢复播放
+ */
++ (BOOL)shouldResumeVideo:(AFBrowserItem *)item playerView:(AFPlayerView *)playerView;
+
+/**
+ * @brief 当调用 AFPlayerView.enable = NO 时触发，统一在视频即将暂停前进行拦截，控制是否暂停
+ */
++ (BOOL)shouldPauseVideo:(AFBrowserItem *)item playerView:(AFPlayerView *)playerView;
+
+
 
 @end
 

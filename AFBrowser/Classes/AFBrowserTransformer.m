@@ -608,7 +608,7 @@
             if ([self.transitionView respondsToSelector:@selector(browserCancelDismiss)]) {
                 [self.transitionView performSelector:@selector(browserCancelDismiss)];
             }
-            self.player.showVideoControl = self.player.item.showVideoControl; 
+            self.player.showVideoControl = self.player.item.videoControlEnable; 
             [self.player browserCancelDismiss];
         } else {
             self.configuration.transitionStatus = AFTransitionStatusNormal;
