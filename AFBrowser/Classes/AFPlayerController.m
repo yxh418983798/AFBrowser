@@ -118,7 +118,7 @@ static int playerCount = 0;
         if (active) {
             [AFPlayerView resumeAllPlayer];
         } else {
-            [AFPlayerView pauseAllPlayer];
+            [AFPlayerView pauseAllPlayer:(AFPlayerPauseAllReasonByOther)];
         }
     }
 }

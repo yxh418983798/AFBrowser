@@ -42,9 +42,6 @@
 
 @interface AFPlayer : NSObject
 
-/** 控制所有播放器，设置为false则会暂停所有播放器，必须设置回true，否则调用play也不会播放 */
-@property (class) BOOL  enable;
-
 /** 代理 */
 @property (weak, nonatomic) id <AFPlayerDelegate> delegate;
 
@@ -73,6 +70,9 @@
 
 @property (nonatomic, assign) AFPlayerResumeOption          resumeOption;
 
+
+/** 播放回调 */
+@property (nonatomic, copy) void (^completion)(NSError *error);
 
 /// 单例
 + (instancetype)sharePlayer;
@@ -129,8 +129,11 @@
 /// 返回转场动画使用的size
 - (CGSize)transitionSize;
 
+/// 获取全局播放器暂停原因
++ (AFPlayerPauseAllReason)pauseAllReason;
+
 /// 暂停所有正在播放的播放器
-+ (void)pauseAllPlayer;
++ (void)pauseAllPlayer:(AFPlayerPauseAllReason)reason;
 
 /// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer;

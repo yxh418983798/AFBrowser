@@ -54,9 +54,6 @@ static int const AFDownloadBlockCode = 6666;
 /** isFirstFrame */
 @property (nonatomic, assign) BOOL            didFirstFrame;
 
-/** 播放回调 */
-@property (nonatomic, copy) void (^completion)(NSError *error);
-
 @end
 
 
@@ -510,7 +507,7 @@ static CGFloat playBtn_W = 50.0;
 
 /// 播放，内部调用
 - (void)play {
-    [self playVideoItem:self.item completion:self.completion];
+    [self playVideoItem:self.item completion:self.player.completion];
 }
 
 /// 暂停
@@ -523,9 +520,14 @@ static CGFloat playBtn_W = 50.0;
     [self.player stop];
 }
 
+/// 获取全局播放器暂停原因
++ (AFPlayerPauseAllReason)pauseAllReason {
+    return AFPlayer.pauseAllReason;
+}
+
 /// 暂停所有正在播放的播放器
-+ (void)pauseAllPlayer {
-    [AFPlayer pauseAllPlayer];
++ (void)pauseAllPlayer:(AFPlayerPauseAllReason)reason {
+    [AFPlayer pauseAllPlayer:reason];
 }
 
 /// 恢复所有播放器的状态
@@ -571,7 +573,7 @@ static CGFloat playBtn_W = 50.0;
 #pragma mark - 事件
 /// 点击播放/暂停按钮
 - (void)playBtnAction:(UIButton *)playBtn {
-    if (!AFPlayer.enable) {
+    if (AFPlayer.pauseAllReason) {
         if ([self.delegate respondsToSelector:@selector(tapActionOnDisablePlayerView:)]) {
             [self.delegate tapActionOnDisablePlayerView:self];
         }
@@ -626,7 +628,7 @@ static CGFloat playBtn_W = 50.0;
 
 - (void)sliderTouchUpAction:(UISlider *)sender{
     self.bottomBar.isSliderTouch = NO;
-    if (self.status == AFPlayerStatusPlay && AFPlayer.enable) {
+    if (self.status == AFPlayerStatusPlay && !AFPlayer.pauseAllReason) {
         [self play];
     }
 }
@@ -640,7 +642,7 @@ static CGFloat playBtn_W = 50.0;
 
 - (void)endTouchSlider:(AFPlayerSlider *)slider {
     self.bottomBar.isSliderTouch = NO;
-    if (self.status == AFPlayerStatusPlay && AFPlayer.enable) {
+    if (self.status == AFPlayerStatusPlay && !AFPlayer.pauseAllReason) {
         [self play];
     }
 }
@@ -681,31 +683,11 @@ static CGFloat playBtn_W = 50.0;
 + (BOOL)isPlaying {
     for (AFPlayerProxy *proxy in self.playerViews.allValues) {
         AFPlayerView *player = proxy.target;
-        if (player.item.pauseReason == AFPlayerPauseReasonByPauseAll || player.item.playerStatus == AFPlayerStatusPlay || player.item.playerStatus == AFPlayerStatusLoading) {
+        if (player.item.pauseReason || player.item.playerStatus == AFPlayerStatusPlay || player.item.playerStatus == AFPlayerStatusLoading) {
             return YES;
         }
     }
     return NO;
-}
-
-///// 设置PlayerId为活跃
-//- (void)setPlayerIdActive:(BOOL)playerIdActive {
-//    _playerIdActive = playerIdActive;
-//    if (playerIdActive) {
-//        [AFPlayerView.playerViews setValue:self.proxy forKey:[NSString stringWithFormat:@"%lld", self.playerId]];
-//    }
-//}
-
-
-#pragma mark - 播放器控制
-/// 播放器开关
-+ (BOOL)enable {
-    return AFPlayer.enable;
-}
-
-/// 设置播放器开关
-+ (void)setEnable:(BOOL)enable {
-    AFPlayer.enable = enable;
 }
 
 

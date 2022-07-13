@@ -45,15 +45,12 @@ static int const AFDownloadBlockCode = 6666;
 /** isFirstFrame */
 @property (nonatomic, assign) BOOL          didFirstFrame;
 
-/** 播放回调 */
-@property (nonatomic, copy) void (^completion)(NSError *error);
-
 @end
 
 
 static NSString * const AFPlayerNotificationPauseAllPlayer = @"AFPlayerNotificationPauseAllPlayer";
 static NSString * const AFPlayerNotificationResumeAllPlayer = @"AFPlayerNotificationResumeAllPlayer";
-static BOOL _AllPlayerSwitch = YES; // 记录播放器总开关
+static AFPlayerPauseAllReason _PauseAllReason = AFPlayerPauseAllReasonNone; // 记录播放器全局状态
 static int playerCount = 0;
 
 @implementation AFPlayer
@@ -237,11 +234,11 @@ static int playerCount = 0;
 
 /// 时长
 - (float)duration {
-    if (self.item.duration > 1) {
-        return self.item.duration;
-    } else {
-        return _player.currentItem ? CMTimeGetSeconds(self.player.currentItem.duration) : 0.f;
+    if (self.player.currentItem) {
+        float time = CMTimeGetSeconds(self.player.currentItem.duration);
+        return time > 0 ? time : self.item.duration;
     }
+    return self.item.duration;
 }
 
 /// 获取播放器frame
@@ -478,7 +475,7 @@ static int playerCount = 0;
 #pragma mark - 播放
 /// 播放视频
 - (void)playVideoItem:(AFBrowserVideoItem *)item superview:(UIView *)superview completion:(void (^)(NSError *))completion {
-    item.pauseReason = AFPlayerPauseReasonDefault;
+    item.pauseReason = AFPlayerPauseAllReasonNone;
     self.completion = completion;
     // 停止当前item
     if (self.item != item) {
@@ -548,12 +545,14 @@ static int playerCount = 0;
     if (!self.item.content) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[play]播放错误content为空, %@", self.displayDescription]];
         [self updatePlayerStatus:(AFPlayerStatusFailed)];
+        [self completionError:[NSError errorWithDomain:@"AFPlayer" code:80400 userInfo:@{@"error" : @"播放视频错误：item.content为空"}]];
         return;
     }
     // playerItem为空
     if (!self.player.currentItem) {
         [AFBrowserLoaderProxy addLogString:[NSString stringWithFormat:@"[play]播放错误playerItem为空, %@", self.displayDescription]];
         [self playVideoItem:self.item superview:self.superView completion:self.completion];
+        [self completionError:[NSError errorWithDomain:@"AFPlayer" code:80400 userInfo:@{@"error" : @"播放视频错误：player.currentItem为空"}]];
         return;
     }
     // 切换item
@@ -570,7 +569,7 @@ static int playerCount = 0;
         }
     } else {
         // 开关控制
-        if (!_AllPlayerSwitch) {
+        if (_PauseAllReason) {
             [self pause];
             NSLog(@"-------------------------- 播放过滤，关闭全局播放器 --------------------------");
             return;
@@ -608,7 +607,7 @@ static int playerCount = 0;
 - (void)startPlay {
     NSLog(@"-------------------------- startPlay：%@ --------------------------", self.superView);
     [self layout];
-    self.item.pauseReason = AFPlayerPauseReasonDefault;
+    self.item.pauseReason = AFPlayerPauseAllReasonNone;
     [self.item updateItemStatus:AFBrowserVideoItemStatusPrepareDone];
     if ([self.configuration.delegate respondsToSelector:@selector(browser:willPlayVideoItem:)]) {
         [self.configuration.delegate browser:[self.browserDelegate performSelector:@selector(delegate)] willPlayVideoItem:self.item];
@@ -628,7 +627,7 @@ static int playerCount = 0;
 
 /// 暂停
 - (void)pausePlay {
-    self.item.pauseReason = AFPlayerPauseReasonDefault;
+    self.item.pauseReason = AFPlayerPauseAllReasonNone;
     self.item.currentTime = self.item.progress * self.duration;
     [self updatePlayerStatus:(AFPlayerStatusNormal)];
 //    if (self.item.itemStatus > AFBrowserVideoItemStatusLoaded) {
@@ -656,6 +655,7 @@ static int playerCount = 0;
     [self seekToTime:0.f];
     if (!self.item.loop) {
         [self pause];
+        [self completionError:nil];
     } else {
         [self startPlay];
     }
@@ -665,9 +665,7 @@ static int playerCount = 0;
 #pragma mark - 错误回调
 - (void)completionError:(NSError *)error {
     if (self.completion) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.completion(error);
-        });
+        self.completion(error);
     }
 }
 
@@ -764,9 +762,14 @@ static int playerCount = 0;
     [self finishedPlay];
 }
 
+/// 获取全局播放器暂停原因
++ (AFPlayerPauseAllReason)pauseAllReason {
+    return _PauseAllReason;
+}
+
 /// 收到通知：暂停所有正在播放的播放器
-+ (void)pauseAllPlayer {
-    _AllPlayerSwitch = NO;
++ (void)pauseAllPlayer:(AFPlayerPauseAllReason)reason {
+    _PauseAllReason = reason;
     NSLog(@"-------------------------- 暂停所有播放器 --------------------------");
     [NSNotificationCenter.defaultCenter postNotificationName:AFPlayerNotificationPauseAllPlayer object:nil];
 }
@@ -779,19 +782,19 @@ static int playerCount = 0;
             }
         }
         [self pausePlay];
-        self.item.pauseReason = AFPlayerPauseReasonByPauseAll;
+        self.item.pauseReason = _PauseAllReason;
     }
 }
 
 /// 收到通知：恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer {
-    _AllPlayerSwitch = YES;
+    _PauseAllReason = AFPlayerPauseAllReasonNone;
     NSLog(@"-------------------------- 恢复所有播放器 --------------------------");
     [NSNotificationCenter.defaultCenter postNotificationName:AFPlayerNotificationResumeAllPlayer object:nil];
 }
 - (void)resumeAllPlayerNotification {
 
-    if (self.item.playerStatus == AFPlayerStatusNormal && self.item.pauseReason == AFPlayerPauseReasonByPauseAll) {
+    if (self.item.playerStatus == AFPlayerStatusNormal && self.item.pauseReason) {
         if (self.shouldResume) {
             [self playVideoItem:self.item superview:self.superView completion:self.completion];
             self.resumeOption = AFPlayerResumeOptionNone;
@@ -818,19 +821,6 @@ static int playerCount = 0;
     [self destroy];
 }
 
-
-#pragma mark - 播放器开关
-+ (BOOL)enable {
-    return _AllPlayerSwitch;
-}
-+ (void)setEnable:(BOOL)enable {
-    if (enable) {
-        [self resumeAllPlayer];
-    } else {
-        [self pauseAllPlayer];
-    }
-}
-    
 
 #pragma mark - 播放器数组管理
 /// 保存当前所有的播放器

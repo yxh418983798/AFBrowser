@@ -164,7 +164,7 @@
 @property (nonatomic, assign) AFPlayerStatus            playerStatus;
 
 /** 暂停原因 */
-@property (nonatomic, assign) AFPlayerPauseReason       pauseReason;
+@property (nonatomic, assign) AFPlayerPauseAllReason    pauseReason;
   
 
 

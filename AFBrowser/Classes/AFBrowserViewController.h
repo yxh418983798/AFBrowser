@@ -5,7 +5,7 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：2.0.4
+//  Version：2.0.5
 //  1、视频播放器重构
 
 #import <UIKit/UIKit.h>

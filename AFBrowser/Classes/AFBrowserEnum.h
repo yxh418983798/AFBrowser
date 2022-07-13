@@ -127,10 +127,13 @@ typedef NS_ENUM(NSUInteger, AFPlayerResumeOption) {
     AFPlayerResumeOptionOnNotification,
 };
 
-/// 播放器暂停原因
-typedef NS_ENUM(NSUInteger, AFPlayerPauseReason) {
-    AFPlayerPauseReasonDefault,    ///< 默认
-    AFPlayerPauseReasonByPauseAll, ///< 调用了暂停所有播放器
+/// 播放器全局暂停原因
+typedef NS_ENUM(NSUInteger, AFPlayerPauseAllReason) {
+    AFPlayerPauseAllReasonNone,    ///< 默认，播放器可用状态
+    AFPlayerPauseAllReasonByApplicationInactive,    ///< 应用处于不活跃状态，暂停所有播放器
+    AFPlayerPauseAllReasonByApplicationBackground,    ///< 应用处于后台状态，暂停所有播放器
+    AFPlayerPauseAllReasonBySystemCall, ///< 系统来电，暂停所有播放器
+    AFPlayerPauseAllReasonByOther,    ///< 开发者手动暂停所有播放器，例如与音视频通话/直播间等业务冲突导致的播放器暂停
 };
 
 

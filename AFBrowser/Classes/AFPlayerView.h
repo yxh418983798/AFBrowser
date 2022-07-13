@@ -38,9 +38,6 @@
 
 @interface AFPlayerView : UIView
 
-/** 控制所有播放器，设置为false则会暂停所有播放器，必须设置回true，否则调用play也不会播放 */
-@property (class) BOOL  enable;
-
 /** 播放器唯一Id，可用于控制播放器 */
 @property (nonatomic, assign) int64_t             playerId;
 
@@ -133,8 +130,11 @@
 /// 停止单例播放器
 + (void)stopSharePlayer;
 
+/// 获取全局播放器暂停原因
++ (AFPlayerPauseAllReason)pauseAllReason;
+
 /// 暂停所有正在播放的播放器
-+ (void)pauseAllPlayer;
++ (void)pauseAllPlayer:(AFPlayerPauseAllReason)reason;
 
 /// 恢复所有播放器的状态，如果暂停前是正在播放的，会继续播放
 + (void)resumeAllPlayer;
