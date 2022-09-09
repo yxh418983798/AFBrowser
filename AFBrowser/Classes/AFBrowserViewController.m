@@ -84,6 +84,10 @@
 
 /** 记录之前的状态栏状态 */
 @property (nonatomic, assign) UIStatusBarStyle       lastStatusBarStyle;
+
+/** deleteImage */
+@property (nonatomic, strong) UIImage            *deleteImage;
+
 @end
 
 
@@ -127,6 +131,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
     if ([self.configuration.delegate respondsToSelector:@selector(viewDidLoadBrowser:)]) {
         [self.configuration.delegate viewDidLoadBrowser:self];
     }
+    [self updateDeleteImage:self.configuration.selectedIndex];
 }
 
 - (void)viewDidLayoutSubviews {
@@ -248,35 +253,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 
-- (void)pauseCurrentPlayer {
-    if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
-        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
-        [cell.player pause];
-        cell.player.resumeOption = AFPlayerResumeOptionBrowserAppeared;
-    }
-}
-
-- (UIView *)windowBackgroundView {
-    if (!_windowBackgroundView) {
-        _windowBackgroundView = UIView.new;
-        _windowBackgroundView.frame = CGRectMake(-500, -500, 2000, 2000);
-    //    backgroundView.frame = UIScreen.mainScreen.bounds;
-        _windowBackgroundView.backgroundColor = UIColor.blackColor;
-    }
-    return _windowBackgroundView;
-}
-
-#pragma mark - 链式调用
-- (AFBrowserViewController *(^)(AFBrowserConfiguration *))makeConfiguration {
-    return ^id(AFBrowserConfiguration * configuration) {
-        self.configuration = configuration;
-        self.configuration.browserVc = self;
-        return self;
-    };
-}
-
-
-#pragma mark - 配置UI
+#pragma mark - UI
+/// 配置UI
 - (void)configSubViews {
 
     // collectionView
@@ -301,6 +279,50 @@ static const CGFloat lineSpacing = 0.f; //间隔
         [self.configuration.delegate browser:self configCollectionView:self.collectionView];
     }
     [self.view addSubview:self.collectionView];
+}
+
+/// 更新删除图片
+- (void)updateDeleteImage:(NSInteger)index {
+    if (self.configuration.browserType == AFBrowserTypeDelete) {
+        if ([self.configuration.delegate respondsToSelector:@selector(browser:imageForDeleteBtnAtIndex:defaultImage:)]) {
+            UIImage *image = [self.configuration.delegate browser:self imageForDeleteBtnAtIndex:index defaultImage:self.deleteImage];
+            if (image) {
+                self.deleteBtn.hidden = NO;
+                [self.deleteBtn setImage:image forState:(UIControlStateNormal)];
+            } else {
+                _deleteBtn.hidden = YES;
+            }
+        }
+    }
+}
+
+
+#pragma mark - Getter
+/// 浏览器的加载器代理
+static Class _loaderProxy;
++ (Class<AFBrowserLoaderDelegate>)loaderProxy {
+    return _loaderProxy;
+}
++ (void)setLoaderProxy:(Class<AFBrowserLoaderDelegate>)loaderProxy {
+    _loaderProxy = loaderProxy;
+}
+
+/// 存储容器
+- (NSMutableDictionary<NSString *,AFBrowserItem *> *)items {
+    if (!_items) {
+        _items = NSMutableDictionary.new;
+    }
+    return _items;
+}
+
+- (UIView *)windowBackgroundView {
+    if (!_windowBackgroundView) {
+        _windowBackgroundView = UIView.new;
+        _windowBackgroundView.frame = CGRectMake(-500, -500, 2000, 2000);
+    //    backgroundView.frame = UIScreen.mainScreen.bounds;
+        _windowBackgroundView.backgroundColor = UIColor.blackColor;
+    }
+    return _windowBackgroundView;
 }
 
 - (UIView *)toolBar {
@@ -332,6 +354,14 @@ static const CGFloat lineSpacing = 0.f; //间隔
         [self.toolBar addSubview:_deleteBtn];
     }
     return _deleteBtn;
+}
+
+- (UIImage *)deleteImage {
+    if (!_deleteImage) {
+        NSBundle *bundle = [NSBundle bundleWithURL:[[NSBundle bundleForClass:self.class] URLForResource:@"AFBrowser" withExtension:@"bundle"]];
+        _deleteImage = [UIImage imageNamed:@"browser_delete" inBundle:bundle compatibleWithTraitCollection:nil];
+    }
+    return _deleteImage;
 }
 
 - (UIButton *)selectBtn {
@@ -368,11 +398,139 @@ static const CGFloat lineSpacing = 0.f; //间隔
     return _pageLabel;
 }
 
+/// 获取对应类型的方法，给外部调用
+- (SEL)selectorForAction:(AFBrowserAction)action {
+    switch (action) {
+        case AFBrowserActionDismiss:
+            return @selector(dismissBtnAction);
+
+        case AFBrowserActionDelete:
+            return @selector(deleteBtnAction);
+            
+        case AFBrowserActionReload:
+            return @selector(reloadData);
+
+        default:
+            return nil;;
+    }
+}
+
 
 #pragma mark - Setter
+/// 链式调用
+- (AFBrowserViewController *(^)(AFBrowserConfiguration *))makeConfiguration {
+    return ^id(AFBrowserConfiguration * configuration) {
+        self.configuration = configuration;
+        self.configuration.browserVc = self;
+        return self;
+    };
+}
+
 - (void)setConfiguration:(AFBrowserConfiguration *)configuration {
     _configuration = configuration;
     self.transformer.configuration = self.configuration;
+}
+
+
+#pragma mark - 数据处理
+/// 获取指定index的item
+- (AFBrowserVideoItem *)itemAtIndex:(NSInteger)index {
+    NSString *key = [NSString stringWithFormat:@"AFPageItemIndex_%ld", index];
+    AFBrowserItem *item = [self.items valueForKey:key];
+    if (!item) {
+        item = [self.configuration.delegate browser:self itemForBrowserAtIndex:index];
+        if (self.configuration.playOption == AFBrowserPlayOptionDefault) {
+            self.configuration.playOption = AFBrowserPlayOptionNeverAutoPlay;
+            if (index == self.configuration.selectedIndex) {
+                item.autoPlay = YES;
+            }
+        } else if (self.configuration.playOption == AFBrowserPlayOptionAutoPlay) {
+            item.autoPlay = YES;
+        }
+        [self.items setValue:item forKey:key];
+    }
+    return item;
+}
+
+/// 删除指定index的item
+- (void)deleteItemAtIndex:(NSInteger)index {
+    NSString *key = [NSString stringWithFormat:@"AFPageItemIndex_%ld", index];
+    if ([self.items.allKeys containsObject:key]) {
+        [self.items removeObjectForKey:key];
+    }
+}
+
+/// 获取当前展示的item
+- (AFBrowserItem *)currentItem {
+    return [self itemAtIndex:self.configuration.selectedIndex];
+}
+
+/// 获取item的数量
+- (NSInteger)numberOfItems {
+    if (_numberOfItems == 0) {
+        _numberOfItems = [self.configuration.delegate numberOfItemsInBrowser:self];
+    }
+    return _numberOfItems;
+}
+
+- (NSInteger)totalNumberOfItems {
+    if ([self.configuration.delegate respondsToSelector:@selector(totalNumberOfItemsInBrowser:)]) {
+        return [self.configuration.delegate totalNumberOfItemsInBrowser:self];
+    }
+    return self.numberOfItems;
+}
+
+/// 查询图片缓存
+- (UIImage *)imageFromCacheForKey:(id)key {
+    if ([key isKindOfClass:NSString.class] || [key isKindOfClass:NSURL.class]) {
+        NSString *keyString = [key isKindOfClass:NSString.class] ? key : [(NSURL *)key absoluteString];
+        if ([self.configuration.delegate respondsToSelector:@selector(browser:hasImageCacheWithKey:atIndex:)]) {
+            return [self.configuration.delegate browser:self hasImageCacheWithKey:keyString atIndex:self.configuration.selectedIndex];
+        }
+        return [AFBrowserLoaderProxy imageFromCacheForKey:keyString];
+    } else if ([key isKindOfClass:UIImage.class]) {
+        return key;
+    }
+    return nil;
+}
+
+/// 触发加载分页数据
+- (void)loadItems {
+    if (self.configuration.selectedIndex != 0 && self.configuration.selectedIndex != self.numberOfItems - 1) return;
+    if (![self.configuration.delegate respondsToSelector:@selector(browser:loadDataWithDirection:completionReload:)]) return;
+    AFBrowserDirection direction = self.configuration.selectedIndex == 0 ? AFBrowserDirectionLeft : AFBrowserDirectionRight;
+    [self.configuration.delegate browser:self loadDataWithDirection:direction completionReload:^(BOOL success) {
+        if (success) {
+            [self.items removeAllObjects];
+            [self scrollViewDidScroll:self.collectionView];
+//            if (direction == AFBrowserDirectionLeft) {
+//                NSInteger currentNumbers = [self.configuration.delegate numberOfItemsInBrowser:self];
+//                self.configuration.selectedIndex = MAX((int)(currentNumbers - self.numberOfItems), 0);
+//                [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0] atScrollPosition:(UICollectionViewScrollPositionNone) animated:NO];
+//            } else {
+//                [self.collectionView reloadData];
+//            }
+            [self.collectionView reloadData];
+        }
+    }];
+}
+
+/// 刷新数据
+- (void)reloadData {
+    [self.items removeAllObjects];
+    [self.collectionView reloadData];
+}
+
+- (void)reloadDataWhenEndScroll {
+    [self.items removeAllObjects];
+    [self scrollViewDidScroll:self.collectionView];
+    [self.collectionView reloadData];
+    return;
+    if (self.collectionView.isTracking || self.self.collectionView.isDecelerating) {
+        self.reloadWhenEndScroll = YES;
+    } else {
+        [self.collectionView reloadData];
+    }
 }
 
 /// 设置浏览类型
@@ -435,114 +593,6 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
 }
 
-
-#pragma mark - 获取对应类型的方法，给外部调用
-- (SEL)selectorForAction:(AFBrowserAction)action {
-    switch (action) {
-        case AFBrowserActionDismiss:
-            return @selector(dismissBtnAction);
-
-        case AFBrowserActionDelete:
-            return @selector(deleteBtnAction);
-            
-        case AFBrowserActionReload:
-            return @selector(reloadData);
-
-        default:
-            return nil;;
-    }
-}
-
-
-#pragma mark - item数据的操作
-/// 存储容器
-- (NSMutableDictionary<NSString *,AFBrowserItem *> *)items {
-    if (!_items) {
-        _items = NSMutableDictionary.new;
-    }
-    return _items;
-}
-
-/// 获取指定index的item
-- (AFBrowserVideoItem *)itemAtIndex:(NSInteger)index {
-    NSString *key = [NSString stringWithFormat:@"AFPageItemIndex_%ld", index];
-    AFBrowserItem *item = [self.items valueForKey:key];
-    if (!item) {
-        item = [self.configuration.delegate browser:self itemForBrowserAtIndex:index];
-        if (self.configuration.playOption == AFBrowserPlayOptionDefault) {
-            self.configuration.playOption = AFBrowserPlayOptionNeverAutoPlay;
-            if (index == self.configuration.selectedIndex) {
-                item.autoPlay = YES;
-            }
-        } else if (self.configuration.playOption == AFBrowserPlayOptionAutoPlay) {
-            item.autoPlay = YES;
-        }
-        [self.items setValue:item forKey:key];
-    }
-    return item;
-}
-
-/// 删除指定index的item
-- (void)deleteItemAtIndex:(NSInteger)index {
-    NSString *key = [NSString stringWithFormat:@"AFPageItemIndex_%ld", index];
-    if ([self.items.allKeys containsObject:key]) {
-        [self.items removeObjectForKey:key];
-    }
-}
-
-/// 获取item的数量
-- (NSInteger)numberOfItems {
-    if (_numberOfItems == 0) {
-        _numberOfItems = [self.configuration.delegate numberOfItemsInBrowser:self];
-    }
-    return _numberOfItems;
-}
-
-- (NSInteger)totalNumberOfItems {
-    if ([self.configuration.delegate respondsToSelector:@selector(totalNumberOfItemsInBrowser:)]) {
-        return [self.configuration.delegate totalNumberOfItemsInBrowser:self];
-    }
-    return self.numberOfItems;
-}
-
-#pragma mark - 触发加载分页数据
-- (void)loadItems {
-    if (self.configuration.selectedIndex != 0 && self.configuration.selectedIndex != self.numberOfItems - 1) return;
-    if (![self.configuration.delegate respondsToSelector:@selector(browser:loadDataWithDirection:completionReload:)]) return;
-    AFBrowserDirection direction = self.configuration.selectedIndex == 0 ? AFBrowserDirectionLeft : AFBrowserDirectionRight;
-    [self.configuration.delegate browser:self loadDataWithDirection:direction completionReload:^(BOOL success) {
-        if (success) {
-            [self.items removeAllObjects];
-            [self scrollViewDidScroll:self.collectionView];
-//            if (direction == AFBrowserDirectionLeft) {
-//                NSInteger currentNumbers = [self.configuration.delegate numberOfItemsInBrowser:self];
-//                self.configuration.selectedIndex = MAX((int)(currentNumbers - self.numberOfItems), 0);
-//                [self.collectionView scrollToItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0] atScrollPosition:(UICollectionViewScrollPositionNone) animated:NO];
-//            } else {
-//                [self.collectionView reloadData];
-//            }
-            [self.collectionView reloadData];
-        }
-    }];
-}
-
-/// 刷新数据
-- (void)reloadData {
-    [self.items removeAllObjects];
-    [self.collectionView reloadData];
-}
-
-- (void)reloadDataWhenEndScroll {
-    [self.items removeAllObjects];
-    [self scrollViewDidScroll:self.collectionView];
-    [self.collectionView reloadData];
-    return;
-    if (self.collectionView.isTracking || self.self.collectionView.isDecelerating) {
-        self.reloadWhenEndScroll = YES;
-    } else {
-        [self.collectionView reloadData];
-    }
-}
 
 #pragma mark UICollectionViewDataSource
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
@@ -617,6 +667,7 @@ static const CGFloat lineSpacing = 0.f; //间隔
         if ([self.configuration.delegate respondsToSelector:@selector(browser:didScroll:atIndex:)]) {
             [self.configuration.delegate browser:self didScroll:scrollView atIndex:currentPageNum];
         }
+        [self updateDeleteImage:currentPageNum];
     }
 }
 
@@ -652,39 +703,8 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 
-#pragma mark - 刚进入时，播放当前的播放器
-- (void)startCurrentPlayer {
-    AFBrowserVideoItem *item = [self itemAtIndex:self.configuration.selectedIndex];
-    if (!item) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self startCurrentPlayer];
-        });
-        return;
-    }
-    
-    if (item.type != AFBrowserItemTypeVideo) return;
-    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
-    if (!cell) {
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
-            [self startCurrentPlayer];
-        });
-    } else {
-        if (AVAudioSession.sharedInstance.otherAudioPlaying) {
-            [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategorySoloAmbient error:nil];
-        }
-        [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayback error:nil];
-        [AVAudioSession.sharedInstance setActive:YES error:nil];
-        if (self.configuration.transitionStatus == AFTransitionStatusPresented && cell.player.frame.size.width == UIScreen.mainScreen.bounds.size.width) {
-            cell.player.showVideoControl = item.videoControlEnable;
-        } else {
-            NSLog(@"-------------------------- 未完成转场，过滤设置 --------------------------");
-        }
-        [NSNotificationCenter.defaultCenter postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.configuration.selectedIndex)];
-    }
-}
-
-
-#pragma mark - 单击图片 AFBrowserCollectionViewCellDelegate
+#pragma mark - AFBrowserCollectionViewCellDelegate
+/// 单击图片
 - (void)singleTapAction {
     
     if ([self.configuration.delegate respondsToSelector:@selector(browser:tapActionAtIndex:)]) {
@@ -718,16 +738,14 @@ static const CGFloat lineSpacing = 0.f; //间隔
     }
 }
 
-
-#pragma mark - 长按事件 AFBrowserCollectionViewCellDelegate
+/// 长按事件
 - (void)longPressActionAtCollectionViewCell:(AFBrowserCollectionViewCell *)cell {
     if ([self.configuration.delegate respondsToSelector:@selector(browser:longPressActionAtIndex:)]) {
         [self.configuration.delegate browser:self longPressActionAtIndex:[self.collectionView indexPathForCell:cell].item];
     }
 }
 
-
-#pragma mark - 查询图片缓存   AFBrowserCollectionViewCellDelegate
+/// 查询图片缓存
 - (UIImage *)browserCell:(AFBrowserCollectionViewCell *)cell hasImageCache:(id)content atIndex:(NSInteger)index {
     
     if ([content isKindOfClass:UIImage.class]) return content;
@@ -743,74 +761,12 @@ static const CGFloat lineSpacing = 0.f; //间隔
     return image;
 }
 
-
-#pragma mark - 是否展示原图按钮  AFBrowserCollectionViewCellDelegate
+/// 是否展示原图按钮
 - (BOOL)browserCell:(AFBrowserCollectionViewCell *)cell shouldAutoLoadOriginalImageForItemAtIndex:(NSInteger)index {
     if ([self.configuration.delegate respondsToSelector:@selector(browser:shouldAutoLoadOriginalImageForItemAtIndex:)]) {
         return [self.configuration.delegate browser:self shouldAutoLoadOriginalImageForItemAtIndex:index];
     }
     return !self.configuration.autoLoadOriginalImage;
-}
-
-
-#pragma mark -  dismiss事件
-- (void)dismissActionAtCollectionViewCell:(AFBrowserCollectionViewCell *)cell {
-    [self dismissViewControllerAnimated:YES completion:nil];
-}
-
-
-#pragma mark - 退出
-- (void)dismissBtnAction {
-    [self dismissViewControllerAnimated:YES completion:nil];
-}
-
-
-#pragma mark - 删除事件
-- (void)deleteBtnAction {
-    if ([self.configuration.delegate respondsToSelector:@selector(browser:deleteActionAtIndex:completionDelete:)]) {
-        [self.configuration.delegate browser:self deleteActionAtIndex:self.configuration.selectedIndex completionDelete:^{
-            [self completionDeleteAction];
-        }];
-    } else {
-        [self completionDeleteAction];
-    }
-}
-
-
-#pragma mark - 确认删除
-- (void)completionDeleteAction {
-    
-    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
-    [cell.player stop];
-    if (self.numberOfItems == 1) {
-        self.configuration.transitionStyle = AFBrowserTransitionStyleSystem;
-        [self dismissBtnAction];
-        return;
-    }
-    [self deleteItemAtIndex:self.configuration.selectedIndex];
-//    int currentPageNum = round(scrollView.contentOffset.x / (scrollView.frame.size.width + lineSpacing));
-//    switch (self.configuration.pageControlType) {
-//
-//        case AFPageControlTypeCircle:
-//            _pageControl.numberOfPages --;
-//            self.pageControl.currentPage = currentPageNum;
-//            break;
-//
-//        case AFPageControlTypeText:
-//            self.pageLabel.text = [NSString stringWithFormat:@"%d/%zd", currentPageNum + 1, self.totalNumberOfItems];
-//            break;
-//
-//        default:
-//            break;
-//    }
-    [self.collectionView deleteItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:self.configuration.selectedIndex inSection:0]]];
-    [self scrollViewDidScroll:self.collectionView];
-}
-         
-
-#pragma mark - 选择图片
-- (void)selectBtnAction {
-    
 }
 
 
@@ -859,9 +815,62 @@ static const CGFloat lineSpacing = 0.f; //间隔
     return cell;
 }
 
-/// 获取当前展示的item
-- (AFBrowserItem *)currentItem {
-    return [self itemAtIndex:self.configuration.selectedIndex];
+
+#pragma mark - 事件
+/// dismiss事件
+- (void)dismissActionAtCollectionViewCell:(AFBrowserCollectionViewCell *)cell {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+/// 退出
+- (void)dismissBtnAction {
+    [self dismissViewControllerAnimated:YES completion:nil];
+}
+
+/// 删除事件
+- (void)deleteBtnAction {
+    if ([self.configuration.delegate respondsToSelector:@selector(browser:deleteActionAtIndex:completionDelete:)]) {
+        [self.configuration.delegate browser:self deleteActionAtIndex:self.configuration.selectedIndex completionDelete:^{
+            [self completionDeleteAction];
+        }];
+    } else {
+        [self completionDeleteAction];
+    }
+}
+
+/// 确认删除
+- (void)completionDeleteAction {
+    
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
+    [cell.player stop];
+    if (self.numberOfItems == 1) {
+        self.configuration.transitionStyle = AFBrowserTransitionStyleSystem;
+        [self dismissBtnAction];
+        return;
+    }
+    [self deleteItemAtIndex:self.configuration.selectedIndex];
+//    int currentPageNum = round(scrollView.contentOffset.x / (scrollView.frame.size.width + lineSpacing));
+//    switch (self.configuration.pageControlType) {
+//
+//        case AFPageControlTypeCircle:
+//            _pageControl.numberOfPages --;
+//            self.pageControl.currentPage = currentPageNum;
+//            break;
+//
+//        case AFPageControlTypeText:
+//            self.pageLabel.text = [NSString stringWithFormat:@"%d/%zd", currentPageNum + 1, self.totalNumberOfItems];
+//            break;
+//
+//        default:
+//            break;
+//    }
+    [self.collectionView deleteItemsAtIndexPaths:@[[NSIndexPath indexPathForRow:self.configuration.selectedIndex inSection:0]]];
+    [self scrollViewDidScroll:self.collectionView];
+}
+         
+/// 选择图片
+- (void)selectBtnAction {
+    
 }
 
 
@@ -912,29 +921,45 @@ static const CGFloat lineSpacing = 0.f; //间隔
 }
 
 
-#pragma mark - 查询图片缓存
-- (UIImage *)imageFromCacheForKey:(id)key {
-    if ([key isKindOfClass:NSString.class] || [key isKindOfClass:NSURL.class]) {
-        NSString *keyString = [key isKindOfClass:NSString.class] ? key : [(NSURL *)key absoluteString];
-        if ([self.configuration.delegate respondsToSelector:@selector(browser:hasImageCacheWithKey:atIndex:)]) {
-            return [self.configuration.delegate browser:self hasImageCacheWithKey:keyString atIndex:self.configuration.selectedIndex];
-        }
-        return [AFBrowserLoaderProxy imageFromCacheForKey:keyString];
-    } else if ([key isKindOfClass:UIImage.class]) {
-        return key;
+#pragma mark - 播放器
+/// 刚进入时，播放当前的播放器
+- (void)startCurrentPlayer {
+    AFBrowserVideoItem *item = [self itemAtIndex:self.configuration.selectedIndex];
+    if (!item) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self startCurrentPlayer];
+        });
+        return;
     }
-    return nil;
+    
+    if (item.type != AFBrowserItemTypeVideo) return;
+    AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
+    if (!cell) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.1 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+            [self startCurrentPlayer];
+        });
+    } else {
+        if (AVAudioSession.sharedInstance.otherAudioPlaying) {
+            [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategorySoloAmbient error:nil];
+        }
+        [AVAudioSession.sharedInstance setCategory:AVAudioSessionCategoryPlayback error:nil];
+        [AVAudioSession.sharedInstance setActive:YES error:nil];
+        if (self.configuration.transitionStatus == AFTransitionStatusPresented && cell.player.frame.size.width == UIScreen.mainScreen.bounds.size.width) {
+            cell.player.showVideoControl = item.videoControlEnable;
+        } else {
+            NSLog(@"-------------------------- 未完成转场，过滤设置 --------------------------");
+        }
+        [NSNotificationCenter.defaultCenter postNotificationName:@"AFBrowserUpdateVideoStatus" object:@(self.configuration.selectedIndex)];
+    }
 }
 
-
-#pragma mark - 浏览器的加载器代理
-static Class _loaderProxy;
-+ (void)setLoaderProxy:(Class<AFBrowserLoaderDelegate>)loaderProxy {
-    _loaderProxy = loaderProxy;
-}
-
-+ (Class<AFBrowserLoaderDelegate>)loaderProxy {
-    return _loaderProxy;
+/// 暂停播放
+- (void)pauseCurrentPlayer {
+    if ([self itemAtIndex:self.configuration.selectedIndex].type == AFBrowserItemTypeVideo) {
+        AFBrowserCollectionViewCell *cell = (AFBrowserCollectionViewCell *)[self.collectionView cellForItemAtIndexPath:[NSIndexPath indexPathForItem:self.configuration.selectedIndex inSection:0]];
+        [cell.player pause];
+        cell.player.resumeOption = AFPlayerResumeOptionBrowserAppeared;
+    }
 }
 
 

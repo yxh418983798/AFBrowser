@@ -17,10 +17,10 @@
 /** 类型 */
 @property (assign, nonatomic) AFBrowserItemType type;
 
-/** content */
+/** 图片视频地址（UIImage，NSURL，NSString） */
 @property (strong, nonatomic) id                content;
 
-/** 缩略图/封面图 */
+/** 缩略图/封面图（UIImage，NSURL，NSString） */
 @property (strong, nonatomic) id                coverImage;
 
 /** 宽度 */

@@ -99,6 +99,16 @@
 - (UIImage *)browser:(AFBrowserViewController *)browser imageForPlaceholderAtIndex:(NSInteger)index;
 
 /**
+ * @brief 删除模式下，返回删除按钮图片
+ *
+ * @discussion
+ * 在该方法中返回图片，可自定义删除按钮样式
+ * 隐藏按钮： return nil;
+ * 使用默认图片：return defaultImage;
+ */
+- (UIImage *)browser:(AFBrowserViewController *)browser imageForDeleteBtnAtIndex:(NSInteger)index defaultImage:(UIImage *)defaultImage;
+
+/**
  * @brief 配置浏览器的CollectionView，可用于配置UI相关或分页加载
  */
 - (void)browser:(AFBrowserViewController *)browser configCollectionView:(UICollectionView *)collectionView;

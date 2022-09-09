@@ -5,8 +5,8 @@
 //  Created by alfie on 2019/7/9.
 //  Copyright © 2019 Alfie. All rights reserved.
 //
-//  Version：2.0.5
-//  1、视频播放器重构
+//  Version：2.1.0
+//  1、自定义删除图片功能
 
 #import <UIKit/UIKit.h>
 #import "AFBrowserLoaderDelegate.h"
